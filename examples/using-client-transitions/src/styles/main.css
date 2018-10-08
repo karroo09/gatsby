@@ -50,7 +50,7 @@ a {
   height: 400px;
 }
 
-@-webkit-keyframes slideOut {
+@keyframes slideOut {
   0% {
     transform: translateX(0%);
   }
@@ -58,7 +58,7 @@ a {
     transform: translateX(-100%);
   }
 }
-@-webkit-keyframes slideIn {
+@keyframes slideIn {
   0% {
     transform: translateX(100%);
   }
@@ -72,4 +72,3 @@ a {
 .slide-enter-active {
   animation: slideIn 2500ms both ease;
 }
-
