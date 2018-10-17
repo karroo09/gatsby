@@ -77,6 +77,8 @@ module.exports = async ({ parentSpan }) => {
       .value()
 
     Object.keys(childNodesByType).forEach(childNodeType => {
+      // if (!processedTypes[childNodeType]) return
+
       // Does this child type have one child per parent or multiple?
       const maxChildCount = _.maxBy(
         _.values(_.groupBy(childNodesByType[childNodeType], c => c.parent)),
@@ -156,10 +158,6 @@ module.exports = async ({ parentSpan }) => {
 
     const mergedFieldsFromPlugins = _.merge(...fieldsFromPlugins)
 
-    const inferredInputFieldsFromPlugins = inferInputObjectStructureFromFields({
-      fields: mergedFieldsFromPlugins,
-    })
-
     const gqlType = new GraphQLObjectType({
       name: typeName,
       description: `Node of type ${typeName}`,
@@ -168,17 +166,6 @@ module.exports = async ({ parentSpan }) => {
       isTypeOf: value => value.internal.type === typeName,
     })
 
-    const inferedInputFields = inferInputObjectStructureFromNodes({
-      nodes,
-      typeName,
-    })
-
-    const filterFields = _.merge(
-      {},
-      inferedInputFields.inferredFields,
-      inferredInputFieldsFromPlugins.inferredFields
-    )
-
     const proccesedType: ProcessedNodeType = {
       ...intermediateType,
       fieldsFromPlugins: mergedFieldsFromPlugins,
@@ -186,7 +173,7 @@ module.exports = async ({ parentSpan }) => {
       node: {
         name: typeName,
         type: gqlType,
-        args: filterFields,
+        // args: filterFields,
         resolve(a, args, context) {
           const runSift = require(`./run-sift`)
           let latestNodes
@@ -228,6 +215,33 @@ module.exports = async ({ parentSpan }) => {
     }
   }
 
+  const createInputFilters = processedType => {
+    return new Promise(resolve => {
+      const { nodes, name, fieldsFromPlugins } = processedType
+
+      const inferredInputFieldsFromPlugins = inferInputObjectStructureFromFields(
+        {
+          fields: fieldsFromPlugins,
+        }
+      )
+
+      const inferedInputFields = inferInputObjectStructureFromNodes({
+        nodes,
+        name,
+      })
+
+      const filterFields = _.merge(
+        {},
+        inferedInputFields.inferredFields,
+        inferredInputFieldsFromPlugins.inferredFields
+      )
+
+      processedType.node.args = filterFields
+
+      resolve()
+    })
+  }
+
   // Create node types and node fields for nodes that have a resolve function.
   // Ensure that File type is created first, so it can be imported
   // in setFieldsOnGraphQLNodeType.
@@ -237,9 +251,9 @@ module.exports = async ({ parentSpan }) => {
     await createType(fileNodes, `File`)
   }
 
-  await Promise.all(
-    Object.entries(otherTypes).map(([name, nodes]) => createType(nodes, name))
-  )
+  await Promise.all(_.map(otherTypes, createType))
+
+  await Promise.all(Object.values(processedTypes).map(createInputFilters))
 
   span.finish()
 

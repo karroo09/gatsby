@@ -45,12 +45,16 @@ function convertToInputType(
     return null
   }
 
-  if (
-    type.getInterfaces &&
-    type.getInterfaces().some(iface => iface.name === "Node")
-  ) {
-    return null
-  }
+  // TODO: Do we want/need to check this?
+  // And if so, better move this in the conditional on L#63?
+  // if (
+  //   type.getInterfaces &&
+  //   type.getInterfaces().some(iface => iface.name === "Node")
+  // ) {
+  //   return null
+  // }
+
+  // FIXME: Filter out all child* fields?
 
   const nextTypeMap = new Set(Array.from(typeMap).concat([type]))
 
