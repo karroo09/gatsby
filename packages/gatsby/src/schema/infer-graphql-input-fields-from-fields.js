@@ -44,6 +44,14 @@ function convertToInputType(
   if (typeMap.has(type)) {
     return null
   }
+
+  if (
+    type.getInterfaces &&
+    type.getInterfaces().some(iface => iface.name === "Node")
+  ) {
+    return null
+  }
+
   const nextTypeMap = new Set(Array.from(typeMap).concat([type]))
 
   if (type instanceof GraphQLScalarType || type instanceof GraphQLEnumType) {
