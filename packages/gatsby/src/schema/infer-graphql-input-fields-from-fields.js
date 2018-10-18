@@ -45,29 +45,35 @@ function convertToInputType(
     return null
   }
 
-  // TODO: Do we want/need to check this?
-  // And if so, better move this in the conditional on L#63?
-  // if (
-  //   type.getInterfaces &&
-  //   type.getInterfaces().some(iface => iface.name === "Node")
-  // ) {
-  //   return null
-  // }
-
-  // FIXME: Filter out all child* fields?
-
   const nextTypeMap = new Set(Array.from(typeMap).concat([type]))
 
   if (type instanceof GraphQLScalarType || type instanceof GraphQLEnumType) {
     return type
   } else if (type instanceof GraphQLObjectType) {
-    const fields = _.transform(type.getFields(), (out, fieldConfig, key) => {
+    let fields = _.transform(type.getFields(), (out, fieldConfig, key) => {
       const type = convertToInputType(fieldConfig.type, nextTypeMap)
       if (type) out[key] = { type }
     })
+
+    if (
+      type.getInterfaces &&
+      type.getInterfaces().some(iface => iface.name === `Node`)
+    ) {
+      fields = Object.entries(fields).reduce((acc, [key, value]) => {
+        if (
+          ![`parent`, `children`, `internal`].includes(key) &&
+          !key.startsWith(`child`)
+        ) {
+          acc[key] = value
+        }
+        return acc
+      }, {})
+    }
+
     if (Object.keys(fields).length === 0) {
       return null
     }
+
     return new GraphQLInputObjectType({
       name: createTypeName(`${type.name}InputObject`),
       fields,

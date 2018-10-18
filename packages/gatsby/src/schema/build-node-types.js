@@ -77,8 +77,6 @@ module.exports = async ({ parentSpan }) => {
       .value()
 
     Object.keys(childNodesByType).forEach(childNodeType => {
-      // if (!processedTypes[childNodeType]) return
-
       // Does this child type have one child per parent or multiple?
       const maxChildCount = _.maxBy(
         _.values(_.groupBy(childNodesByType[childNodeType], c => c.parent)),
