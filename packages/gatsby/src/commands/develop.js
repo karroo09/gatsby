@@ -27,6 +27,7 @@ const getSslCert = require(`../utils/get-ssl-cert`)
 const slash = require(`slash`)
 const { initTracer } = require(`../utils/tracer`)
 const apiRunnerNode = require(`../utils/api-runner-node`)
+const resolvers = require(`../schema/resolvers`)
 
 // const isInteractive = process.stdout.isTTY
 
@@ -93,9 +94,13 @@ async function startServer(program) {
   )
   app.use(
     `/___graphql`,
-    graphqlHTTP({
-      schema: store.getState().schema,
-      graphiql: true,
+    graphqlHTTP(req => {
+      return {
+        schema: store.getState().schema,
+        // FIXME: Do we want the request on context (default)?
+        context: { ...req, resolvers },
+        graphiql: true,
+      }
     })
   )
 

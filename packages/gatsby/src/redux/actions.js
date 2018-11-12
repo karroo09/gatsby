@@ -10,7 +10,7 @@ const fs = require(`fs`)
 const url = require(`url`)
 const kebabHash = require(`kebab-hash`)
 const { hasNodeChanged, getNode } = require(`../db/nodes`)
-const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
+const { trackObjects } = require(`../schema/utils/node-tracking`)
 const { store } = require(`./index`)
 const fileExistsSync = require(`fs-exists-cached`).sync
 const joiSchemas = require(`../joi-schemas/joi`)
@@ -136,8 +136,8 @@ actions.createPage = (
       `matchPath`,
       `component`,
       `componentChunkName`,
-      `pluginCreator___NODE`,
-      `pluginCreatorName`,
+      `pluginCreator`,
+      `pluginCreatorId`,
     ]
     const invalidFields = Object.keys(_.pick(page.context, reservedFields))
 
@@ -526,7 +526,7 @@ actions.createNode = (
     )
   }
 
-  trackInlineObjectsInRootNode(node)
+  trackObjects(node)
 
   const oldNode = getNode(node.id)
 

@@ -1,0 +1,52 @@
+const path = require(`path`)
+const slash = require(`slash`)
+const mime = require(`mime`)
+
+const { getAbsolutePath, getValueAtSelector } = require(`../utils`)
+const { getNodesByType } = require(`../db`)
+
+const getFirstValueAt = (node, selector) => {
+  let value = getValueAtSelector(node, selector)
+  while (Array.isArray(value)) {
+    value = value[0]
+  }
+  return value
+}
+
+const getFilePath = (field, relativePath) => {
+  const [typeName, ...selector] = field.split(`.`)
+
+  if (typeName === `File`) return null
+
+  const isRelative = require(`is-relative`)
+  const isRelativeUrl = require(`is-relative-url`)
+  const looksLikeFile =
+    !path.isAbsolute(relativePath) &&
+    mime.getType(relativePath) !== null &&
+    // FIXME: Do we need all of this?
+    mime.getType(relativePath) !== `application/x-msdownload` &&
+    isRelative(relativePath) &&
+    isRelativeUrl(relativePath)
+
+  if (!looksLikeFile) return null
+
+  const normalizedPath = slash(relativePath)
+  const node = getNodesByType(typeName).find(
+    node => getFirstValueAt(node, selector) === normalizedPath
+  )
+
+  return node ? getAbsolutePath(node, normalizedPath) : null
+}
+
+const isFile = (field, relativePath) => {
+  const filePath = getFilePath(field, relativePath)
+  if (!filePath) return false
+  const filePathExists = getNodesByType(`File`).some(
+    node => node.absolutePath === filePath
+  )
+  return filePathExists
+}
+
+module.exports = {
+  isFile,
+}

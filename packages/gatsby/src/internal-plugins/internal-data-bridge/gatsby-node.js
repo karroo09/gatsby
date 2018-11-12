@@ -170,3 +170,65 @@ emitter.on(`DELETE_PAGE`, action => {
   const node = getNode(nodeId)
   boundActionCreators.deleteNode({ node })
 })
+
+exports.addTypeDefs = ({ addTypeDefs }) => {
+  const typeDefs = `
+    type SiteProxy {
+      prefix: String
+      url: String
+    }
+
+    type Site implements Node {
+      buildTime: Date
+      host: String
+      pathPrefix: String
+      polyfill: Boolean
+      port: Int
+      proxy: SiteProxy
+    }
+
+    type SitePage implements Node {
+      component: String
+      componentChunkName: String
+      componentPath: String
+      internalComponentName: String
+      jsonName: String
+      path: String
+      matchPath: String
+      pluginCreator: SitePlugin @link
+      pluginCreatorId: String
+    }
+
+    type PackageDependencies {
+      name: String
+      version: String
+    }
+
+    type PackageJson {
+      author: String
+      bundledDependecies: [PackageDependencies]
+      dependencies: [PackageDependencies]
+      description: String
+      devDependencies: [PackageDependencies]
+      keywords: [String]
+      license: String
+      main: String
+      name: String
+      optionalDependecies: [PackageDependencies]
+      peerDependencies: [PackageDependencies]
+      version: String
+    }
+
+    type SitePlugin implements Node {
+      browserAPIs: [String]
+      name: String
+      nodeAPIs: [String]
+      packageJson: PackageJson
+      pluginFilePath: String
+      resolve: String
+      ssrAPIs: [String]
+      version: String
+    }
+  `
+  addTypeDefs(typeDefs)
+}
