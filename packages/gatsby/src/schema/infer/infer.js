@@ -1,4 +1,4 @@
-const { TypeComposer } = require(`graphql-compose`)
+const { schemaComposer } = require(`graphql-compose`)
 
 const { isFile } = require(`./file`)
 const { findMany, findOne, link } = require(`../resolvers`)
@@ -12,7 +12,7 @@ const {
 // Deeper nested levels should be inferred as JSON.
 const MAX_DEPTH = 3
 
-const getInferredType = (value, prefix, depth = 0) => {
+const addInferredFields = (tc, value, prefix, depth = 0) => {
   const fields = Object.entries(value).reduce((acc, [key, value]) => {
     let arrays = 0
     while (Array.isArray(value)) {
@@ -54,7 +54,20 @@ const getInferredType = (value, prefix, depth = 0) => {
           value instanceof Date
             ? `Date`
             : value && depth < MAX_DEPTH
-              ? getInferredType(value, selector, depth + 1)
+              ? addInferredFields(
+                  tc.hasField(key)
+                    ? tc.getFieldTC(key)
+                    : schemaComposer.getOrCreateTC(createKey(selector)),
+                  // TODO: Be consistent: use getOrCreateTC everywhere, or:
+                  // : TypeComposer.createTemp({
+                  //   name: createKey(selector),
+                  //   fields: {},
+                  // }),
+                  // : new TypeComposer(new GraphQLObjectType())
+                  value,
+                  selector,
+                  depth + 1
+                )
               : `JSON`
         break
       default:
@@ -71,9 +84,13 @@ const getInferredType = (value, prefix, depth = 0) => {
     return acc
   }, {})
 
-  return TypeComposer.createTemp({ name: createKey(prefix), fields })
+  Object.entries(fields).forEach(
+    ([fieldName, fieldConfig]) =>
+      !tc.hasField(fieldName) && tc.setField(fieldName, fieldConfig)
+  )
+  return tc
 }
 
 module.exports = {
-  getInferredType,
+  addInferredFields,
 }
