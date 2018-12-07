@@ -3,8 +3,8 @@ const { schemaComposer } = require(`graphql-compose`)
 const { isFile } = require(`./file`)
 const { findMany, findOne, link } = require(`../resolvers`)
 const {
-  createKey,
   createSelector,
+  createTypeName,
   is32bitInteger,
   isDate,
 } = require(`../utils`)
@@ -57,10 +57,10 @@ const addInferredFields = (tc, value, prefix, depth = 0) => {
               ? addInferredFields(
                   tc.hasField(key)
                     ? tc.getFieldTC(key)
-                    : schemaComposer.getOrCreateTC(createKey(selector)),
+                    : schemaComposer.getOrCreateTC(createTypeName(selector)),
                   // TODO: Be consistent: use getOrCreateTC everywhere, or:
                   // : TypeComposer.createTemp({
-                  //   name: createKey(selector),
+                  //   name: createTypeName(selector),
                   //   fields: {},
                   // }),
                   // : new TypeComposer(new GraphQLObjectType())
