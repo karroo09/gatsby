@@ -11,8 +11,23 @@ const {
   createSelector,
   getUniqueValues,
   getUniqueValuesBy,
+  is32bitInteger,
   isDate,
+  isDefined,
 } = require(`../utils`)
+
+const findFloat = entries => {
+  let result
+  const find = numbers =>
+    numbers.some(value => {
+      const number = typeof value === `object` ? value.value : value
+      return Array.isArray(number)
+        ? find(number)
+        : !is32bitInteger(number) && (result = number)
+    })
+  find(entries)
+  return result
+}
 
 const getType = value => {
   switch (typeof value) {
@@ -26,9 +41,10 @@ const getType = value => {
       if (value === null) return null
       if (value instanceof Date) return `date`
       if (Array.isArray(value)) {
-        const values = value.filter(v => v != null)
-        if (!values.length) return null
-        return `[${getUniqueValues(values.map(getType)).join(`,`)}]`
+        const uniqueValues = getUniqueValues(
+          value.map(getType).filter(isDefined)
+        )
+        return uniqueValues.length ? `[${uniqueValues.join(`,`)}]` : null
       }
       if (!Object.keys(value)) return null
       return `object`
@@ -51,7 +67,7 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
       .map(node => {
         const value = node[key]
         const type = getType(value)
-        return type && { value, type, parent: node } // FIXME: && value != null?
+        return type && { value, type, parent: node }
       })
       .filter(Boolean)
 
@@ -60,8 +76,6 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
     const types = getUniqueValuesBy(entries, entry => entry.type)
     if (!types.length) return acc
     if (types.length > 1 || types[0].type.includes(`,`)) {
-      // FIXME: if(!isMixOfDateAndString)
-      //
       reportConflict(selector, types)
       return acc
     }
@@ -74,7 +88,7 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
       value = value[0]
       arrayWrappers++
     }
-    if (value && typeof value === `object`) {
+    if (typeof value === `object`) {
       const objects = entries.reduce((acc, entry) => {
         let { value } = entry
         if (arrayWrappers) {
@@ -91,9 +105,10 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
       if (!Object.keys(exampleObject).length) return acc
       exampleFieldValue = exampleObject
     } else {
-      // TODO: prefer float! or do it in inferType?
-      // TODO: Can value be null?
-      exampleFieldValue = value
+      // FIXME: Why not simply treat every number as float (instead of looping through all values again)?
+      exampleFieldValue =
+        (typeof value === `number` && findFloat(entries)) || value
+      // exampleFieldValue = value === `number` ? 0.1 : value
     }
     while (arrayWrappers--) {
       exampleFieldValue = [exampleFieldValue]
@@ -108,6 +123,7 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
 
 // TODO: cache hit when?
 // const cache = new Map()
+// const clearExampleValueCache = () => cache.clear()
 
 const getExampleValue = ({ nodes, typeName, ignoreFields }) => {
   // if (cache.has(typeName)) {
@@ -120,4 +136,5 @@ const getExampleValue = ({ nodes, typeName, ignoreFields }) => {
 
 module.exports = {
   getExampleValue,
+  // clearExampleValueCache,
 }
