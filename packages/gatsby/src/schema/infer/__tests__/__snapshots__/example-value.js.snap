@@ -41,6 +41,10 @@ Object {
   ],
   "float": 0.1,
   "int": 0,
+  "invalidDate": "String",
+  "invalidDates": Array [
+    "String",
+  ],
   "nestedArrays": Array [
     Array [
       1,
@@ -83,5 +87,14 @@ Object {
     },
   },
   "string": "Foo bar",
+  "stringObject": Object {
+    "0": "F",
+    "1": "o",
+    "2": "o",
+    "3": " ",
+    "4": "b",
+    "5": "a",
+    "6": "r",
+  },
 }
 `;

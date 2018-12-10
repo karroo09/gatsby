@@ -57,6 +57,7 @@ const getType = value => {
     case `object`:
       if (value === null) return null
       if (value instanceof Date) return `date`
+      if (value instanceof String) return `string`
       if (Array.isArray(value)) {
         const uniqueValues = getUniqueValues(
           value.map(getType).filter(isDefined)

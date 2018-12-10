@@ -46,6 +46,7 @@ const addInferredFields = (tc, value, prefix, depth = 0) => {
       return acc
     }
 
+    // TODO: Maybe pull out in `fieldConfig = getType(value, selector, depth)`
     let fieldConfig
     switch (typeof value) {
       case `boolean`:
@@ -77,23 +78,30 @@ const addInferredFields = (tc, value, prefix, depth = 0) => {
         fieldConfig = `String`
         break
       case `object`:
-        fieldConfig =
-          value instanceof Date
-            ? `Date`
-            : value && depth < MAX_DEPTH
-              ? addInferredFields(
-                  schemaComposer.getOrCreateTC(createTypeName(selector)),
-                  // TODO: Be consistent: use getOrCreateTC everywhere, or:
-                  // : TypeComposer.createTemp({
-                  //   name: createTypeName(selector),
-                  //   fields: {},
-                  // }),
-                  // : new TypeComposer(new GraphQLObjectType())
-                  value,
-                  selector,
-                  depth + 1
-                )
-              : `JSON`
+        if (value instanceof Date) {
+          fieldConfig = `Date`
+          break
+        }
+        if (value instanceof String) {
+          fieldConfig = `String`
+          break
+        }
+        if (value && depth < MAX_DEPTH) {
+          // TODO: Be consistent: use getOrCreateTC everywhere, or:
+          // : TypeComposer.createTemp({
+          //   name: createTypeName(selector),
+          //   fields: {},
+          // }),
+          // : new TypeComposer(new GraphQLObjectType())
+          fieldConfig = addInferredFields(
+            schemaComposer.getOrCreateTC(createTypeName(selector)),
+            value,
+            selector,
+            depth + 1
+          )
+          break
+        }
+        fieldConfig = `JSON`
         break
       default:
         // null
@@ -114,9 +122,9 @@ const addInferredFields = (tc, value, prefix, depth = 0) => {
     return acc
   }, {})
 
-  Object.entries(fields).forEach(
-    ([fieldName, fieldConfig]) =>
-      !tc.hasField(fieldName) && tc.setField(fieldName, fieldConfig)
+  Object.entries(fields).forEach(([fieldName, fieldConfig]) =>
+    // !tc.hasField(fieldName) &&
+    tc.setField(fieldName, fieldConfig)
   )
   return tc
 }
