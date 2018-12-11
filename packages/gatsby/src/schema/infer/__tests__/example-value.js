@@ -12,7 +12,10 @@ describe(`Example value`, () => {
   const exampleValue = getExampleValue({ nodes })
 
   it(`builds correct example value from array of nodes`, () => {
-    expect(exampleValue).toMatchSnapshot()
+    expect(exampleValue).toMatchSnapshot({
+      // TODO: Use snapshot properties
+      // dates: expect.arrayContaining([expect.any(Date)]),
+    })
   })
 
   it(`does not mutate nodes`, () => {
@@ -84,12 +87,7 @@ describe(`Example value`, () => {
 
   it(`handles mix of valid date strings and date objects`, () => {
     expect(exampleValue.date).toBe(`2018-01-01T00:00:00.000Z`)
-    // FIXME: Apparently jest messes with globals, so what we get is *not* an
-    // instance of Date.
-    // @see https://github.com/facebook/jest/issues/2549
-    // expect(exampleValue.dates).toEqual([new Date(`2018-01-01`)])
-    // expect(exampleValue.dates[0]).toBeInstanceOf(Date)
-    expect(typeof exampleValue.dates[0]).toBe(`object`)
+    expect(exampleValue.dates[0]).toBeInstanceOf(Date)
   })
 
   it(`treats mix of dates and strings as strings`, () => {
