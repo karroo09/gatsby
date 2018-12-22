@@ -13,6 +13,10 @@ const withSpecialCases = require(`./special-cases`)
 // Also rethink if this covers all scenarios we want to support?
 // TODO: Currently, `link` is called with `(findOne||findMany)(type)`
 // as resolver. Should this be figured out here (i.e. with `info.returnType`)?
+// If we do this here, we also have to take care of wrapping in
+// withPageResolver, because the `resolve` argument wont be wrapped
+// TODO: It's weird that when {by:`id`} we use findOne/findMany only to
+// not use them in link()
 const link = ({ by }) => resolve => (source, args, context, info) => {
   const fieldValue = source[info.fieldName]
 
@@ -25,14 +29,19 @@ const link = ({ by }) => resolve => (source, args, context, info) => {
   }
 
   if (by === `id`) {
-    return Array.isArray(fieldValue)
-      ? findByIds({ args: { ids: fieldValue } })
-      : findById({ args: { id: fieldValue } })
+    const [resolve, key] = Array.isArray(fieldValue)
+      ? [findByIds, `ids`]
+      : [findById, `id`]
+    return withPageDependencies(resolve)()({
+      source,
+      args: { [key]: fieldValue },
+      context,
+      info,
+    })
   }
 
   const operator = Array.isArray(fieldValue) ? oneOf : equals
   args.filter = by.split(`.`).reduceRight(
-    /* eslint-disable-next-line arrow-body-style */
     (acc, key, i, { length }) => ({
       [key]: i === length - 1 ? operator(acc) : acc,
     }),
@@ -59,7 +68,7 @@ const findByIdsAndType = type => ({ args }, firstResultOnly) =>
         .map(getById)
         [firstResultOnly ? `find` : `filter`](
           node => node && node.internal.type === type
-        )
+        ) || null
     : firstResultOnly
       ? null
       : []
