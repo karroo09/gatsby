@@ -54,6 +54,7 @@ const buildSchema = async () => {
       addTypeToRootQuery(tc)
     }
   })
+  // TODO: Move this to updateSchema()?
   await addCustomResolveFunctions()
   return getSchema()
 }
@@ -63,7 +64,9 @@ const updateSchema = async () => {
   // @see https://github.com/gatsbyjs/gatsby/issues/2685#issuecomment-340645874
   // Avoid regenerating everything.
   // FIXME: What else must be updated?
-  addInferredType(`SitePage`)
+  const tc = addInferredType(`SitePage`)
+  addResolvers(tc)
+  addTypeToRootQuery(tc)
   return getSchema()
 }
 
