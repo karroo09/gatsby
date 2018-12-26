@@ -12,6 +12,7 @@
 // * or start reducing from an empty object, and copy over scalars
 
 const { schemaComposer } = require(`graphql-compose`)
+const { GraphQLNonNull } = require(`graphql`)
 
 // const { store } = require(`../../redux`)
 const { getNodesByType } = require(`../db`)
@@ -44,12 +45,20 @@ const getLinkResolver = (astNode, type) => {
 }
 
 // TODO: Filter sparse arrays?
-const resolveValue = (value, filterValue, fieldTC) =>
-  Array.isArray(value)
-    ? Promise.all(value.map(item => resolveValue(item, filterValue, fieldTC)))
-    : prepareForQuery(value, filterValue, fieldTC)
 
-const prepareForQuery = (node, filter, tc) => {
+const resolveValue = (value, filterValue, type) => {
+  const nullableType = type instanceof GraphQLNonNull ? type.ofType : type
+  // FIXME: We probably have to check that node data and schema are actually in sync,
+  // i.e. both are arrays or scalars
+  // return Array.isArray(value) && nullableType instanceof GraphQLList
+  return Array.isArray(value)
+    ? Promise.all(
+        value.map(item => resolveValue(item, filterValue, nullableType.ofType))
+      )
+    : prepareForQuery(value, filterValue, nullableType.getFields())
+}
+
+const prepareForQuery = (node, filter, fields) => {
   // FIXME: Make this a .map() and resolve with Promise.all.
   // .reduce() works sequentially: must resolve `acc` before the next iteration
   // Promise.all(
@@ -72,12 +81,13 @@ const prepareForQuery = (node, filter, tc) => {
       // if (Object.prototype.hasOwnProperty.call(node, fieldName))
       if (node[fieldName] == null) return node
 
-      const { resolve, type, astNode } = tc.getFieldConfig(fieldName)
+      const { resolve, type } = fields[fieldName]
 
       // FIXME: This is just to test if manually calling the link directive
       // resolver would work (it does). Instead we should use the executable
       // schema where the link resolvers are already added.
-      const resolver = (astNode && getLinkResolver(astNode, type)) || resolve
+      // let { resolve, type, astNode } = tc.getFieldConfig(fieldName)
+      // resolve = (astNode && getLinkResolver(astNode, type)) || resolv
 
       // const value =
       //   typeof resolver === `function`
@@ -94,8 +104,8 @@ const prepareForQuery = (node, filter, tc) => {
       //     ? await resolveValue(value, filterValue, tc.getFieldTC(fieldName))
       //     : value
 
-      if (typeof resolver === `function`) {
-        node[fieldName] = await resolver(
+      if (typeof resolve === `function`) {
+        node[fieldName] = await resolve(
           node,
           {},
           {},
@@ -116,8 +126,7 @@ const prepareForQuery = (node, filter, tc) => {
       const value = node[fieldName]
 
       if (!isLeaf && value != null) {
-        const fieldTC = tc.getFieldTC(fieldName)
-        node[fieldName] = await resolveValue(value, filterValue, fieldTC)
+        node[fieldName] = await resolveValue(value, filterValue, type)
       }
 
       return node
@@ -145,12 +154,20 @@ const getNodesForQuery = async (type, filter) => {
     }
   }
 
-  // FIXME: Use schema from store (includes resolvers added by @link directive)
-  // const { store } = require(`../../redux`)
-  // const tc = TypeComposer.createTemp(
-  //   store.getState().schema.getType(type)
-  // )
-  const tc = schemaComposer.getTC(type)
+  // Use executable schema from store (includes resolvers added by @link directive).
+  // Alternatively, call @link resolvers manually.
+  const { GraphQLSchema } = require(`graphql`)
+  const { schema } = require(`../../redux`).store.getState()
+
+  // FIXME: In testing, when no schema is built yet, use schemaComposer.
+  // Should mock store in tests instead.
+  const fields =
+    schema instanceof GraphQLSchema
+      ? schema.getType(type).getFields()
+      : schemaComposer
+          .getTC(type)
+          .getType()
+          .getFields()
 
   // Should we do it the other way around, i.e. queryNodes = filter.reduce?
   const queryNodes = Promise.all(
@@ -164,7 +181,7 @@ const getNodesForQuery = async (type, filter) => {
         return nodeCache.get(cacheKey)
       }
 
-      const queryNode = prepareForQuery(node, filterFields, tc)
+      const queryNode = prepareForQuery(node, filterFields, fields)
 
       nodeCache.set(cacheKey, queryNode)
       trackObjects(await queryNode)
