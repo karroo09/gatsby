@@ -55,7 +55,12 @@ const addInferredFields = (tc, value, prefix, depth = 0) => {
           fieldConfig = `Date`
           break
         }
-        if (isFile(selector, value)) {
+        // FIXME: The weird thing is that we are trying to infer a File,
+        // but cannot assume that a source plugin for File nodes is actually present.
+        // Same goes for special cases. The alternative would be for plugins to be
+        // able to register special cases and type inference rules, but that seems
+        // like overkill. Or: promote source-filesystem to an internal plugin.
+        if (/* schemaComposer.has(`File`) && */ isFile(selector, value)) {
           // NOTE: For arrays of files, where not every path references
           // a File node in the db, it is semi-random if the field is
           // inferred as File or String, since the exampleValue only has

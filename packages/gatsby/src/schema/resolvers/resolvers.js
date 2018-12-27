@@ -23,6 +23,7 @@ const link = ({ by }) => resolve => (source, args, context, info) => {
   if (fieldValue == null || isObject(fieldValue)) return fieldValue
   if (
     Array.isArray(fieldValue) &&
+    // TODO: Do we have to look with fieldValue.some(v => isObject(v))?
     (fieldValue[0] == null || isObject(fieldValue[0]))
   ) {
     return fieldValue

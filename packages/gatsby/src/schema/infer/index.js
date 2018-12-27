@@ -22,6 +22,7 @@ const addInferredType = typeName => {
 
 const addInferredTypes = () => {
   const typeNames = getUniqueValues(getNodes().map(node => node.internal.type))
+  // TODO: return typeNames.map(addInferredType) ?
   typeNames.forEach(addInferredType)
 }
 

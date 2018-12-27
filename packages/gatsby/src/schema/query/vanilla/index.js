@@ -1,5 +1,5 @@
 const filter = require(`./filter`)
-const sort = require(`./sort`)
+const sort = require(`../sift/sort`)
 
 const { isObject } = require(`../../utils`)
 

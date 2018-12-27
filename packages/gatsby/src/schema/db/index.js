@@ -11,6 +11,7 @@ const { getNode, getNodes, getNodesByType } = require(`./redux`)
 // in `link()`, which also needs to check if a link is already resolved
 // to a node.
 // TODO: isObject()
+// TODO: Ensure that getNode returns null not undefined when not found
 const getById = id =>
   id != null ? (typeof id === `object` ? id : getNode(id)) : null
 
