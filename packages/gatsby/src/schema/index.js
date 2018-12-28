@@ -13,6 +13,10 @@ module.exports = async ({ parentSpan, update }) => {
 
   // span.finish()
 
+  // TODO: Investigate alternatives to `graphql-tools`'s `mergeSchemas()`,
+  // which seems to touch every field resolver (which is why we have to call
+  // resolvers with `fieldNodes` etc. in `get-nodes-for-query`).
+  // Also: do we lose custom directives when merging???
   const schema = mergeSchemas({
     schemas: [gatsbySchema, ...thirdPartySchemas],
   })

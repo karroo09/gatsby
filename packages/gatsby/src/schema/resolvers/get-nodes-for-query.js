@@ -20,12 +20,12 @@ const { dropQueryOperators } = require(`../query`)
 const { isProductionBuild } = require(`../utils`)
 const { trackObjects } = require(`../utils/node-tracking`)
 
-const cache = new Map()
-const nodeCache = new Map()
-
 const { emitter } = require(`../../redux`)
 let isBootstrapFinished = false
 emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
+
+const cache = new Map()
+const nodeCache = new Map()
 
 // const getLinkResolver = (astNode, type) => {
 //   const linkDirective = astNode.directives.find(
