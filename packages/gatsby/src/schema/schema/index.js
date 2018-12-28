@@ -64,7 +64,8 @@ const updateSchema = async () => {
   // @see https://github.com/gatsbyjs/gatsby/issues/2685#issuecomment-340645874
   // Avoid regenerating everything.
   // FIXME: This step is probably not needed -- the only thing added is being able
-  // to query SitePage.context fields. Do we need this?
+  // to query SitePage.context fields and fields added with
+  // createNodeField. Do we actually need this?
   const tc = addInferredType(`SitePage`)
   addResolvers(tc)
   addTypeToRootQuery(tc)
