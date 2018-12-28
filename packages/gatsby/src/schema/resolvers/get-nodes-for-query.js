@@ -115,7 +115,6 @@ const prepareForQuery = (node, filter, parentType) => {
           node,
           {},
           {},
-          // FIXME: parentType should be checked elsewhere
           // NOTE: fieldNodes is needed for `graphql-tools` schema stitching to work
           { fieldName, fieldNodes: [{}], parentType, returnType: type }
         )
