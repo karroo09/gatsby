@@ -95,7 +95,7 @@ const prepareForQuery = (node, filter, fields) => {
       //         node,
       //         {},
       //         {},
-      //         { fieldName, parentType: {}, returnType: type }
+      //         { fieldName, fieldNodes: [{}], parentType: {}, returnType: type }
       //       )
       //     : node[fieldName]
 
@@ -110,7 +110,8 @@ const prepareForQuery = (node, filter, fields) => {
           {},
           {},
           // FIXME: parentType should be checked elsewhere
-          { fieldName, parentType: {}, returnType: type }
+          // NOTE: fieldNodes is needed for `graphql-tools` schema stitching to work
+          { fieldName, fieldNodes: [{}], parentType: {}, returnType: type }
         )
       }
 
