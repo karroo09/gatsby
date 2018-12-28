@@ -59,10 +59,10 @@ const resolveValue = (value, filterValue, type) => {
     ? Promise.all(
         value.map(item => resolveValue(item, filterValue, nullableType.ofType))
       )
-    : prepareForQuery(value, filterValue, nullableType.getFields())
+    : prepareForQuery(value, filterValue, nullableType)
 }
 
-const prepareForQuery = (node, filter, fields) => {
+const prepareForQuery = (node, filter, parentType) => {
   // FIXME: Make this a .map() and resolve with Promise.all.
   // .reduce() works sequentially: must resolve `acc` before the next iteration
   // Promise.all(
@@ -75,6 +75,8 @@ const prepareForQuery = (node, filter, fields) => {
   // ).then(fields =>
   //   fields.reduce((acc, [key, value]) => (acc[key] = value) && acc, node)
   // )
+
+  const fields = parentType.getFields()
 
   const queryNode = Object.entries(filter).reduce(
     async (acc, [fieldName, filterValue]) => {
@@ -115,7 +117,7 @@ const prepareForQuery = (node, filter, fields) => {
           {},
           // FIXME: parentType should be checked elsewhere
           // NOTE: fieldNodes is needed for `graphql-tools` schema stitching to work
-          { fieldName, fieldNodes: [{}], parentType: {}, returnType: type }
+          { fieldName, fieldNodes: [{}], parentType, returnType: type }
         )
       }
 
@@ -166,13 +168,10 @@ const getNodesForQuery = async (type, filter) => {
 
   // FIXME: In testing, when no schema is built yet, use schemaComposer.
   // Should mock store in tests instead.
-  const fields =
+  const parentType =
     schema instanceof GraphQLSchema
-      ? schema.getType(type).getFields()
-      : schemaComposer
-          .getTC(type)
-          .getType()
-          .getFields()
+      ? schema.getType(type)
+      : schemaComposer.getTC(type).getType()
 
   // Should we do it the other way around, i.e. queryNodes = filter.reduce?
   const queryNodes = Promise.all(
@@ -186,7 +185,7 @@ const getNodesForQuery = async (type, filter) => {
         return nodeCache.get(cacheKey)
       }
 
-      const queryNode = prepareForQuery(node, filterFields, fields)
+      const queryNode = prepareForQuery(node, filterFields, parentType)
 
       nodeCache.set(cacheKey, queryNode)
       trackObjects(await queryNode)
