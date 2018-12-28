@@ -23,26 +23,30 @@ const { trackObjects } = require(`../utils/node-tracking`)
 const cache = new Map()
 const nodeCache = new Map()
 
-const getLinkResolver = (astNode, type) => {
-  const linkDirective = astNode.directives.find(
-    directive => directive.name.value === `link`
-  )
-  if (linkDirective) {
-    const { GraphQLList } = require(`graphql`)
-    const { findOne, findMany, link } = require(`./resolvers`)
+const { emitter } = require(`../../redux`)
+let isBootstrapFinished = false
+emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
 
-    const by = linkDirective.arguments.find(
-      argument => argument.name.value === `by`
-    ).value.value
+// const getLinkResolver = (astNode, type) => {
+//   const linkDirective = astNode.directives.find(
+//     directive => directive.name.value === `link`
+//   )
+//   if (linkDirective) {
+//     const { GraphQLList } = require(`graphql`)
+//     const { findOne, findMany, link } = require(`./resolvers`)
 
-    return link({ by })(
-      type instanceof GraphQLList
-        ? findMany(type.ofType.name)
-        : findOne(type.name)
-    )
-  }
-  return null
-}
+//     const by = linkDirective.arguments.find(
+//       argument => argument.name.value === `by`
+//     ).value.value
+
+//     return link({ by })(
+//       type instanceof GraphQLList
+//         ? findMany(type.ofType.name)
+//         : findOne(type.name)
+//     )
+//   }
+//   return null
+// }
 
 // TODO: Filter sparse arrays?
 
@@ -148,7 +152,7 @@ const getNodesForQuery = async (type, filter) => {
   const filterFields = dropQueryOperators(filter)
 
   let cacheKey
-  if (isProductionBuild) {
+  if (isProductionBuild || !isBootstrapFinished) {
     cacheKey = JSON.stringify({ type, count: nodes.length, filterFields })
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey)
@@ -190,7 +194,7 @@ const getNodesForQuery = async (type, filter) => {
     })
   )
 
-  if (isProductionBuild) {
+  if (isProductionBuild || !isBootstrapFinished) {
     cache.set(cacheKey, queryNodes)
   }
 
