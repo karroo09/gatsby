@@ -11,13 +11,12 @@
 //   before, so we can mutate it with reduce/forEach
 // * or start reducing from an empty object, and copy over scalars
 
-const { schemaComposer } = require(`graphql-compose`)
 const { GraphQLNonNull } = require(`graphql`)
 
-// const { store } = require(`../../redux`)
+const { store } = require(`../../redux`)
 const { getNodesByType } = require(`../db`)
 const { dropQueryOperators } = require(`../query`)
-const { isProductionBuild } = require(`../utils`)
+const { hasResolvers, isProductionBuild } = require(`../utils`)
 const { trackObjects } = require(`../utils/node-tracking`)
 
 const { emitter } = require(`../../redux`)
@@ -168,8 +167,7 @@ const getNodesForQuery = async (type, filter) => {
 
   // Use executable schema from store (includes resolvers added by @link directive).
   // Alternatively, call @link resolvers manually.
-  const { GraphQLSchema } = require(`graphql`)
-  const { schema } = require(`../../redux`).store.getState()
+  const { schema } = store.getState()
 
   // Just an experiment. This works as well -- but does not cache resolved nodes.
   // const { execute, parse } = require(`graphql`)
@@ -178,14 +176,13 @@ const getNodesForQuery = async (type, filter) => {
   // const { data, errors } = await execute({ schema, document: parse(query) })
   // const queryNodes = data && data[queryField]
 
-  // FIXME: In testing, when no schema is built yet, use schemaComposer.
-  // Should mock store in tests instead.
-  const parentType =
-    schema instanceof GraphQLSchema
-      ? schema.getType(type)
-      : schemaComposer.getTC(type).getType()
+  const parentType = schema.getType(type)
 
-  // Should we do it the other way around, i.e. queryNodes = filter.reduce?
+  // If there are no resolvers to call manually, we can just return nodes.
+  if (!hasResolvers(parentType, filterFields)) {
+    return nodes
+  }
+
   const queryNodes = Promise.all(
     nodes.map(async node => {
       const cacheKey = JSON.stringify({
