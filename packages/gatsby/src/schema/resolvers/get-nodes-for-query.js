@@ -1,15 +1,4 @@
-/**
- * Nodes in the store don't have fields which are
- * - added in `setFieldsOnGraphQLNodeType`
- * - added in `@link` directive.
- * Therefore we need to resolve those fields so they are
- * available for querying.
- */
-
-// TODO: Possible PERFORMANCE:
-// * either deepcopy the node object with JSON.parse(JSON.stringify())
-//   before, so we can mutate it with reduce/forEach
-// * or start reducing from an empty object, and copy over scalars
+// TODO: Avoid passing schema around
 
 const { GraphQLNonNull } = require(`graphql`)
 
@@ -49,7 +38,7 @@ const nodeCache = new Map()
 
 // TODO: Filter sparse arrays?
 
-const resolveValue = (value, filterValue, type) => {
+const resolveValue = (value, filterValue, type, schema) => {
   // TODO: Maybe use const { getNullableType } = require(`graphql`)
   const nullableType = type instanceof GraphQLNonNull ? type.ofType : type
   // FIXME: We probably have to check that node data and schema are actually in sync,
@@ -57,12 +46,14 @@ const resolveValue = (value, filterValue, type) => {
   // return Array.isArray(value) && nullableType instanceof GraphQLList
   return Array.isArray(value)
     ? Promise.all(
-        value.map(item => resolveValue(item, filterValue, nullableType.ofType))
+        value.map(item =>
+          resolveValue(item, filterValue, nullableType.ofType, schema)
+        )
       )
-    : prepareForQuery(value, filterValue, nullableType)
+    : prepareForQuery(value, filterValue, nullableType, schema)
 }
 
-const prepareForQuery = (node, filter, parentType) => {
+const prepareForQuery = (node, filter, parentType, schema) => {
   // FIXME: Make this a .map() and resolve with Promise.all.
   // .reduce() works sequentially: must resolve `acc` before the next iteration
   // Promise.all(
@@ -81,11 +72,6 @@ const prepareForQuery = (node, filter, parentType) => {
   const queryNode = Object.entries(filter).reduce(
     async (acc, [fieldName, filterValue]) => {
       const node = await acc
-      // FIXME: What is the expectation here if this is null?
-      // Continue and call the field resolver or not?
-      // I.e. should we check hasOwnProperty instead?
-      // if (Object.prototype.hasOwnProperty.call(node, fieldName))
-      if (node[fieldName] == null) return node
 
       const { type, args, resolve } = fields[fieldName]
 
@@ -101,7 +87,7 @@ const prepareForQuery = (node, filter, parentType) => {
       //         node,
       //         {},
       //         {},
-      //         { fieldName, fieldNodes: [{}], parentType: {}, returnType: type }
+      //         { fieldName, parentType: {}, returnType: type, schema }
       //       )
       //     : node[fieldName]
 
@@ -119,9 +105,7 @@ const prepareForQuery = (node, filter, parentType) => {
           node,
           defaultValues,
           {},
-          // NOTE: fieldNodes is needed for `graphql-tools` schema stitching
-          // to work (which we don't use currently)
-          { fieldName, fieldNodes: [{}], parentType, returnType: type }
+          { fieldName, parentType, returnType: type, schema }
         )
       }
 
@@ -137,7 +121,7 @@ const prepareForQuery = (node, filter, parentType) => {
       const value = node[fieldName]
 
       if (!isLeaf && value != null) {
-        node[fieldName] = await resolveValue(value, filterValue, type)
+        node[fieldName] = await resolveValue(value, filterValue, type, schema)
       }
 
       return node
@@ -194,7 +178,7 @@ const getNodesForQuery = async (type, filter) => {
         return nodeCache.get(cacheKey)
       }
 
-      const queryNode = prepareForQuery(node, filterFields, parentType)
+      const queryNode = prepareForQuery(node, filterFields, parentType, schema)
 
       nodeCache.set(cacheKey, queryNode)
       trackObjects(await queryNode)
