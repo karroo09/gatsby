@@ -1,5 +1,3 @@
-// TODO: Avoid passing schema around
-
 const { GraphQLNonNull } = require(`graphql`)
 
 const { store } = require(`../../redux`)
@@ -38,7 +36,7 @@ const nodeCache = new Map()
 
 // TODO: Filter sparse arrays?
 
-const resolveValue = (value, filterValue, type, schema) => {
+const resolveValue = (value, filterValue, type, context, schema) => {
   // TODO: Maybe use const { getNullableType } = require(`graphql`)
   const nullableType = type instanceof GraphQLNonNull ? type.ofType : type
   // FIXME: We probably have to check that node data and schema are actually in sync,
@@ -47,13 +45,13 @@ const resolveValue = (value, filterValue, type, schema) => {
   return Array.isArray(value)
     ? Promise.all(
         value.map(item =>
-          resolveValue(item, filterValue, nullableType.ofType, schema)
+          resolveValue(item, filterValue, nullableType.ofType, context, schema)
         )
       )
-    : prepareForQuery(value, filterValue, nullableType, schema)
+    : prepareForQuery(value, filterValue, nullableType, context, schema)
 }
 
-const prepareForQuery = (node, filter, parentType, schema) => {
+const prepareForQuery = (node, filter, parentType, context, schema) => {
   // FIXME: Make this a .map() and resolve with Promise.all.
   // .reduce() works sequentially: must resolve `acc` before the next iteration
   // Promise.all(
@@ -101,12 +99,12 @@ const prepareForQuery = (node, filter, parentType, schema) => {
           acc[name] = defaultValue
           return acc
         }, {})
-        node[fieldName] = await resolve(
-          node,
-          defaultValues,
-          {},
-          { fieldName, parentType, returnType: type, schema }
-        )
+        node[fieldName] = await resolve(node, defaultValues, context, {
+          fieldName,
+          parentType,
+          returnType: type,
+          schema,
+        })
       }
 
       // `dropQueryOperators` sets value to `true` for leaf values.
@@ -121,7 +119,13 @@ const prepareForQuery = (node, filter, parentType, schema) => {
       const value = node[fieldName]
 
       if (!isLeaf && value != null) {
-        node[fieldName] = await resolveValue(value, filterValue, type, schema)
+        node[fieldName] = await resolveValue(
+          value,
+          filterValue,
+          type,
+          context,
+          schema
+        )
       }
 
       return node
@@ -134,7 +138,7 @@ const prepareForQuery = (node, filter, parentType, schema) => {
   return queryNode
 }
 
-const getNodesForQuery = async (type, filter) => {
+const getNodesForQuery = async (type, filter, context) => {
   const nodes = await getNodesByType(type)
 
   if (!filter) return nodes
@@ -178,7 +182,13 @@ const getNodesForQuery = async (type, filter) => {
         return nodeCache.get(cacheKey)
       }
 
-      const queryNode = prepareForQuery(node, filterFields, parentType, schema)
+      const queryNode = prepareForQuery(
+        node,
+        filterFields,
+        parentType,
+        context,
+        schema
+      )
 
       nodeCache.set(cacheKey, queryNode)
       trackObjects(await queryNode)
