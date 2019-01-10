@@ -1,7 +1,6 @@
 TODO:
 
-- Input/Filter: id/parent/children fields!
-- ITC on InterfaceTypeComposer
+- findById(), findByIds() and link() all need to take care of not resolving a linked field twice. Should this be abstracted? I.e. with the stuff that's now in getById
 
 - Internal field on Node interface needs: contentDigest, content, etc.
 - dropTypeModifiers helper!
