@@ -18,18 +18,10 @@ const nodeCache = new Map()
 //     directive => directive.name.value === `link`
 //   )
 //   if (linkDirective) {
-//     const { GraphQLList } = require(`graphql`)
-//     const { findOne, findMany, link } = require(`./resolvers`)
-
 //     const by = linkDirective.arguments.find(
 //       argument => argument.name.value === `by`
 //     ).value.value
-
-//     return link({ by })(
-//       type instanceof GraphQLList
-//         ? findMany(type.ofType.name)
-//         : findOne(type.name)
-//     )
+//     return link({ by })
 //   }
 //   return null
 // }
