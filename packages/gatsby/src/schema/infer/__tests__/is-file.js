@@ -71,9 +71,10 @@ describe(`isFile util`, () => {
 
       const selector = `Foo.file`
       const relativePath = `foo\\bar.txt`
-      expect(isFile(selector, relativePath)).toBeTruthy()
+      const result = isFile(selector, relativePath)
 
       path.join.mockRestore()
+      expect(result).toBeTruthy()
     })
   })
 })

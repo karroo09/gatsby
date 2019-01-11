@@ -18,6 +18,7 @@ const isObject = require(`./is-object`)
 const isProductionBuild = require(`./is-production-build`)
 const stringToRegExp = require(`./string-to-regexp`)
 const toSnakeCase = require(`./to-snake-case`)
+const withBaseDir = require(`./with-base-dir`)
 const { getParentNodeId, trackObjects } = require(`./node-tracking`)
 
 module.exports = {
@@ -43,4 +44,5 @@ module.exports = {
   stringToRegExp,
   toSnakeCase,
   trackObjects,
+  withBaseDir,
 }
