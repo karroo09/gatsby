@@ -1,14 +1,18 @@
-const path = require(`path`)
-
-const { getBaseDir, getComponentDir, getParentNode } = require(`../utils`)
+const {
+  getBaseDir,
+  getComponentDir,
+  getParentNode,
+  withBaseDir,
+} = require(`../utils`)
 
 const convert = (relativePath, baseDir) => {
+  const withDir = withBaseDir(baseDir)
   switch (typeof relativePath) {
     case `string`:
-      return path.join(baseDir, relativePath)
+      return withDir(relativePath)
     case `object`:
       if (Array.isArray(relativePath)) {
-        return relativePath.map(p => path.join(baseDir, p))
+        return relativePath.map(withDir)
       } else if (relativePath) {
         return Object.entries(relativePath).reduce((acc, [operator, p]) => {
           acc[operator] = convert(p, baseDir)
@@ -30,6 +34,10 @@ const withSpecialCases = ({ type, source, args, context, info }) => {
   switch (type) {
     case `File`:
       if (args.filter && source) {
+        // TODO: slash(args.filter.absolutePath)
+        // TODO: slash(args.filter.relativePath)
+        // TODO: slash(args.filter.absoluteDirectory)
+        // TODO: slash(args.filter.relativeDirectory)
         if (args.filter.relativePath) {
           const absolutePath = toAbsolutePath(
             args.filter.relativePath,

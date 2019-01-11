@@ -41,9 +41,8 @@ const isFile = (field, relativePath) => {
   const normalizedPath = slash(relativePath)
   const filePath = getFilePath(field, normalizedPath)
   if (!filePath) return false
-  const normalizedFilePath = slash(filePath)
   const filePathExists = getNodesByType(`File`).some(
-    node => node.absolutePath === normalizedFilePath
+    node => node.absolutePath === filePath
   )
   return filePathExists
 }
