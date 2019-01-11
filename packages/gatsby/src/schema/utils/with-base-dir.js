@@ -1,6 +1,6 @@
 const path = require(`path`)
 const slash = require(`slash`)
 
-const withBaseDir = dir => p => slash(path.join(dir, p))
+const withBaseDir = dir => p => path.posix.join(dir, slash(p))
 
 module.exports = withBaseDir
