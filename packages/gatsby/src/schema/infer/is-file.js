@@ -30,16 +30,16 @@ const getFilePath = (field, relativePath) => {
 
   if (!looksLikeFile) return null
 
+  const normalizedPath = slash(relativePath)
   const node = getNodesByType(typeName).find(
-    node => getFirstValueAt(node, selector) === relativePath
+    node => getFirstValueAt(node, selector) === normalizedPath
   )
 
-  return node ? getAbsolutePath(node, relativePath) : null
+  return node ? getAbsolutePath(node, normalizedPath) : null
 }
 
 const isFile = (field, relativePath) => {
-  const normalizedPath = slash(relativePath)
-  const filePath = getFilePath(field, normalizedPath)
+  const filePath = getFilePath(field, relativePath)
   if (!filePath) return false
   const filePathExists = getNodesByType(`File`).some(
     node => node.absolutePath === filePath

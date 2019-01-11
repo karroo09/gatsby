@@ -35,14 +35,14 @@ jest.mock(`../../db`, () => {
     {
       id: 6,
       internal: { type: `File` },
-      absolutePath: `C:/Users/me/foo/bar.txt`,
+      absolutePath: `C:/Users/me/foo/qux.txt`,
       dir: `C:/Users/me/foo`,
     },
     {
       id: 7,
       parent: 5,
       internal: { type: `Foo` },
-      file: `foo/bar.txt`,
+      file: `foo/qux.txt`,
     },
   ]
   return {
@@ -52,29 +52,33 @@ jest.mock(`../../db`, () => {
 })
 
 describe(`isFile util`, () => {
+  const selector = `Foo.file`
+
   it(`handles file paths referencing existing File nodes`, () => {
-    const selector = `Foo.file`
     const relativePath = `./foo/bar.txt`
     expect(isFile(selector, relativePath)).toBeTruthy()
   })
 
-  it(`handles file paths referencing non-existing File nodes`, () => {
-    const selector = `Foo.file`
+  it(`rejects file paths referencing non-existing File nodes`, () => {
     const relativePath = `./foo/bar/bar.txt`
     expect(isFile(selector, relativePath)).toBeFalsy()
   })
 
-  describe(`Windows environment`, () => {
-    it(`works with Windows file paths`, () => {
-      const path = require(`path`)
-      jest.spyOn(path, `join`).mockImplementation(path.win32.join)
+  it(`handles Windows file paths`, () => {
+    const relativePath = `foo\\qux.txt`
+    expect(isFile(selector, relativePath)).toBeTruthy()
+  })
 
-      const selector = `Foo.file`
-      const relativePath = `foo\\bar.txt`
-      const result = isFile(selector, relativePath)
+  it(`rejects absolute paths`, () => {
+    const relativePath = `/foo/bar.txt`
+    expect(isFile(selector, relativePath)).toBeFalsy()
+  })
 
-      path.join.mockRestore()
-      expect(result).toBeTruthy()
-    })
+  it(`rejects absolute Windows paths`, () => {
+    const path = require(`path`)
+    jest.spyOn(path, `isAbsolute`).mockImplementation(path.win32.isAbsolute)
+    const relativePath = `C:\\foo\\bar.txt`
+    expect(isFile(selector, relativePath)).toBeFalsy()
+    path.isAbsolute.mockRestore()
   })
 })
