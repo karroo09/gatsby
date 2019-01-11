@@ -348,7 +348,7 @@ describe(`Schema query`, () => {
     expect(results.data).toEqual(expected)
   })
 
-  it.only(`paginates results`, async () => {
+  it(`paginates results`, async () => {
     const query = `
       query {
         pages: pageMarkdown {
