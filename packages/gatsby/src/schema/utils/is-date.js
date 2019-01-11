@@ -1,5 +1,5 @@
-const isValid = require(`date-fns/isValid`)
+const { isValid, parseISO } = require(`date-fns`)
 
-const isDate = string => isValid(string)
+const isDate = string => isValid(parseISO(string))
 
 module.exports = isDate
