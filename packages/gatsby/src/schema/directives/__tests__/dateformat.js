@@ -10,7 +10,7 @@ const tc = TypeComposer.create(`
     formattable: Date @dateformat
     formatted: Date @dateformat(formatString: "dd. MMMM yyyy", locale: "de")
     fromNow: Date @dateformat(fromNow: true, locale: "de")
-    difference: Date @dateformat(difference: "2019-01-01T00:00:00.000")
+    difference: Date @dateformat(difference: "2019-01-01")
   }
 `)
 
@@ -126,7 +126,7 @@ describe(`@dateformat directive`, () => {
     )
     expect(fromNow).toBe(`letzten Dienstag um 10:00`)
 
-    // default difference: "2019-01-01T00:00:00.000Z"
+    // default difference: "2019-01-01"
     // NOTE: If not otherwise specified, the default base date for `difference`
     // is interpreted as being in the local timeZone.
     const difference = await fields.difference.resolve(
@@ -167,10 +167,9 @@ describe(`@dateformat directive`, () => {
       { fieldName: `date` }
     )
     expect(fromNow).toBe(`2019`)
-
     const difference = await fields.difference.resolve(
       { date },
-      { difference: new Date(Date.UTC(2019, 0, 5)) },
+      { difference: `2019-01-05T00:00:00.000Z` },
       {},
       { fieldName: `date` }
     )

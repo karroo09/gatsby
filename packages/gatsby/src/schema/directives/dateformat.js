@@ -6,12 +6,18 @@ const {
   GraphQLBoolean,
 } = require(`graphql`)
 const { SchemaDirectiveVisitor } = require(`graphql-tools`)
-const format = require(`date-fns/format`)
-const formatDistance = require(`date-fns/formatDistance`)
-const formatRelative = require(`date-fns/formatRelative`)
+const {
+  format,
+  formatDistance,
+  formatRelative,
+  isDate,
+  isValid,
+  parseISO,
+} = require(`date-fns`)
 
 // UPSTREAM: GraphQLDate.parseLiteral should accept date strings in other
-// formats but toISOString
+// formats but toISOString (could use utils/isDate)
+// TODO: `difference` arg should be GraphQLDate?
 
 const formatDate = (
   date,
@@ -22,18 +28,21 @@ const formatDate = (
   difference
 ) => {
   const locale = lang && require(`date-fns/locale/${lang}`)
-  return fromNow
-    ? formatRelative(date, Date.now(), { locale })
-    : difference
-      ? // TODO: Use formatDistanceStrict?
-        formatDistance(date, difference, { locale, addSuffix: true })
-      : format(date, formatString, {
-          locale,
-          // Allow formatting with YYYY-MM-DD, instead of the more correct yyyy-MM-dd
-          // @see: https://git.io/fxCyr
-          awareOfUnicodeTokens: true,
-          // timeZone, // IANA time zone, needs `date-fns-tz`
-        })
+  if (fromNow) {
+    return formatRelative(date, Date.now(), { locale })
+  }
+  const baseDate = isDate(difference) ? difference : parseISO(difference)
+  if (isValid(baseDate)) {
+    // TODO: Use formatDistanceStrict?
+    return formatDistance(date, baseDate, { locale, addSuffix: true })
+  }
+  return format(date, formatString, {
+    locale,
+    // Allow formatting with YYYY-MM-DD, instead of the more correct yyyy-MM-dd
+    // @see: https://git.io/fxCyr
+    awareOfUnicodeTokens: true,
+    // timeZone, // IANA time zone, needs `date-fns-tz`
+  })
 }
 
 const DateFormatDirective = new GraphQLDirective({
