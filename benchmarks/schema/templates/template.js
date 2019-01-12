@@ -21,7 +21,7 @@ export default Post
 
 export const query = graphql`
   query($id: ID) {
-    markdown(filter: { id: { eq: $id } }) {
+    markdown(id: { eq: $id }) {
       frontmatter {
         title
         date
