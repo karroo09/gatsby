@@ -27,7 +27,7 @@ const addTypeDefs = ({ addTypeDefs }) => {
 
     type Frontmatter {
       title: String
-      date: Date @dateformat(defaultFormat: "YYYY")
+      date: Date @dateformat(format: "yyyy")
       published: Boolean
       authors: [AuthorsYaml] @link(by: "email")
     }
@@ -136,7 +136,7 @@ const createPages = ({ actions, graphql }) => {
   return graphql(`
     query {
       allMarkdown(
-        sort: { fields: [FRONTMATTER___DATE], order: DESC }
+        sort: { fields: [frontmatter___date], order: DESC }
         filter: { frontmatter: { title: { ne: null } } }
       ) {
         id
