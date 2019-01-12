@@ -1,11 +1,16 @@
-const { GraphQLList, getNullableType, getNamedType } = require(`graphql`)
+const {
+  GraphQLList,
+  getNullableType,
+  getNamedType,
+  isAbstractType,
+} = require(`graphql`)
 
 const { equals, oneOf } = require(`../query`)
 const { isObject } = require(`../utils`)
 
 // FIXME: Handle array of arrays
 // Maybe TODO: should we check fieldValue *and* info.returnType?
-const link = ({ by }) => (source, args, context, info) => {
+const link = ({ by }) => async (source, args, context, info) => {
   const fieldValue = source[info.fieldName]
 
   if (fieldValue == null || isObject(fieldValue)) return fieldValue
@@ -40,10 +45,36 @@ const link = ({ by }) => (source, args, context, info) => {
   )
 
   const returnType = getNullableType(info.returnType)
-  const typeName = getNamedType(returnType).name
-  return returnType instanceof GraphQLList
-    ? findMany(typeName)({ source, args, context, info })
-    : findOne(typeName)({ source, args: args.filter, context, info })
+  const type = getNamedType(returnType)
+  const possibleTypes = isAbstractType(type)
+    ? info.schema.getPossibleTypes(type)
+    : [type]
+
+  if (returnType instanceof GraphQLList) {
+    const results = await Promise.all(
+      possibleTypes.map(type =>
+        findMany(type.name)({
+          source,
+          args,
+          context,
+          info,
+        })
+      )
+    )
+    return results.reduce((acc, r) => acc.concat(r))
+  } else {
+    let result
+    for (const type of possibleTypes) {
+      result = await findOne(type.name)({
+        source,
+        args: args.filter,
+        context,
+        info,
+      })
+      if (result != null) break
+    }
+    return result
+  }
 }
 
 module.exports = link
