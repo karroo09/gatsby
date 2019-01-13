@@ -10,7 +10,6 @@ const {
   format,
   formatDistance,
   formatRelative,
-  isDate,
   isValid,
   parseISO,
 } = require(`date-fns`)
@@ -19,8 +18,10 @@ const {
 // formats but toISOString (could use utils/isDate)
 // TODO: `difference` arg should be GraphQLDate?
 
+const toDate = date => (typeof date === `string` ? parseISO(date) : date)
+
 const formatDate = (
-  date,
+  dateOrString,
   formatString,
   lang,
   timeZone,
@@ -28,10 +29,11 @@ const formatDate = (
   difference
 ) => {
   const locale = lang && require(`date-fns/locale/${lang}`)
+  const date = toDate(dateOrString)
   if (fromNow) {
     return formatRelative(date, Date.now(), { locale })
   }
-  const baseDate = isDate(difference) ? difference : parseISO(difference)
+  const baseDate = toDate(difference)
   if (isValid(baseDate)) {
     // TODO: Use formatDistanceStrict?
     return formatDistance(date, baseDate, { locale, addSuffix: true })
