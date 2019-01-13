@@ -109,28 +109,66 @@ describe(`Abstract types`, () => {
     })
   })
 
-  it.only(`handles linking to interfaces and unions`, async () => {
+  it(`handles linking to interfaces and unions`, async () => {
     const query = `
       {
-        foo { id }
-        bar { id }
+        foo { id, foo }
+        bar { id, bar }
         custom {
-          foo { id }
-          bar { id }
+          foo { id, foo }
+          bar { id, bar }
           foobar {
-            ... on Foo { id }
-            ... on Bar { id }
+            foobar
+            ... on Foo { id, foo }
+            ... on Bar { id, bar }
           }
           allFoobar {
-            ... on Foo { id }
-            ... on Bar { id }
+            foobar
+            ... on Foo { id, foo }
+            ... on Bar { id, bar }
           }
           fbUnion {
-            ... on Foo { id }
-            ... on Bar { id }
+            ... on Foo { id, foo }
+            ... on Bar { id, bar }
           }
           allFBUnion {
-            ... on Foo { id }
+            ... on Foo { id, foo }
+            ... on Bar { id, bar }
+          }
+        }
+      }
+    `
+    const results = await graphql(query)
+    const expected = {
+      foo: { id: `foo1`, foo: 3 },
+      bar: { id: `bar1`, bar: 2 },
+      custom: {
+        foo: { id: `foo1`, foo: 3 },
+        bar: { id: `bar1`, bar: 2 },
+        foobar: { id: `foo1`, foobar: 1, foo: 3 },
+        allFoobar: [
+          { id: `foo1`, foobar: 1, foo: 3 },
+          { id: `bar1`, foobar: 1, bar: 2 },
+        ],
+        fbUnion: { id: `foo1`, foo: 3 },
+        allFBUnion: [{ id: `foo1`, foo: 3 }, { id: `bar1`, bar: 2 }],
+      },
+    }
+    expect(results.errors).toBeUndefined()
+    expect(results.data).toEqual(expected)
+  })
+
+  it(`handles querying for interface fields`, async () => {
+    const query = `
+      {
+        custom(
+          allFoobar: {
+            foobar: { eq: 1 }
+          }
+        )
+        {
+          allFoobar {
+            foobar
             ... on Bar { id }
           }
         }
@@ -138,15 +176,16 @@ describe(`Abstract types`, () => {
     `
     const results = await graphql(query)
     const expected = {
-      foo: { id: `foo1` },
-      bar: { id: `bar1` },
       custom: {
-        foo: { id: `foo1` },
-        bar: { id: `bar1` },
-        foobar: { id: `foo1` },
-        allFoobar: [{ id: `foo1` }, { id: `bar1` }],
-        fbUnion: { id: `foo1` },
-        allFBUnion: [{ id: `foo1` }, { id: `bar1` }],
+        allFoobar: [
+          {
+            foobar: 1,
+          },
+          {
+            id: `bar1`,
+            foobar: 1,
+          },
+        ],
       },
     }
     expect(results.errors).toBeUndefined()
