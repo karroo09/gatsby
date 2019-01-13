@@ -12,13 +12,14 @@ const LinkNodeDirective = new GraphQLDirective({
   locations: [DirectiveLocation.FIELD_DEFINITION],
   args: {
     by: { type: GraphQLString, defaultValue: `id` },
+    from: { type: GraphQLString },
   },
 })
 
 class LinkNodeDirectiveVisitor extends SchemaDirectiveVisitor {
   visitFieldDefinition(field) {
-    const { by } = this.args
-    field.resolve = link({ by })
+    const { by, from } = this.args
+    field.resolve = link({ by, from })
   }
 }
 
