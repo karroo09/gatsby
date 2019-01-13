@@ -1,18 +1,17 @@
-/**
- * Implement Gatsby's Node APIs in this file.
- *
- * See: https://www.gatsbyjs.org/docs/node-apis/
- */
-
-// You can delete this file if you're not using it
-
 exports.addTypeDefs = ({ addTypeDefs }) => {
   const typeDefs = `
+    type AuthorJson implements Node {
+      name: String!
+      email: String!
+      picture: File @link(by: "relativePath")
+      posts: [BlogJson] @link(by: "authors.email", from: "email")
+    }
+
     type BlogJson implements Node {
       title: String!
-      author: String
+      authors: [AuthorJson] @link(by: "email")
       text: String
-      picture: File @link(by: "relativePath")
+      date: Date @dateformat(formatString: "yyyy/MM/dd")
     }
   `
   addTypeDefs(typeDefs)
