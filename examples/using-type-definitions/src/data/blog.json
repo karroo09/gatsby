@@ -1,11 +1,16 @@
 [
   {
     "title": "Gatsby is pretty amazing",
-    "author": "Mikhail Novikov",
-    "picture": "../images/gatsby-astronaut.png"
+    "authors": ["m@example.com"],
+    "date": "2019-01-01"
   },
   {
     "title": "But Gatsby blog posts might not have author",
-    "picture": "../images/gatsby-astronaut.png"
+    "date": "2018-01-01"
+  },
+  {
+    "title": "Or more than one author",
+    "authors": ["m@example.com", "s@example.com"],
+    "date": "2017-01-01"
   }
 ]
