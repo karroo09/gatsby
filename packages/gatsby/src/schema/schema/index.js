@@ -1,5 +1,6 @@
 const { schemaComposer, TypeComposer } = require(`graphql-compose`)
 const { SchemaDirectiveVisitor } = require(`graphql-tools`)
+const { GraphQLObjectType } = require(`graphql`)
 
 const { directives, visitors } = require(`../directives`)
 const { addNodeInterfaceFields, hasNodeInterface } = require(`../interfaces`)
@@ -17,7 +18,11 @@ const addTypeDefs = typeDefs => {
   // Ensure we have TypeComposer instances in the TypeMapper.
   // This is not strictly necessary, as they are created for
   // every node type in the store in `addInferredTypes`.
-  types.forEach(type => TypeComposer.create(type))
+  types.forEach(type => {
+    if (type instanceof GraphQLObjectType) {
+      TypeComposer.create(type)
+    }
+  })
 }
 
 const addTypes = () => apiRunner(`addTypeDefs`, { addTypeDefs })
