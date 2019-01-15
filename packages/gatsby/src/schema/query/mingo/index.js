@@ -17,11 +17,8 @@ const query = (nodes = [], args, firstResultOnly) => {
     return nodes.find(node => query.test(node))
   }
 
-  const sorted = query.find(nodes).sort(args.sort)
+  return query.find(nodes).sort(args.sort)
   // .all()
-  const count = sorted.length
-  const items = sorted.skip(args.skip).limit(args.limit)
-  return { items, count }
 }
 
 module.exports = {

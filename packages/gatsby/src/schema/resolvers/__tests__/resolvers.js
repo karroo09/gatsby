@@ -5,7 +5,6 @@ const {
   findMany,
   findOne,
   link,
-  paginate,
 } = require(`..`)
 
 const { TypeComposer, schemaComposer } = require(`graphql-compose`)
@@ -150,78 +149,6 @@ describe(`Resolvers`, () => {
       const filter = { baz: { ne: `foo` } }
       const result = await findOne(type)({ args: filter })
       expect(result).toEqual(getById(1))
-    })
-  })
-
-  describe(`paginate resolver wrapper`, () => {
-    it(`finds nodes matching filter`, async () => {
-      const filter = { baz: { ne: `foo` } }
-      const { count, items } = await paginate(type)({
-        args: { filter },
-      })
-      expect(count).toBe(2)
-      expect(items).toEqual([1, 3].map(getById))
-    })
-
-    it(`sorts nodes matching filter`, async () => {
-      const filter = { baz: { ne: `foo` } }
-      const sort = { fields: [`id`], order: `DESC` }
-      const { count, items } = await paginate(type)({
-        args: { filter, sort },
-      })
-      expect(count).toBe(2)
-      expect(items).toEqual([3, 1].map(getById))
-    })
-
-    it(`returns correct pagination info`, async () => {
-      const filter = { baz: { ne: `foo` } }
-      const limit = 1
-      const { pageInfo, count } = await paginate(type)({
-        args: { filter, limit },
-      })
-      expect(count).toBe(1)
-      expect(pageInfo).toEqual({
-        currentPage: 1,
-        hasNextPage: true,
-        hasPreviousPage: false,
-        itemCount: 2,
-        pageCount: 2,
-        perPage: 1,
-      })
-    })
-
-    it(`returns correct pagination info`, async () => {
-      const filter = { baz: { ne: `foo` } }
-      const skip = 1
-      const limit = 1
-      const { pageInfo } = await paginate(type)({
-        args: { filter, skip, limit },
-      })
-      expect(pageInfo).toEqual({
-        currentPage: 2,
-        hasNextPage: false,
-        hasPreviousPage: true,
-        itemCount: 2,
-        pageCount: 2,
-        perPage: 1,
-      })
-    })
-
-    it(`returns correct pagination info`, async () => {
-      const filter = { baz: { ne: `bar` } }
-      const skip = 1
-      const limit = 1
-      const { pageInfo } = await paginate(type)({
-        args: { filter, skip, limit },
-      })
-      expect(pageInfo).toEqual({
-        currentPage: 2,
-        hasNextPage: true,
-        hasPreviousPage: true,
-        itemCount: 3,
-        pageCount: 3,
-        perPage: 1,
-      })
     })
   })
 

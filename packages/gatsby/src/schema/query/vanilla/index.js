@@ -25,13 +25,7 @@ const query = (nodes = [], args, firstResultOnly) => {
   }
 
   const filtered = args.filter ? filter(nodes, args, firstResultOnly) : nodes
-  const sorted = args.sort ? filtered.sort(sort(args.sort)) : filtered
-  const count = sorted.length
-  const items = sorted.slice(
-    args.skip || 0,
-    args.limit && (args.skip || 0) + args.limit
-  )
-  return { items, count }
+  return args.sort ? filtered.sort(sort(args.sort)) : filtered
 }
 
 module.exports = {

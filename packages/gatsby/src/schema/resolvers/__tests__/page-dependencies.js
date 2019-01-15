@@ -13,11 +13,6 @@ const findMany = type => rp => {
   return results
 }
 
-const paginate = type => rp => {
-  const results = { items: [{ id: 1 }, { id: 2 }], pageInfo: {} }
-  return results
-}
-
 describe(`Create page dependencies`, () => {
   beforeEach(() => {
     createPageDependency.mockReset()
@@ -124,73 +119,6 @@ describe(`Create page dependencies`, () => {
 
   it(`creates connection even if no results returned from top level query field`, async () => {
     const wrappedResolver = withPageDependencies(() => () => [])
-    const type = `Foo`
-    const rp = {
-      context: { path: `foo` },
-      info: { parentType: { name: `Query` } },
-    }
-    await wrappedResolver(type)(rp)
-    expect(createPageDependency).toHaveBeenCalledTimes(1)
-    expect(createPageDependency).toHaveBeenCalledWith({
-      path: `foo`,
-      connection: `Foo`,
-    })
-  })
-
-  it(`processes multiple paginated results`, async () => {
-    const wrappedResolver = withPageDependencies(paginate)
-    const type = `Foo`
-    const rp = {
-      context: { path: `foo` },
-      info: { parentType: { name: `Bar` } },
-    }
-    await wrappedResolver(type)(rp)
-    expect(createPageDependency).toHaveBeenCalledTimes(2)
-    expect(createPageDependency).toHaveBeenCalledWith({
-      path: `foo`,
-      nodeId: 1,
-    })
-    expect(createPageDependency).toHaveBeenCalledWith({
-      path: `foo`,
-      nodeId: 2,
-    })
-  })
-
-  it(`creates connection for multiple paginated results from top level query field`, async () => {
-    const wrappedResolver = withPageDependencies(paginate)
-    const type = `Foo`
-    const rp = {
-      context: { path: `foo` },
-      info: { parentType: { name: `Query` } },
-    }
-    await wrappedResolver(type)(rp)
-    expect(createPageDependency).toHaveBeenCalledTimes(1)
-    expect(createPageDependency).toHaveBeenCalledWith({
-      path: `foo`,
-      connection: `Foo`,
-    })
-  })
-
-  it(`handles no paginated results`, async () => {
-    const wrappedResolver = withPageDependencies(() => () => ({
-      items: [null],
-      pageInfo: {},
-    }))
-    const type = `Foo`
-    const rp = {
-      context: { path: `foo` },
-      info: { parentType: { name: `Bar` } },
-    }
-    const result = await wrappedResolver(type)(rp)
-    expect(createPageDependency).not.toHaveBeenCalled()
-    expect(result.items).toEqual([null])
-  })
-
-  it(`creates connection even if no results returned from top level paginated query field`, async () => {
-    const wrappedResolver = withPageDependencies(() => () => ({
-      items: [],
-      pageInfo: {},
-    }))
     const type = `Foo`
     const rp = {
       context: { path: `foo` },
