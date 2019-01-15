@@ -2,7 +2,7 @@ const { GraphQLSchema, GraphQLBoolean, GraphQLInt } = require(`graphql`)
 
 const { buildSchema, updateSchema } = require(`..`)
 
-const { getById } = require(`../../db`)
+const { getById, getNodesByType } = require(`../../db`)
 jest.mock(`../../db`, () => {
   const nodes = [
     {
@@ -29,7 +29,11 @@ jest.mock(`../../db`, () => {
   ]
   return {
     getById: id => nodes.find(node => node.id === id),
-    getNodesByType: type => nodes.filter(node => node.internal.type === type),
+    getNodesByType: jest
+      .fn()
+      .mockImplementation(type =>
+        nodes.filter(node => node.internal.type === type)
+      ),
     getTypes: () =>
       Array.from(
         nodes.reduce(
@@ -44,27 +48,28 @@ jest.mock(`../../../utils/api-runner-node`, () => (api, options) => {
   switch (api) {
     case `addTypeDefs`: {
       const typeDefs = [
-        `
-      type Frontmatter {
-        title: String!
-        date: Date!
-        authors: [Author!]! @link(by: "lastname")
-        tags: [String]
-        published: Boolean
-      }
-      type Markdown implements Node {
-        html: String
-        htmlAst: JSON
-        frontmatter: Frontmatter
-      }
-    `,
-        `
-      type Author implements Node {
-        lastname: String
-        firstname: String
-        email: String
-        posts: [Markdown!]!
-      }`,
+        `type Frontmatter {
+          title: String!
+          date: Date!
+          authors: [Author!]! @link(by: "lastname")
+          tags: [String]
+          published: Boolean
+        }
+        type Markdown implements Node {
+          html: String
+          htmlAst: JSON
+          frontmatter: Frontmatter
+        }`,
+        `type Author implements Node {
+          lastname: String
+          firstname: String
+          email: String
+          posts: [Markdown!]!
+        }`,
+        `type SitePage implements Node {
+          title: String
+        }
+        `,
       ]
       typeDefs.forEach(options.addTypeDefs)
       break
@@ -73,7 +78,7 @@ jest.mock(`../../../utils/api-runner-node`, () => (api, options) => {
     case `addResolvers`: {
       const resolvers = {
         Author: {
-          posts: (source, ignoredArgs, context, info) => {
+          posts: async (source, ignoredArgs, context, info) => {
             const {
               resolve,
             } = info.schema.getQueryType().getFields().allMarkdown
@@ -88,7 +93,7 @@ jest.mock(`../../../utils/api-runner-node`, () => (api, options) => {
                 },
               },
             }
-            return resolve(source, args, context, info)
+            return (await resolve(source, args, context, info)).items
           },
         },
       }
@@ -125,14 +130,7 @@ describe(`Schema builder`, () => {
   it(`builds schema with root query fields`, async () => {
     expect(schema).toBeInstanceOf(GraphQLSchema)
     expect(Object.keys(schema.getQueryType().getFields())).toEqual(
-      expect.arrayContaining([
-        `markdown`,
-        `allMarkdown`,
-        `pageMarkdown`,
-        `author`,
-        `allAuthor`,
-        `pageAuthor`,
-      ])
+      expect.arrayContaining([`markdown`, `allMarkdown`, `author`, `allAuthor`])
     )
   })
 
@@ -222,9 +220,17 @@ describe(`Schema builder`, () => {
   })
 
   it(`updates schema with SitePage type`, async () => {
+    getNodesByType.mockReturnValue([{ keywords: [`foo`] }])
     await updateSchema()
-    expect(schema.getQueryType().getFields().sitePage.type.name).toBe(
-      `SitePage`
-    )
+    const SitePage = schema.getQueryType().getFields().sitePage.type
+    expect(SitePage.name).toBe(`SitePage`)
+    expect(Object.keys(SitePage.getFields())).toEqual([
+      `title`,
+      `id`,
+      `parent`,
+      `children`,
+      `internal`,
+      `keywords`,
+    ])
   })
 })
