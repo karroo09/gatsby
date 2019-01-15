@@ -1,10 +1,10 @@
-const toSnakeCase = require(`./to-snake-case`)
+// const toSnakeCase = require(`./to-snake-case`)
 
 const createSortKey = (key, delimiter) =>
   key &&
   key
     .split(`.`)
-    .map(toSnakeCase)
+    // .map(toSnakeCase)
     .join(delimiter)
     .replace(/^\d|[^\w]/g, `_`)
 // FIXME: Enum values should be uppercase
