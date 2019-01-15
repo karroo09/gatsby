@@ -13,7 +13,11 @@ const addResolvers = require(`./add-resolvers`)
 const addThirdPartySchemas = require(`./add-third-party-schemas`)
 
 const addTypeDefs = typeDefs => {
-  schemaComposer.addTypeDefs(typeDefs)
+  const types = schemaComposer.addTypeDefs(typeDefs)
+  // Ensure we have TypeComposer instances in the TypeMapper.
+  // This is not strictly necessary, as they are created for
+  // every node type in the store in `addInferredTypes`.
+  types.forEach(type => TypeComposer.create(type))
 }
 
 const addTypes = () => apiRunner(`addTypeDefs`, { addTypeDefs })
