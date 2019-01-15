@@ -1,7 +1,8 @@
 const { TypeComposer } = require(`graphql-compose`)
 
-const { findMany, findOne, paginate } = require(`../resolvers`)
+const { findMany, findOne } = require(`../resolvers`)
 const { getInputArgs } = require(`../input`)
+const { paginate } = require(`../pagination`)
 
 // TODO: Make those fields NonNull?
 const PageInfoTC = TypeComposer.create({
@@ -31,7 +32,7 @@ const getPaginationType = tc => {
 
 const addResolvers = tc => {
   const typeName = tc.getTypeName()
-  const [filter, sort] = getInputArgs(tc)
+  const [filter, sort, fields] = getInputArgs(tc)
   tc.addResolver({
     name: `findOne`,
     type: tc,

@@ -4,7 +4,6 @@ const {
   findByIdsAndType,
   findMany,
   findOne,
-  paginate,
 } = require(`./resolvers`)
 const link = require(`./link`)
 
@@ -15,5 +14,4 @@ module.exports = {
   findMany,
   findOne,
   link,
-  paginate,
 }
