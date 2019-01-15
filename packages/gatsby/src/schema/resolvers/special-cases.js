@@ -39,7 +39,7 @@ const withSpecialCases = ({ type, source, args, context, info }) => {
         }
         if (args.filter.relativePath) {
           const { relativePath } = args.filter
-          // FIXME: For now, keep v2 behavior
+          // FIXME: For now, keep v2 behavior, @see #10993.
           const baseDir = source && getDir(source, false)
           // const baseDir =
           //   source &&
@@ -55,7 +55,7 @@ const withSpecialCases = ({ type, source, args, context, info }) => {
           }
         } else if (args.filter.relativeDirectory) {
           const { relativeDirectory } = args.filter
-          // FIXME: For now, keep v2 behavior
+          // FIXME: For now, keep v2 behavior, @see #10993.
           const baseDir = source && getDir(source, false)
           // const baseDir =
           //   source &&

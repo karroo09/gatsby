@@ -1,16 +1,11 @@
-const {
-  GraphQLList,
-  GraphQLNonNull,
-  GraphQLInputObjectType,
-} = require(`graphql`)
-const { InputTypeComposer, EnumTypeComposer } = require(`graphql-compose`)
+const { getNamedType, GraphQLInputObjectType } = require(`graphql`)
+const { schemaComposer, EnumTypeComposer } = require(`graphql-compose`)
 
 const { createSelector, createSortKey } = require(`../utils`)
 
 const MAX_SORT_DEPTH = 3
 const SORT_FIELD_DELIMITER = `___`
 
-// const SortOrderEnum = new GraphQLEnumType({
 const SortOrderEnum = EnumTypeComposer.create({
   name: `SortOrderEnum`,
   values: {
@@ -22,13 +17,9 @@ const SortOrderEnum = EnumTypeComposer.create({
 const convert = (fields, prefix = ``, depth = 0) => {
   const sortFields = Object.entries(fields).reduce(
     (acc, [fieldName, fieldConfig]) => {
-      let { type } = fieldConfig
+      const type = getNamedType(fieldConfig.type)
       const sortKey = createSelector(prefix, fieldName)
 
-      // TODO: getNamedType()
-      while (type instanceof GraphQLList || type instanceof GraphQLNonNull) {
-        type = type.ofType
-      }
       if (type instanceof GraphQLInputObjectType) {
         if (depth < MAX_SORT_DEPTH) {
           Object.assign(acc, convert(type.getFields(), sortKey, depth + 1))
@@ -47,27 +38,25 @@ const convert = (fields, prefix = ``, depth = 0) => {
 }
 
 const getSortInput = itc => {
-  const fields = itc.getFields()
-  const sortFields = convert(fields)
+  const fields = convert(itc.getFields())
 
   const typeName = itc.getTypeName().replace(/Input$/, ``)
 
-  // const SortFieldsEnum = new GraphQLEnumType({
-  const SortFieldsEnum = EnumTypeComposer.create({
-    name: typeName + `SortFieldsEnum`,
-    values: sortFields,
-  })
+  const FieldsEnumTC = schemaComposer.getOrCreateETC(
+    typeName + `FieldsEnum`,
+    etc => etc.addFields(fields)
+  )
 
-  // const SortInput = new GraphQLInputObjectType({
-  const SortInput = InputTypeComposer.create({
-    name: typeName + `SortInput`,
-    fields: {
-      fields: [SortFieldsEnum],
-      order: { type: SortOrderEnum, defaultValue: `ASC` },
-    },
-  })
+  const SortInputTC = schemaComposer.getOrCreateITC(
+    typeName + `SortInput`,
+    itc =>
+      itc.addFields({
+        fields: [FieldsEnumTC],
+        order: { type: SortOrderEnum, defaultValue: `ASC` },
+      })
+  )
 
-  return SortInput
+  return [SortInputTC, FieldsEnumTC]
 }
 
 module.exports = getSortInput

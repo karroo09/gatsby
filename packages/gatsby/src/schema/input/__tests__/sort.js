@@ -20,12 +20,12 @@ const tc = TypeComposer.create({
 })
 addNodeInterface(tc)
 const itc = tc.getITC()
-const sort = getSortInput(itc)
+const [SortInputTC] = getSortInput(itc)
 
 describe(`Sort input`, () => {
   it(`builds sort input type`, () => {
-    expect(sort.getType()).toBeInstanceOf(GraphQLInputObjectType)
-    expect(sort.getFieldNames()).toEqual([`fields`, `order`])
+    expect(SortInputTC.getType()).toBeInstanceOf(GraphQLInputObjectType)
+    expect(SortInputTC.getFieldNames()).toEqual([`fields`, `order`])
   })
 
   it(`does not mutate input`, () => {
@@ -35,17 +35,19 @@ describe(`Sort input`, () => {
   })
 
   it(`adds sort order enum`, () => {
-    expect(sort.getFieldType(`order`)).toBeInstanceOf(GraphQLEnumType)
-    expect(sort.getField(`order`).defaultValue).toBe(`ASC`)
-    expect(sort.getFieldType(`order`).getValues()).toEqual([
+    expect(SortInputTC.getFieldType(`order`)).toBeInstanceOf(GraphQLEnumType)
+    expect(SortInputTC.getField(`order`).defaultValue).toBe(`ASC`)
+    expect(SortInputTC.getFieldType(`order`).getValues()).toEqual([
       expect.objectContaining({ name: `ASC`, value: `ASC` }),
       expect.objectContaining({ name: `DESC`, value: `DESC` }),
     ])
   })
 
   it(`adds sort fields`, () => {
-    expect(sort.getFieldType(`fields`).ofType).toBeInstanceOf(GraphQLEnumType)
-    expect(sort.getFieldType(`fields`).ofType.getValues()).toEqual(
+    expect(SortInputTC.getFieldType(`fields`).ofType).toBeInstanceOf(
+      GraphQLEnumType
+    )
+    expect(SortInputTC.getFieldType(`fields`).ofType.getValues()).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: `bool`, value: `bool` }),
         expect.objectContaining({ name: `array`, value: `array` }),
@@ -59,7 +61,7 @@ describe(`Sort input`, () => {
   })
 
   it(`adds Node interface fields`, () => {
-    const sortKeys = sort.getFieldType(`fields`).ofType.getValues()
+    const sortKeys = SortInputTC.getFieldType(`fields`).ofType.getValues()
     expect(sortKeys).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: `id`, value: `id` }),
@@ -77,7 +79,7 @@ describe(`Sort input`, () => {
   })
 
   it(`respects max sort depth`, () => {
-    const sortKeys = sort.getFieldType(`fields`).ofType.getValues()
+    const sortKeys = SortInputTC.getFieldType(`fields`).ofType.getValues()
     expect(sortKeys).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -90,8 +92,7 @@ describe(`Sort input`, () => {
 
   it(`built sort input fields match snapshot`, () => {
     expect(
-      sort
-        .getFieldType(`fields`)
+      SortInputTC.getFieldType(`fields`)
         .ofType.getValues()
         .map(({ name, value }) => ({ name, value }))
     ).toMatchSnapshot()
