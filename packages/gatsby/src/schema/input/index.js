@@ -19,9 +19,9 @@ const getInputArgs = tc => {
   // const itc = toInputObjectType(tc, {}, cache)
   const itc = tc.getITC()
 
-  const FilterInput = getFilterInput(itc)
-  const SortInput = getSortInput(itc)
-  return [FilterInput, SortInput]
+  const FilterInputTC = getFilterInput(itc)
+  const [SortInputTC, FieldsEnumTC] = getSortInput(itc)
+  return [FilterInputTC, SortInputTC, FieldsEnumTC]
 }
 
 module.exports = {
