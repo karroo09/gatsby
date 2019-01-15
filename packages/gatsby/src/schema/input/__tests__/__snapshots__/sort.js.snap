@@ -43,7 +43,7 @@ Array [
     "value": "parent.parent.internal.content",
   },
   Object {
-    "name": "parent___parent___internal___content_digest",
+    "name": "parent___parent___internal___contentDigest",
     "value": "parent.parent.internal.contentDigest",
   },
   Object {
@@ -51,15 +51,15 @@ Array [
     "value": "parent.parent.internal.description",
   },
   Object {
-    "name": "parent___parent___internal___field_owners",
+    "name": "parent___parent___internal___fieldOwners",
     "value": "parent.parent.internal.fieldOwners",
   },
   Object {
-    "name": "parent___parent___internal___ignore_type",
+    "name": "parent___parent___internal___ignoreType",
     "value": "parent.parent.internal.ignoreType",
   },
   Object {
-    "name": "parent___parent___internal___media_type",
+    "name": "parent___parent___internal___mediaType",
     "value": "parent.parent.internal.mediaType",
   },
   Object {
@@ -87,7 +87,7 @@ Array [
     "value": "parent.children.internal.content",
   },
   Object {
-    "name": "parent___children___internal___content_digest",
+    "name": "parent___children___internal___contentDigest",
     "value": "parent.children.internal.contentDigest",
   },
   Object {
@@ -95,15 +95,15 @@ Array [
     "value": "parent.children.internal.description",
   },
   Object {
-    "name": "parent___children___internal___field_owners",
+    "name": "parent___children___internal___fieldOwners",
     "value": "parent.children.internal.fieldOwners",
   },
   Object {
-    "name": "parent___children___internal___ignore_type",
+    "name": "parent___children___internal___ignoreType",
     "value": "parent.children.internal.ignoreType",
   },
   Object {
-    "name": "parent___children___internal___media_type",
+    "name": "parent___children___internal___mediaType",
     "value": "parent.children.internal.mediaType",
   },
   Object {
@@ -119,7 +119,7 @@ Array [
     "value": "parent.internal.content",
   },
   Object {
-    "name": "parent___internal___content_digest",
+    "name": "parent___internal___contentDigest",
     "value": "parent.internal.contentDigest",
   },
   Object {
@@ -127,15 +127,15 @@ Array [
     "value": "parent.internal.description",
   },
   Object {
-    "name": "parent___internal___field_owners",
+    "name": "parent___internal___fieldOwners",
     "value": "parent.internal.fieldOwners",
   },
   Object {
-    "name": "parent___internal___ignore_type",
+    "name": "parent___internal___ignoreType",
     "value": "parent.internal.ignoreType",
   },
   Object {
-    "name": "parent___internal___media_type",
+    "name": "parent___internal___mediaType",
     "value": "parent.internal.mediaType",
   },
   Object {
@@ -167,7 +167,7 @@ Array [
     "value": "children.parent.internal.content",
   },
   Object {
-    "name": "children___parent___internal___content_digest",
+    "name": "children___parent___internal___contentDigest",
     "value": "children.parent.internal.contentDigest",
   },
   Object {
@@ -175,15 +175,15 @@ Array [
     "value": "children.parent.internal.description",
   },
   Object {
-    "name": "children___parent___internal___field_owners",
+    "name": "children___parent___internal___fieldOwners",
     "value": "children.parent.internal.fieldOwners",
   },
   Object {
-    "name": "children___parent___internal___ignore_type",
+    "name": "children___parent___internal___ignoreType",
     "value": "children.parent.internal.ignoreType",
   },
   Object {
-    "name": "children___parent___internal___media_type",
+    "name": "children___parent___internal___mediaType",
     "value": "children.parent.internal.mediaType",
   },
   Object {
@@ -211,7 +211,7 @@ Array [
     "value": "children.children.internal.content",
   },
   Object {
-    "name": "children___children___internal___content_digest",
+    "name": "children___children___internal___contentDigest",
     "value": "children.children.internal.contentDigest",
   },
   Object {
@@ -219,15 +219,15 @@ Array [
     "value": "children.children.internal.description",
   },
   Object {
-    "name": "children___children___internal___field_owners",
+    "name": "children___children___internal___fieldOwners",
     "value": "children.children.internal.fieldOwners",
   },
   Object {
-    "name": "children___children___internal___ignore_type",
+    "name": "children___children___internal___ignoreType",
     "value": "children.children.internal.ignoreType",
   },
   Object {
-    "name": "children___children___internal___media_type",
+    "name": "children___children___internal___mediaType",
     "value": "children.children.internal.mediaType",
   },
   Object {
@@ -243,7 +243,7 @@ Array [
     "value": "children.internal.content",
   },
   Object {
-    "name": "children___internal___content_digest",
+    "name": "children___internal___contentDigest",
     "value": "children.internal.contentDigest",
   },
   Object {
@@ -251,15 +251,15 @@ Array [
     "value": "children.internal.description",
   },
   Object {
-    "name": "children___internal___field_owners",
+    "name": "children___internal___fieldOwners",
     "value": "children.internal.fieldOwners",
   },
   Object {
-    "name": "children___internal___ignore_type",
+    "name": "children___internal___ignoreType",
     "value": "children.internal.ignoreType",
   },
   Object {
-    "name": "children___internal___media_type",
+    "name": "children___internal___mediaType",
     "value": "children.internal.mediaType",
   },
   Object {
@@ -275,7 +275,7 @@ Array [
     "value": "internal.content",
   },
   Object {
-    "name": "internal___content_digest",
+    "name": "internal___contentDigest",
     "value": "internal.contentDigest",
   },
   Object {
@@ -283,15 +283,15 @@ Array [
     "value": "internal.description",
   },
   Object {
-    "name": "internal___field_owners",
+    "name": "internal___fieldOwners",
     "value": "internal.fieldOwners",
   },
   Object {
-    "name": "internal___ignore_type",
+    "name": "internal___ignoreType",
     "value": "internal.ignoreType",
   },
   Object {
-    "name": "internal___media_type",
+    "name": "internal___mediaType",
     "value": "internal.mediaType",
   },
   Object {
