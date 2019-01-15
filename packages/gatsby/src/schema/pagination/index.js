@@ -1,8 +1,31 @@
-const { findMany } = require(`../resolvers`)
+const { TypeComposer } = require(`graphql-compose`)
 
-const paginate = type => async rp => {
-  const results = await findMany(type)(rp)
-  const { skip = 0, limit } = rp.args
+const PageInfoTC = TypeComposer.create({
+  name: `PageInfo`,
+  fields: {
+    currentPage: `Int`,
+    hasNextPage: `Boolean`,
+    hasPreviousPage: `Boolean`,
+    itemCount: `Int`,
+    pageCount: `Int`,
+    perPage: `Int`,
+  },
+})
+
+const getPaginationTC = tc => {
+  const typeName = tc.getTypeName()
+  // TODO: get or create
+  return TypeComposer.create({
+    name: typeName + `Page`,
+    fields: {
+      count: `Int`,
+      items: [tc],
+      pageInfo: PageInfoTC,
+    },
+  })
+}
+
+const paginate = (results, { skip = 0, limit }) => {
   const count = results.length
   const items = results.slice(skip, limit && skip + limit)
 
@@ -14,8 +37,10 @@ const paginate = type => async rp => {
 
   const pageCount = limit
     ? Math.ceil(skip / limit) + Math.ceil((count - skip) / limit)
-    : 1
-  const currentPage = limit ? Math.ceil(skip / limit) + 1 : 1 // Math.min(currentPage, pageCount)
+    : skip
+      ? 2
+      : 1
+  const currentPage = limit ? Math.ceil(skip / limit) + 1 : skip ? 2 : 1 // Math.min(currentPage, pageCount)
   const hasPreviousPage = currentPage > 1
   const hasNextPage = skip + limit < count // currentPage < pageCount
 
@@ -35,4 +60,4 @@ const paginate = type => async rp => {
   }
 }
 
-module.exports = { paginate }
+module.exports = { paginate, getPaginationTC }

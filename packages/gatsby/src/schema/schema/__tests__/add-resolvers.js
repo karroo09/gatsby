@@ -11,7 +11,7 @@ describe(`Add resolvers (fieldConfigs)`, () => {
     expect(Array.from(tc.getResolvers().keys())).toEqual([
       `findOne`,
       `findMany`,
-      `pagination`,
+      `findManyPaginated`,
     ])
 
     expect(tc.getResolver(`findOne`).args.foo).toBeInstanceOf(InputTypeComposer)
@@ -29,21 +29,23 @@ describe(`Add resolvers (fieldConfigs)`, () => {
     expect(tc.getResolver(`findMany`).resolve).toBeInstanceOf(Function)
     expect(tc.getResolver(`findMany`).type).toBeInstanceOf(Array)
 
-    expect(tc.getResolver(`pagination`).args.filter).toBeInstanceOf(
+    expect(tc.getResolver(`findManyPaginated`).args.filter).toBeInstanceOf(
       InputTypeComposer
     )
-    expect(tc.getResolver(`pagination`).args.sort).toBeInstanceOf(
+    expect(tc.getResolver(`findManyPaginated`).args.sort).toBeInstanceOf(
       InputTypeComposer
     )
-    expect(tc.getResolver(`pagination`).args.skip).toBeDefined()
-    expect(tc.getResolver(`pagination`).args.limit).toBeDefined()
-    expect(tc.getResolver(`pagination`).resolve).toBeInstanceOf(Function)
-    expect(tc.getResolver(`pagination`).type.getFields().items).toBeInstanceOf(
-      Array
-    )
-    expect(tc.getResolver(`pagination`).type.getFields().count).toBeDefined()
+    expect(tc.getResolver(`findManyPaginated`).args.skip).toBeDefined()
+    expect(tc.getResolver(`findManyPaginated`).args.limit).toBeDefined()
+    expect(tc.getResolver(`findManyPaginated`).resolve).toBeInstanceOf(Function)
     expect(
-      tc.getResolver(`pagination`).type.getFields().pageInfo
+      tc.getResolver(`findManyPaginated`).type.getFields().items
+    ).toBeInstanceOf(Array)
+    expect(
+      tc.getResolver(`findManyPaginated`).type.getFields().count
+    ).toBeDefined()
+    expect(
+      tc.getResolver(`findManyPaginated`).type.getFields().pageInfo
     ).toBeInstanceOf(TypeComposer)
   })
 })
