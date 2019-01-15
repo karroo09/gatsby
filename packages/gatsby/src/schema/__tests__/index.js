@@ -160,69 +160,73 @@ describe(`Schema query`, () => {
     const query = `
       query {
         allMarkdown {
-          frontmatter {
-            title
-            date(formatString: "MM-dd-yyyy")
-            published
-            authors {
-              name
-              email
-              posts {
-                frontmatter {
-                  title
+          items {
+            frontmatter {
+              title
+              date(formatString: "MM-dd-yyyy")
+              published
+              authors {
+                name
+                email
+                posts {
+                  frontmatter {
+                    title
+                  }
                 }
               }
+              authorNames
             }
-            authorNames
           }
         }
       }
     `
     const results = await graphql(query)
     const expected = {
-      allMarkdown: [
-        {
-          frontmatter: {
-            authorNames: [`Author 1`, `Author 2`],
-            authors: [
-              {
-                email: `author1@example.com`,
-                name: `Author 1`,
-                posts: [
-                  { frontmatter: { title: `Markdown File 1` } },
-                  { frontmatter: { title: `Markdown File 2` } },
-                ],
-              },
-              {
-                email: `author2@example.com`,
-                name: `Author 2`,
-                posts: [{ frontmatter: { title: `Markdown File 1` } }],
-              },
-            ],
-            date: `01-01-2019`,
-            published: null,
-            title: `Markdown File 1`,
+      allMarkdown: {
+        items: [
+          {
+            frontmatter: {
+              authorNames: [`Author 1`, `Author 2`],
+              authors: [
+                {
+                  email: `author1@example.com`,
+                  name: `Author 1`,
+                  posts: [
+                    { frontmatter: { title: `Markdown File 1` } },
+                    { frontmatter: { title: `Markdown File 2` } },
+                  ],
+                },
+                {
+                  email: `author2@example.com`,
+                  name: `Author 2`,
+                  posts: [{ frontmatter: { title: `Markdown File 1` } }],
+                },
+              ],
+              date: `01-01-2019`,
+              published: null,
+              title: `Markdown File 1`,
+            },
           },
-        },
-        {
-          frontmatter: {
-            authorNames: [`Author 1`],
-            authors: [
-              {
-                email: `author1@example.com`,
-                name: `Author 1`,
-                posts: [
-                  { frontmatter: { title: `Markdown File 1` } },
-                  { frontmatter: { title: `Markdown File 2` } },
-                ],
-              },
-            ],
-            date: null,
-            published: false,
-            title: `Markdown File 2`,
+          {
+            frontmatter: {
+              authorNames: [`Author 1`],
+              authors: [
+                {
+                  email: `author1@example.com`,
+                  name: `Author 1`,
+                  posts: [
+                    { frontmatter: { title: `Markdown File 1` } },
+                    { frontmatter: { title: `Markdown File 2` } },
+                  ],
+                },
+              ],
+              date: null,
+              published: false,
+              title: `Markdown File 2`,
+            },
           },
-        },
-      ],
+        ],
+      },
     }
     expect(results.errors).toBeUndefined()
     expect(results.data).toEqual(expected)
@@ -232,34 +236,38 @@ describe(`Schema query`, () => {
     const query = `
       query {
         allFile {
-          children {
-            ... on Markdown { frontmatter { title } }
-            ... on Author { name }
+          items {
+            children {
+              ... on Markdown { frontmatter { title } }
+              ... on Author { name }
+            }
+            childMarkdown { frontmatter { title } }
+            childrenAuthor { name }
           }
-          childMarkdown { frontmatter { title } }
-          childrenAuthor { name }
         }
       }
     `
     const results = await graphql(query)
     const expected = {
-      allFile: [
-        {
-          childMarkdown: { frontmatter: { title: `Markdown File 1` } },
-          children: [{ frontmatter: { title: `Markdown File 1` } }],
-          childrenAuthor: [],
-        },
-        {
-          childMarkdown: { frontmatter: { title: `Markdown File 2` } },
-          children: [{ frontmatter: { title: `Markdown File 2` } }],
-          childrenAuthor: [],
-        },
-        {
-          childMarkdown: null,
-          children: [{ name: `Author 2` }, { name: `Author 1` }],
-          childrenAuthor: [{ name: `Author 2` }, { name: `Author 1` }],
-        },
-      ],
+      allFile: {
+        items: [
+          {
+            childMarkdown: { frontmatter: { title: `Markdown File 1` } },
+            children: [{ frontmatter: { title: `Markdown File 1` } }],
+            childrenAuthor: [],
+          },
+          {
+            childMarkdown: { frontmatter: { title: `Markdown File 2` } },
+            children: [{ frontmatter: { title: `Markdown File 2` } }],
+            childrenAuthor: [],
+          },
+          {
+            childMarkdown: null,
+            children: [{ name: `Author 2` }, { name: `Author 1` }],
+            childrenAuthor: [{ name: `Author 2` }, { name: `Author 1` }],
+          },
+        ],
+      },
     }
     expect(results.errors).toBeUndefined()
     expect(results.data).toEqual(expected)
@@ -280,9 +288,11 @@ describe(`Schema query`, () => {
           filter: { children: { internal: { type: { eq: "Markdown" } } } }
           sort: { fields: [id], order: DESC }
         ) {
-          name
-          children {
-            id
+          items {
+            name
+            children {
+              id
+            }
           }
         }
       }
@@ -295,10 +305,12 @@ describe(`Schema query`, () => {
       otherAuthor: {
         name: `Author 2`,
       },
-      allFile: [
-        { name: `2.md`, children: [{ id: `md2` }] },
-        { name: `1.md`, children: [{ id: `md1` }] },
-      ],
+      allFile: {
+        items: [
+          { name: `2.md`, children: [{ id: `md2` }] },
+          { name: `1.md`, children: [{ id: `md1` }] },
+        ],
+      },
     }
     expect(results.errors).toBeUndefined()
     expect(results.data).toEqual(expected)
@@ -323,10 +335,12 @@ describe(`Schema query`, () => {
           }
           sort: { fields: [frontmatter___title], order: DESC }
         ) {
-          id
-          frontmatter {
-            authors {
-              name
+          items {
+            id
+            frontmatter {
+              authors {
+                name
+              }
             }
           }
         }
@@ -334,15 +348,17 @@ describe(`Schema query`, () => {
     `
     const results = await graphql(query)
     const expected = {
-      allMarkdown: [
-        { id: `md2`, frontmatter: { authors: [{ name: `Author 1` }] } },
-        {
-          id: `md1`,
-          frontmatter: {
-            authors: [{ name: `Author 1` }, { name: `Author 2` }],
+      allMarkdown: {
+        items: [
+          { id: `md2`, frontmatter: { authors: [{ name: `Author 1` }] } },
+          {
+            id: `md1`,
+            frontmatter: {
+              authors: [{ name: `Author 1` }, { name: `Author 2` }],
+            },
           },
-        },
-      ],
+        ],
+      },
     }
     expect(results.errors).toBeUndefined()
     expect(results.data).toEqual(expected)
@@ -351,7 +367,7 @@ describe(`Schema query`, () => {
   it(`paginates results`, async () => {
     const query = `
       query {
-        pages: pageMarkdown {
+        pages: allMarkdown {
           count
           items {
             frontmatter {
@@ -362,14 +378,14 @@ describe(`Schema query`, () => {
             }
           }
         }
-        skiplimit: pageMarkdown(
+        skiplimit: allMarkdown(
           skip: 1
           limit: 1
         ) {
           count
           items { id }
         }
-        findsort: pageMarkdown(
+        findsort: allMarkdown(
           filter: { frontmatter: { authors: { name: { regex: "/^Author\\\\s\\\\d/" }}} }
           sort: { fields: [frontmatter___title], order: DESC }
         ) {
