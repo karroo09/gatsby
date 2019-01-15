@@ -26,7 +26,7 @@ const addTypeToRootQuery = tc => {
   schemaComposer.Query.addFields({
     [queryName]: tc.getResolver(`findOne`),
     [queryNamePlural]: tc.getResolver(`findMany`),
-    [queryNamePagination]: tc.getResolver(`pagination`),
+    [queryNamePagination]: tc.getResolver(`findManyPaginated`),
   })
 }
 
