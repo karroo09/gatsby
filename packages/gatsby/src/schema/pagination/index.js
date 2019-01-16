@@ -4,7 +4,8 @@ const { getValueAtSelector, getUniqueValues, isDefined } = require(`../utils`)
 
 const distinct = (source, args, context, info) => {
   const { field } = args
-  const values = source.edges.reduce((acc, { node }) => {
+  const { items } = source
+  const values = items.reduce((acc, node) => {
     const value = getValueAtSelector(node, field)
     return value != null ? acc.concat(value) : acc
   }, [])
@@ -13,7 +14,8 @@ const distinct = (source, args, context, info) => {
 
 const group = (source, args, context, info) => {
   const { field } = args
-  const groupedResults = source.edges.reduce((acc, { node }) => {
+  const { items } = source
+  const groupedResults = items.reduce((acc, node) => {
     const value = getValueAtSelector(node, field)
     const values = Array.isArray(value) ? value : [value]
     values
