@@ -9,13 +9,6 @@ const findById = () => ({ args }) => getById(args.id)
 const findByIds = () => ({ args }) =>
   Array.isArray(args.ids) ? args.ids.map(getById).filter(Boolean) : []
 
-// TODO: Should we merge this with `findByIds`?
-// Or: how much slower is using
-// `findMany(type)({ args: { id: oneOf(source.children) } })`
-// in the child/children resolvers?
-// Or: Split in `findChildOfType` and `findChildrenOfType`,
-// to avoid `firstResultOnly` (also in withPageDependencies)?
-// FIXME: Avoid `type` closure
 const findByIdsAndType = type => ({ args }, firstResultOnly) =>
   Array.isArray(args.ids)
     ? args.ids
@@ -24,19 +17,22 @@ const findByIdsAndType = type => ({ args }, firstResultOnly) =>
           node => node && node.internal.type === type
         ) || null
     : firstResultOnly
-      ? null
-      : []
+    ? null
+    : []
 
 const find = type => async (rp, firstResultOnly) => {
   const queryArgs = withSpecialCases({ type, ...rp })
   // Don't create page dependencies in getNodesForQuery
   /* eslint-disable-next-line no-unused-vars */
   const { path, ...context } = rp.context || {}
-  return query(
-    await getNodesForQuery(type, queryArgs.filter, context),
+  const queryNodes = await getNodesForQuery(
+    type,
     queryArgs,
-    firstResultOnly
+    context,
+    rp.info.schema,
+    rp.projection
   )
+  return query(queryNodes, queryArgs, firstResultOnly)
 }
 
 const findMany = type => async rp => find(type)(rp, false)

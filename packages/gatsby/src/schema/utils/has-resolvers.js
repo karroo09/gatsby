@@ -1,7 +1,7 @@
 const { getNamedType } = require(`graphql`)
 
-const hasResolvers = (parentType, filterFields) => {
-  const fields = parentType.getFields()
+const hasResolvers = (type, filterFields) => {
+  const fields = type.getFields()
   return Object.entries(filterFields).some(([fieldName, filterValue]) => {
     const field = fields[fieldName]
     return (

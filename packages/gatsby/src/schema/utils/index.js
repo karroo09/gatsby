@@ -16,6 +16,8 @@ const isDate = require(`./is-date`)
 const isDefined = require(`./is-defined`)
 const isObject = require(`./is-object`)
 const isProductionBuild = require(`./is-production-build`)
+const merge = require(`./merge`)
+const pathToObject = require(`./path-to-object`)
 const stringToRegExp = require(`./string-to-regexp`)
 const toSnakeCase = require(`./to-snake-case`)
 const withBaseDir = require(`./with-base-dir`)
@@ -41,6 +43,8 @@ module.exports = {
   isDefined,
   isObject,
   isProductionBuild,
+  merge,
+  pathToObject,
   stringToRegExp,
   toSnakeCase,
   trackObjects,

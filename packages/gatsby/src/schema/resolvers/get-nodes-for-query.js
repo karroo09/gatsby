@@ -1,9 +1,13 @@
-const { GraphQLNonNull } = require(`graphql`)
+const { getNullableType } = require(`graphql`)
 
-const { store } = require(`../../redux`)
 const { getNodesByType } = require(`../db`)
 const { dropQueryOperators } = require(`../query`)
-const { hasResolvers, isProductionBuild } = require(`../utils`)
+const {
+  hasResolvers,
+  isProductionBuild,
+  merge,
+  pathToObject,
+} = require(`../utils`)
 const { trackObjects } = require(`../utils/node-tracking`)
 
 const { emitter } = require(`../../redux`)
@@ -13,24 +17,10 @@ emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
 const cache = new Map()
 const nodeCache = new Map()
 
-// const getLinkResolver = (astNode, type) => {
-//   const linkDirective = astNode.directives.find(
-//     directive => directive.name.value === `link`
-//   )
-//   if (linkDirective) {
-//     const by = linkDirective.arguments.find(
-//       argument => argument.name.value === `by`
-//     ).value.value
-//     return link({ by })
-//   }
-//   return null
-// }
-
 // TODO: Filter sparse arrays?
 
 const resolveValue = (value, filterValue, type, context, schema) => {
-  // TODO: Maybe use const { getNullableType } = require(`graphql`)
-  const nullableType = type instanceof GraphQLNonNull ? type.ofType : type
+  const nullableType = getNullableType(type)
   // FIXME: We probably have to check that node data and schema are actually in sync,
   // i.e. both are arrays or scalars
   // return Array.isArray(value) && nullableType instanceof GraphQLList
@@ -44,19 +34,6 @@ const resolveValue = (value, filterValue, type, context, schema) => {
 }
 
 const prepareForQuery = (node, filter, parentType, context, schema) => {
-  // FIXME: Make this a .map() and resolve with Promise.all.
-  // .reduce() works sequentially: must resolve `acc` before the next iteration
-  // Promise.all(
-  //   Object.entries(filter)
-  //     .map(async ([fieldName, filterValue]) => {
-  //       // ...
-  //       return result && [fieldName, result]
-  //     })
-  //     .filter(Boolean)
-  // ).then(fields =>
-  //   fields.reduce((acc, [key, value]) => (acc[key] = value) && acc, node)
-  // )
-
   const fields = parentType.getFields()
 
   const queryNode = Object.entries(filter).reduce(
@@ -64,27 +41,6 @@ const prepareForQuery = (node, filter, parentType, context, schema) => {
       const node = await acc
 
       const { type, args, resolve } = fields[fieldName]
-
-      // FIXME: This is just to test if manually calling the link directive
-      // resolver would work (it does). Instead we should use the executable
-      // schema where the link resolvers are already added.
-      // let { resolve, type, astNode } = tc.getFieldConfig(fieldName)
-      // resolve = (astNode && getLinkResolver(astNode, type)) || resolv
-
-      // const value =
-      //   typeof resolver === `function`
-      //     ? await resolver(
-      //         node,
-      //         {},
-      //         {},
-      //         { fieldName, parentType: {}, returnType: type, schema }
-      //       )
-      //     : node[fieldName]
-
-      // node[fieldName] =
-      //   filterValue !== true && value != null
-      //     ? await resolveValue(value, filterValue, tc.getFieldTC(fieldName))
-      //     : value
 
       if (typeof resolve === `function`) {
         const defaultValues = args.reduce((acc, { name, defaultValue }) => {
@@ -122,44 +78,47 @@ const prepareForQuery = (node, filter, parentType, context, schema) => {
 
       return node
     },
-    // FIXME: Shallow copy the node, to avoid mutating the nodes in the store.
-    // Possible alternative: start reducing not from node, but from {}, and copy fields
-    // when no resolver.
     { ...node }
   )
   return queryNode
 }
 
-const getNodesForQuery = async (type, filter, context) => {
-  const nodes = await getNodesByType(type)
+const getNodesForQuery = async (
+  typeName,
+  args,
+  context,
+  schema,
+  projection
+) => {
+  const nodes = await getNodesByType(typeName)
 
-  if (!filter) return nodes
+  const { filter, sort } = args || {}
+  const { group, distinct } = projection || {}
 
-  const filterFields = dropQueryOperators(filter)
+  const filterFields = filter ? dropQueryOperators(filter) : {}
+  const sortFields = sort ? sort.fields : []
+
+  const fields = merge(
+    filterFields,
+    ...sortFields.map(pathToObject),
+    pathToObject(group),
+    pathToObject(distinct)
+  )
+
+  if (!Object.keys(fields).length) return nodes
 
   let cacheKey
   if (isProductionBuild || !isBootstrapFinished) {
-    cacheKey = JSON.stringify({ type, count: nodes.length, filterFields })
+    cacheKey = JSON.stringify({ typeName, count: nodes.length, fields })
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey)
     }
   }
 
-  // Use executable schema from store (includes resolvers added by @link directive).
-  // Alternatively, call @link resolvers manually.
-  const { schema } = store.getState()
-
-  // Just an experiment. This works as well -- but does not cache resolved nodes.
-  // const { execute, parse } = require(`graphql`)
-  // const queryField = `all${type}`
-  // const query = `{ ${queryField} { ${Object.keys(filterFields).join(`, `)} } }`
-  // const { data, errors } = await execute({ schema, document: parse(query) })
-  // const queryNodes = data && data[queryField]
-
-  const parentType = schema.getType(type)
+  const type = schema.getType(typeName)
 
   // If there are no resolvers to call manually, we can just return nodes.
-  if (!hasResolvers(parentType, filterFields)) {
+  if (!hasResolvers(type, fields)) {
     return nodes
   }
 
@@ -168,19 +127,13 @@ const getNodesForQuery = async (type, filter, context) => {
       const cacheKey = JSON.stringify({
         id: node.id,
         digest: node.internal.contentDigest,
-        filterFields,
+        fields,
       })
       if (nodeCache.has(cacheKey)) {
         return nodeCache.get(cacheKey)
       }
 
-      const queryNode = prepareForQuery(
-        node,
-        filterFields,
-        parentType,
-        context,
-        schema
-      )
+      const queryNode = prepareForQuery(node, fields, type, context, schema)
 
       nodeCache.set(cacheKey, queryNode)
       trackObjects(await queryNode)
