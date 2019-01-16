@@ -126,33 +126,33 @@ TypeComposer.create({
 
 schemaComposer.Query.addFields({ foo: `Foo`, sparse: `Sparse`, arg: `Arg` })
 const schema = schemaComposer.buildSchema()
-const { store } = require(`../../../redux`)
-store.dispatch({
-  type: `SET_SCHEMA`,
-  payload: schema,
-})
 
 describe(`Get nodes for query`, () => {
   describe(`Development build`, () => {
     it(`returns unmodified nodes of type when no filter is specified`, async () => {
       const type = `Foo`
-      const filter = undefined // FIXME: {}
-      const queryNodes = await getNodesForQuery(type, filter)
+      const filter = undefined
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
       expect(queryNodes).toEqual(getNodesByType(type))
     })
 
     it(`returns unmodified nodes of type when filter fields have no resolver functions`, async () => {
       const type = `Foo`
       const filter = { id: { ne: 0 }, array: { nin: [10] } }
-      const queryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
       expect(queryNodes).toEqual(getNodesByType(type))
     })
 
     it(`caches single node`, async () => {
       const type = `Foo`
       const filter = { id: { ne: 0 }, array: { nin: [10] } }
-      const queryNodes = await getNodesForQuery(type, filter)
-      const sameQueryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+      const sameQueryNodes = await getNodesForQuery(
+        type,
+        { filter },
+        {},
+        schema
+      )
       expect(queryNodes[0]).toBe(sameQueryNodes[0])
     })
 
@@ -161,22 +161,22 @@ describe(`Get nodes for query`, () => {
       const type = `Foo`
 
       let filter = { id: { ne: 0 }, array: { nin: [10] } }
-      await getNodesForQuery(type, filter)
+      await getNodesForQuery(type, { filter }, {}, schema)
       expect(trackObjects).not.toHaveBeenCalled() // nodes are cached
 
       filter = { id: { eq: 0 } }
-      await getNodesForQuery(type, filter)
+      await getNodesForQuery(type, { filter }, {}, schema)
       expect(trackObjects).not.toHaveBeenCalled() // !hasResolvers
 
       filter = { id: { eq: 0 }, withResolver: { ne: `` } }
-      await getNodesForQuery(type, filter)
+      await getNodesForQuery(type, { filter }, {}, schema)
       expect(trackObjects).toHaveBeenCalledTimes(3)
     })
 
     it(`resolves resolver function for non-null filter fields`, async () => {
       const type = `Foo`
       const filter = { withResolver: { ne: `qux` } }
-      const queryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
       expect(queryNodes).not.toEqual(getNodesByType(type))
 
       expect(nodes[0].withResolver).toBeUndefined()
@@ -198,7 +198,7 @@ describe(`Get nodes for query`, () => {
           nestedResolver: { eq: true },
         },
       }
-      const queryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
 
       expect(nodes[0].deeply).toBeUndefined()
       expect(queryNodes[0].deeply).toBeUndefined()
@@ -226,7 +226,7 @@ describe(`Get nodes for query`, () => {
         deeply: { nestedResolver: { eq: true } },
       }
       const nodesCopy = JSON.parse(JSON.stringify(nodes))
-      await getNodesForQuery(type, filter)
+      await getNodesForQuery(type, { filter }, {}, schema)
       expect(nodes).toEqual(nodesCopy)
     })
 
@@ -244,7 +244,7 @@ describe(`Get nodes for query`, () => {
           },
         },
       }
-      const queryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
 
       expect(counter).toHaveBeenCalledTimes(12)
       expect(
@@ -265,7 +265,7 @@ describe(`Get nodes for query`, () => {
         sparse: { eq: true },
         sparseResolver: { eq: true },
       }
-      const queryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
       expect(queryNodes[0].null).toBeNull()
       expect(queryNodes[0].sparse[0]).toBeNull()
       expect(queryNodes[0].sparseResolver[0]).toBeNull()
@@ -275,7 +275,7 @@ describe(`Get nodes for query`, () => {
     it(`passes default values to the resolver`, async () => {
       const type = `Arg`
       const filter = { arg: { eq: true } }
-      const queryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
       expect(queryNodes[0].arg).toBe(2)
     })
   })
@@ -306,17 +306,17 @@ describe(`Get nodes for query`, () => {
 
     schemaComposer.Query.addFields({ foo: `Foo` })
     const schema = schemaComposer.buildSchema()
-    const { store } = require(`../../../redux`)
-    store.dispatch({
-      type: `SET_SCHEMA`,
-      payload: schema,
-    })
 
     it(`caches nodes`, async () => {
       const type = `Foo`
       const filter = { id: { ne: 0 }, withResolver: { ne: `` } }
-      const queryNodes = await getNodesForQuery(type, filter)
-      const sameQueryNodes = await getNodesForQuery(type, filter)
+      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+      const sameQueryNodes = await getNodesForQuery(
+        type,
+        { filter },
+        {},
+        schema
+      )
       expect(queryNodes).toBe(sameQueryNodes)
     })
   })

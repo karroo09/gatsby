@@ -442,4 +442,164 @@ describe(`Schema query`, () => {
     expect(results.errors).toBeUndefined()
     expect(results.data).toEqual(expected)
   })
+
+  it(`groups query results`, async () => {
+    const query = `
+      query {
+        allMarkdown {
+          group(field: frontmatter___title) {
+            fieldValue
+            items {
+              frontmatter {
+                title
+                date
+              }
+            }
+          }
+        }
+      }
+    `
+    const results = await graphql(query)
+    const expected = {
+      allMarkdown: {
+        group: [
+          {
+            fieldValue: `Markdown File 1`,
+            items: [
+              {
+                frontmatter: {
+                  title: `Markdown File 1`,
+                  date: `2019-01-01`,
+                },
+              },
+            ],
+          },
+          {
+            fieldValue: `Markdown File 2`,
+            items: [
+              {
+                frontmatter: {
+                  title: `Markdown File 2`,
+                  date: null,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    }
+    expect(results.errors).toBeUndefined()
+    expect(results.data).toEqual(expected)
+  })
+
+  it(`groups query results by scalar field with resolver`, async () => {
+    const query = `
+      query {
+        allMarkdown {
+          group(field: frontmatter___date) {
+            fieldValue
+            items {
+              frontmatter {
+                title
+                date(formatString: "yyyy/MM/dd")
+              }
+            }
+          }
+        }
+      }
+    `
+    const results = await graphql(query)
+    const expected = {
+      allMarkdown: {
+        group: [
+          {
+            fieldValue: `2019-01-01`,
+            items: [
+              {
+                frontmatter: {
+                  title: `Markdown File 1`,
+                  date: `2019/01/01`,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    }
+    expect(results.errors).toBeUndefined()
+    expect(results.data).toEqual(expected)
+  })
+
+  it(`groups query results by linked field`, async () => {
+    const query = `
+      query {
+        allMarkdown {
+          group(field: frontmatter___authors___name) {
+            fieldValue
+            items {
+              frontmatter {
+                title
+                date
+              }
+            }
+          }
+        }
+      }
+    `
+    const results = await graphql(query)
+    const expected = {
+      allMarkdown: {
+        group: [
+          {
+            fieldValue: `Author 1`,
+            items: [
+              {
+                frontmatter: {
+                  title: `Markdown File 1`,
+                  date: `2019-01-01`,
+                },
+              },
+              {
+                frontmatter: {
+                  title: `Markdown File 2`,
+                  date: null,
+                },
+              },
+            ],
+          },
+          {
+            fieldValue: `Author 2`,
+            items: [
+              {
+                frontmatter: {
+                  title: `Markdown File 1`,
+                  date: `2019-01-01`,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    }
+    expect(results.errors).toBeUndefined()
+    expect(results.data).toEqual(expected)
+  })
+
+  it(`returns distinct values`, async () => {
+    const query = `
+      query {
+        allMarkdown {
+          distinct(field: frontmatter___authors___name)
+        }
+      }
+    `
+    const results = await graphql(query)
+    const expected = {
+      allMarkdown: {
+        distinct: [`Author 1`, `Author 2`],
+      },
+    }
+    expect(results.errors).toBeUndefined()
+    expect(results.data).toEqual(expected)
+  })
 })

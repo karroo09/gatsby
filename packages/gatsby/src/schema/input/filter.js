@@ -1,8 +1,4 @@
-const {
-  GraphQLList,
-  GraphQLNonNull,
-  GraphQLInputObjectType,
-} = require(`graphql`)
+const { getNamedType, GraphQLInputObjectType } = require(`graphql`)
 const { InputTypeComposer } = require(`graphql-compose`)
 
 const { getQueryOperators } = require(`../query`)
@@ -26,12 +22,8 @@ const convert = itc => {
   const fields = itc.getFields()
   const convertedFields = Object.entries(fields).reduce(
     (acc, [fieldName, fieldConfig]) => {
-      let { type } = fieldConfig
+      const type = getNamedType(fieldConfig.type)
 
-      // TODO: getNamedType()
-      while (type instanceof GraphQLList || type instanceof GraphQLNonNull) {
-        type = type.ofType
-      }
       if (type instanceof GraphQLInputObjectType) {
         acc[fieldName] = convert(new InputTypeComposer(type))
       } else {

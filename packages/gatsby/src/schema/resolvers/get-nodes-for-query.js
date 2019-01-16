@@ -1,9 +1,13 @@
-const { GraphQLNonNull } = require(`graphql`)
+const { getNullableType } = require(`graphql`)
 
-const { store } = require(`../../redux`)
 const { getNodesByType } = require(`../db`)
 const { dropQueryOperators } = require(`../query`)
-const { hasResolvers, isProductionBuild } = require(`../utils`)
+const {
+  hasResolvers,
+  isProductionBuild,
+  merge,
+  pathToObject,
+} = require(`../utils`)
 const { trackObjects } = require(`../utils/node-tracking`)
 
 const { emitter } = require(`../../redux`)
@@ -14,8 +18,7 @@ const cache = new Map()
 const nodeCache = new Map()
 
 const resolveValue = (value, filterValue, type, context, schema) => {
-  // TODO: Use const { getNullableType } = require(`graphql`)
-  const nullableType = type instanceof GraphQLNonNull ? type.ofType : type
+  const nullableType = getNullableType(type)
   return Array.isArray(value)
     ? Promise.all(
         value.map(item =>
@@ -68,26 +71,42 @@ const prepareForQuery = (node, filter, parentType, context, schema) => {
   return queryNode
 }
 
-const getNodesForQuery = async (type, filter, context) => {
-  const nodes = await getNodesByType(type)
+const getNodesForQuery = async (
+  typeName,
+  args,
+  context,
+  schema,
+  projection
+) => {
+  const nodes = await getNodesByType(typeName)
 
-  if (!filter) return nodes
+  const { filter, sort } = args || {}
+  const { group, distinct } = projection || {}
 
-  const filterFields = dropQueryOperators(filter)
+  const filterFields = filter ? dropQueryOperators(filter) : {}
+  const sortFields = sort ? sort.fields : []
+
+  const fields = merge(
+    filterFields,
+    ...sortFields.map(pathToObject),
+    pathToObject(group),
+    pathToObject(distinct)
+  )
+
+  if (!Object.keys(fields).length) return nodes
 
   let cacheKey
   if (isProductionBuild || !isBootstrapFinished) {
-    cacheKey = JSON.stringify({ type, count: nodes.length, filterFields })
+    cacheKey = JSON.stringify({ typeName, count: nodes.length, fields })
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey)
     }
   }
 
-  const { schema } = store.getState()
-  const parentType = schema.getType(type)
+  const type = schema.getType(typeName)
 
   // If there are no resolvers to call manually, we can just return nodes.
-  if (!hasResolvers(parentType, filterFields)) {
+  if (!hasResolvers(type, fields)) {
     return nodes
   }
 
@@ -96,19 +115,13 @@ const getNodesForQuery = async (type, filter, context) => {
       const cacheKey = JSON.stringify({
         id: node.id,
         digest: node.internal.contentDigest,
-        filterFields,
+        fields,
       })
       if (nodeCache.has(cacheKey)) {
         return nodeCache.get(cacheKey)
       }
 
-      const queryNode = prepareForQuery(
-        node,
-        filterFields,
-        parentType,
-        context,
-        schema
-      )
+      const queryNode = prepareForQuery(node, fields, type, context, schema)
 
       nodeCache.set(cacheKey, queryNode)
       trackObjects(await queryNode)

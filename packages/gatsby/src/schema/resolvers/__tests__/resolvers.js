@@ -17,11 +17,6 @@ TypeComposer.create(`type Bar { baz: String, foo: Nested }`)
 
 schemaComposer.Query.addFields({ foo: `Foo`, bar: `Bar`, nested: `Nested` })
 const schema = schemaComposer.buildSchema()
-const { store } = require(`../../../redux`)
-store.dispatch({
-  type: `SET_SCHEMA`,
-  payload: schema,
-})
 
 const { getById } = require(`../../db`)
 jest.mock(`../../db`, () => {
@@ -29,7 +24,7 @@ jest.mock(`../../db`, () => {
     {
       id: 1,
       internal: { type: `Foo` },
-      baz: `baz`,
+      baz: `qux`,
       foo: { bar: { baz: `baz` } },
     },
     {
@@ -41,7 +36,7 @@ jest.mock(`../../db`, () => {
     {
       id: 3,
       internal: { type: `Foo` },
-      baz: `qux`,
+      baz: `baz`,
       foo: { bar: { baz: `qux` } },
     },
     {
@@ -132,14 +127,20 @@ describe(`Resolvers`, () => {
   describe(`findMany`, () => {
     it(`finds nodes matching filter`, async () => {
       const filter = { baz: { ne: `foo` } }
-      const result = await findMany(type)({ args: { filter } })
+      const result = await findMany(type)({
+        args: { filter },
+        info: { schema },
+      })
       expect(result).toEqual([1, 3].map(getById))
     })
 
     it(`sorts nodes matching filter`, async () => {
       const filter = { baz: { ne: `foo` } }
-      const sort = { fields: [`id`], order: `DESC` }
-      const result = await findMany(type)({ args: { filter, sort } })
+      const sort = { fields: [`foo.bar.baz`], order: `DESC` }
+      const result = await findMany(type)({
+        args: { filter, sort },
+        info: { schema },
+      })
       expect(result).toEqual([3, 1].map(getById))
     })
   })
@@ -147,7 +148,7 @@ describe(`Resolvers`, () => {
   describe(`findOne`, () => {
     it(`finds first node matching filter`, async () => {
       const filter = { baz: { ne: `foo` } }
-      const result = await findOne(type)({ args: filter })
+      const result = await findOne(type)({ args: filter, info: { schema } })
       expect(result).toEqual(getById(1))
     })
   })
@@ -160,23 +161,23 @@ describe(`Resolvers`, () => {
 
     it(`resolves one-to-one`, async () => {
       const source = { id: 1000, linkedFoo: `qux` }
-      const info = { fieldName: `linkedFoo`, returnType: FooType }
+      const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `baz` })
       const resolved = await resolver(source, {}, {}, info)
-      expect(resolved).toEqual(getById(3))
+      expect(resolved).toEqual(getById(1))
     })
 
     it(`resolves many-to-many`, async () => {
       const source = { id: 1000, linkedFoos: [`baz`, `foo`] }
-      const info = { fieldName: `linkedFoos`, returnType: FoosType }
+      const info = { fieldName: `linkedFoos`, returnType: FoosType, schema }
       const resolver = link({ by: `baz` })
       const resolved = await resolver(source, {}, {}, info)
-      expect(resolved).toEqual([1, 4].map(getById))
+      expect(resolved).toEqual([3, 4].map(getById))
     })
 
     it(`resolves one-to-many`, async () => {
       const source = { id: 1000, linkedBars: `baz` }
-      const info = { fieldName: `linkedBars`, returnType: BarsType }
+      const info = { fieldName: `linkedBars`, returnType: BarsType, schema }
       const resolver = link({ by: `baz` })
       const resolved = await resolver(source, {}, {}, info)
       expect(resolved).toEqual([2, 5].map(getById))
@@ -184,7 +185,7 @@ describe(`Resolvers`, () => {
 
     it(`resolves nested one-to-one`, async () => {
       const source = { id: 1000, linkedFoo: `qux` }
-      const info = { fieldName: `linkedFoo`, returnType: FooType }
+      const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `foo.bar.baz` })
       const resolved = await resolver(source, {}, {}, info)
       expect(resolved).toEqual(getById(3))
@@ -192,7 +193,7 @@ describe(`Resolvers`, () => {
 
     it(`resolves nested many-to-many`, async () => {
       const source = { id: 1000, linkedFoos: [`baz`, `qux`] }
-      const info = { fieldName: `linkedFoos`, returnType: FoosType }
+      const info = { fieldName: `linkedFoos`, returnType: FoosType, schema }
       const resolver = link({ by: `foo.bar.baz` })
       const resolved = await resolver(source, {}, {}, info)
       expect(resolved).toEqual([1, 3, 4].map(getById))
@@ -200,7 +201,7 @@ describe(`Resolvers`, () => {
 
     it(`resolves nested one-to-many`, async () => {
       const source = { id: 1000, linkedFoos: `baz` }
-      const info = { fieldName: `linkedFoos`, returnType: FoosType }
+      const info = { fieldName: `linkedFoos`, returnType: FoosType, schema }
       const resolver = link({ by: `foo.bar.baz` })
       const resolved = await resolver(source, {}, {}, info)
       expect(resolved).toEqual([1, 4].map(getById))
@@ -209,7 +210,7 @@ describe(`Resolvers`, () => {
     it(`resolves id`, async () => {
       getById.mockClear()
       const source = { id: 1000, linkedFoo: 1 }
-      const info = { fieldName: `linkedFoo`, returnType: FooType }
+      const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `id` })
       const resolved = await resolver(source, {}, {}, info)
       expect(getById).toHaveBeenCalledTimes(1)
@@ -219,7 +220,7 @@ describe(`Resolvers`, () => {
     it(`resolves ids`, async () => {
       getById.mockClear()
       const source = { id: 1000, linkedFoos: [3, 4] }
-      const info = { fieldName: `linkedFoos`, returnType: FoosType }
+      const info = { fieldName: `linkedFoos`, returnType: FoosType, schema }
       const resolver = link({ by: `id` })
       const resolved = await resolver(source, {}, {}, info)
       expect(getById).toHaveBeenCalledTimes(2)
@@ -228,7 +229,7 @@ describe(`Resolvers`, () => {
 
     it(`returns field value when link already resolved`, async () => {
       const source = { id: 1000, linkedFoo: getById(1) }
-      const info = { fieldName: `linkedFoo`, returnType: FooType }
+      const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `id` })
       getById.mockClear()
       const resolved = await resolver(source, {}, {}, info)
@@ -238,7 +239,7 @@ describe(`Resolvers`, () => {
 
     it(`bails early when field value is null`, async () => {
       const source = { id: 1000, linkedFoo: null }
-      const info = { fieldName: `linkedFoo`, returnType: FooType }
+      const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `id` })
       getById.mockClear()
       const resolved = await resolver(source, {}, {}, info)
@@ -253,6 +254,7 @@ describe(`Resolvers`, () => {
         fieldName: `linkedFoo`,
         parentType: { name: `Query` },
         returnType: FooType,
+        schema,
       }
       const resolver = link({ by: `id` })
       createPageDependency.mockClear()
@@ -268,6 +270,7 @@ describe(`Resolvers`, () => {
         fieldName: `linkedBar`,
         parentType: { name: `Query` },
         returnType: BarsType,
+        schema,
       }
       const resolver = link({ by: `baz` })
       createPageDependency.mockClear()

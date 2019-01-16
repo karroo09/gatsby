@@ -1,4 +1,5 @@
 const { TypeComposer } = require(`graphql-compose`)
+const { getNullableType } = require(`graphql`)
 
 const { getValueAtSelector, getUniqueValues, isDefined } = require(`../utils`)
 
@@ -117,4 +118,17 @@ const getPaginationTC = (tc, FieldsEnumTC) => {
   return createPaginationTC(tc, fields, typeName)
 }
 
-module.exports = { paginate, getPaginationTC }
+const getProjectedField = (info, fieldName) => {
+  const { selections } = info.fieldNodes[0].selectionSet
+  const selection = selections.find(s => s.name.value === fieldName)
+  const fieldArg = selection.arguments.find(arg => arg.name.value === `field`)
+  const enumKey = fieldArg.value.value
+  const Enum = getNullableType(
+    info.returnType
+      .getFields()
+      [fieldName].args.find(arg => arg.name === `field`).type
+  )
+  return Enum.getValue(enumKey).value
+}
+
+module.exports = { paginate, getPaginationTC, getProjectedField }

@@ -17,19 +17,22 @@ const findByIdsAndType = type => ({ args }, firstResultOnly) =>
           node => node && node.internal.type === type
         ) || null
     : firstResultOnly
-      ? null
-      : []
+    ? null
+    : []
 
 const find = type => async (rp, firstResultOnly) => {
   const queryArgs = withSpecialCases({ type, ...rp })
   // Don't create page dependencies in getNodesForQuery
   /* eslint-disable-next-line no-unused-vars */
   const { path, ...context } = rp.context || {}
-  return query(
-    await getNodesForQuery(type, queryArgs.filter, context),
+  const queryNodes = await getNodesForQuery(
+    type,
     queryArgs,
-    firstResultOnly
+    context,
+    rp.info.schema,
+    rp.projection
   )
+  return query(queryNodes, queryArgs, firstResultOnly)
 }
 
 const findMany = type => async rp => find(type)(rp, false)
