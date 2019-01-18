@@ -1,5 +1,6 @@
 const path = require(`path`)
 const slash = require(`slash`)
+const mime = require(`mime`)
 
 const { getAbsolutePath, getValueAtSelector } = require(`../utils`)
 const { getNodesByType } = require(`../db`)
@@ -17,13 +18,12 @@ const getFilePath = (field, relativePath) => {
 
   if (typeName === `File`) return null
 
-  const mime = require(`mime`)
   const isRelative = require(`is-relative`)
   const isRelativeUrl = require(`is-relative-url`)
   const looksLikeFile =
     !path.isAbsolute(relativePath) &&
-    // FIXME: Do we need all of this?
     mime.getType(relativePath) !== null &&
+    // FIXME: Do we need all of this?
     mime.getType(relativePath) !== `application/x-msdownload` &&
     isRelative(relativePath) &&
     isRelativeUrl(relativePath)
