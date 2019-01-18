@@ -30,17 +30,22 @@ module.exports = (state = new Map(), action) => {
       const node = action.payload
       const nodesOfType = getNodesOfType(node, state)
       nodesOfType.delete(node.id)
+      if (!nodesOfType.size) {
+        state.delete(node.internal.type)
+      }
       return state
     }
 
-    // TODO: Payload should be nodes, not ids
+    // Deprecated, will be removed in Gatsby v3.
     case `DELETE_NODES`: {
       const ids = action.payload
       ids.forEach(id => {
-        state.values().some(nodesOfType => {
-          const node = nodesOfType.find(node => node.id === id)
-          if (node) {
-            nodesOfType.delete(id)
+        Array.from(state).some(([type, nodes]) => {
+          if (nodes.has(id)) {
+            nodes.delete(id)
+            if (!nodes.size) {
+              state.delete(type)
+            }
             return true
           }
           return false
