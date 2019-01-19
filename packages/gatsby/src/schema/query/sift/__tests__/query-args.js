@@ -16,6 +16,42 @@ describe(`Drop query operators`, () => {
     }
     expect(dropQueryOperators(filter)).toEqual(expected)
   })
+
+  it(`removes leaf fields from nested filter`, () => {
+    const filter = {
+      foo: { $eq: `foo` },
+      bar: {
+        foo: { $ne: `bar` },
+        bar: {
+          foo: { $in: [1, 2, 3] },
+          bar: {
+            foo: { $nin: [1, 2, 3] },
+          },
+        },
+      },
+      baz: { $ne: true },
+      qux: {
+        foo: { $eq: false },
+      },
+    }
+    const expected = {
+      foo: true,
+      bar: {
+        foo: true,
+        bar: {
+          foo: true,
+          bar: {
+            foo: true,
+          },
+        },
+      },
+      baz: true,
+      qux: {
+        foo: true,
+      },
+    }
+    expect(dropQueryOperators(filter)).toEqual(expected)
+  })
 })
 
 describe(`Prepare query arguments for Sift`, () => {
