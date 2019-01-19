@@ -61,6 +61,7 @@ const updateSchema = async () => {
   const tc = addInferredType(`SitePage`)
   delete tc.gqType._gqcInputTypeComposer
   addResolvers(tc)
+  addTypeToRootQuery(tc)
   return schemaComposer.buildSchema({ directives })
 }
 
