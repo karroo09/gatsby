@@ -69,9 +69,9 @@ describe(`Type inference`, () => {
 
     const fields = tc.getFields()
     const expected = {
-      array: [`Int`],
-      bigInt: `Float`,
-      bool: `Boolean`,
+      array: { type: [`Int`] },
+      bigInt: { type: `Float` },
+      bool: { type: `Boolean` },
       dateString: {
         type: `Date`,
         astNode: expect.objectContaining({ directives: expect.any(Array) }),
@@ -88,12 +88,12 @@ describe(`Type inference`, () => {
         type: [`Date`],
         astNode: expect.objectContaining({ directives: expect.any(Array) }),
       },
-      float: `Float`,
-      int: `Int`,
-      nestedArray: [[`Int`]],
-      nonExistingFilePath: `String`,
-      string: `String`,
-      stringObject: `String`,
+      float: { type: `Float` },
+      int: { type: `Int` },
+      nestedArray: { type: [[`Int`]] },
+      nonExistingFilePath: { type: `String` },
+      string: { type: `String` },
+      stringObject: { type: `String` },
     }
     expect(fields).toEqual(expected)
   })
@@ -307,9 +307,9 @@ describe(`Type inference`, () => {
     addInferredFields(tc, exampleValue, typeName)
 
     const filePathField = tc.getField(`filePath`)
-    expect(filePathField).toBe(`String`)
+    expect(filePathField.type).toBe(`String`)
 
     const filePathsField = tc.getField(`filePaths`)
-    expect(filePathsField).toEqual([[`String`]])
+    expect(filePathsField.type).toEqual([[`String`]])
   })
 })
