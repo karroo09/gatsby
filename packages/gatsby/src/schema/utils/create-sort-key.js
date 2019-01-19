@@ -6,7 +6,7 @@ const createSortKey = (key, delimiter) =>
     .split(`.`)
     // .map(toSnakeCase)
     .join(delimiter)
-    .replace(/^\d|[^\w]/g, `_`)
+// .replace(/^\d|[^\w]/g, `_`)
 // FIXME: Enum values should be uppercase
 // .toUpperCase()
 

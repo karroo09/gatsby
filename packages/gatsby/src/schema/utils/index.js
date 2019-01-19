@@ -1,4 +1,5 @@
 const capitalize = require(`./capitalize`)
+const createFieldName = require(`./create-field-name`)
 const createSelector = require(`./create-selector`)
 const createSortKey = require(`./create-sort-key`)
 const createTypeName = require(`./create-type-name`)
@@ -25,6 +26,7 @@ const { getParentNodeId, trackObjects } = require(`./node-tracking`)
 
 module.exports = {
   capitalize,
+  createFieldName,
   createSelector,
   createSortKey,
   createTypeName,

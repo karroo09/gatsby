@@ -1,9 +1,15 @@
 const { schemaComposer } = require(`graphql-compose`)
-const { GraphQLList, GraphQLObjectType } = require(`graphql`)
+const {
+  GraphQLList,
+  GraphQLObjectType,
+  defaultFieldResolver,
+} = require(`graphql`)
+const invariant = require(`invariant`)
 
 const { isFile } = require(`./is-file`)
 const { link } = require(`../resolvers`)
 const {
+  createFieldName,
   createSelector,
   createTypeName,
   is32bitInteger,
@@ -14,9 +20,13 @@ const {
 // Deeper nested levels should be inferred as JSON.
 const MAX_DEPTH = 3
 
-const addInferredFields = (tc, value, prefix, depth = 0) => {
-  const fields = Object.entries(value).reduce((acc, [key, value]) => {
-    const selector = createSelector(prefix, key)
+const addInferredFields = (tc, obj, prefix, depth = 0) => {
+  const fields = Object.entries(obj).reduce((acc, [unsanitizedKey, value]) => {
+    const key = createFieldName(unsanitizedKey)
+    const selector = createSelector(
+      prefix,
+      key
+    )
 
     let arrays = 0
     while (Array.isArray(value)) {
@@ -109,10 +119,24 @@ const addInferredFields = (tc, value, prefix, depth = 0) => {
       }
     }
 
+    fieldConfig = fieldConfig.type ? fieldConfig : { type: fieldConfig }
+
     while (arrays--) {
-      fieldConfig = fieldConfig.type
-        ? { ...fieldConfig, type: [fieldConfig.type] }
-        : [fieldConfig]
+      fieldConfig = { ...fieldConfig, type: [fieldConfig.type] }
+    }
+
+    // Proxy resolver to unsanitized fieldName in case it contained invalid characters
+    if (key !== unsanitizedKey) {
+      // Don't create a field with the sanitized key if a field with that name already exists
+      invariant(obj[key] == null, `Invalid key.`)
+      invariant(!tc.hasField(key), `Invalid key.`)
+
+      const resolver = fieldConfig.resolve || defaultFieldResolver
+      fieldConfig.resolve = (source, args, context, info) =>
+        resolver(source, args, context, {
+          ...info,
+          fieldName: unsanitizedKey,
+        })
     }
 
     acc[key] = fieldConfig
