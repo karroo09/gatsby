@@ -18,7 +18,10 @@ const convert = (fields, prefix = ``, depth = 0) => {
   const sortFields = Object.entries(fields).reduce(
     (acc, [fieldName, fieldConfig]) => {
       const type = getNamedType(fieldConfig.type)
-      const sortKey = createSelector(prefix, fieldName)
+      const sortKey = createSelector(
+        prefix,
+        fieldName
+      )
 
       if (type instanceof GraphQLInputObjectType) {
         if (depth < MAX_SORT_DEPTH) {
@@ -42,19 +45,16 @@ const getSortInput = itc => {
 
   const typeName = itc.getTypeName().replace(/Input$/, ``)
 
-  const FieldsEnumTC = schemaComposer.getOrCreateETC(
-    typeName + `FieldsEnum`,
-    etc => etc.addFields(fields)
-  )
+  // Use getOrCreate because of schema update
+  const FieldsEnumTC = schemaComposer.getOrCreateETC(typeName + `FieldsEnum`)
+  FieldsEnumTC.addFields(fields)
 
-  const SortInputTC = schemaComposer.getOrCreateITC(
-    typeName + `SortInput`,
-    itc =>
-      itc.addFields({
-        fields: [FieldsEnumTC],
-        order: { type: SortOrderEnum, defaultValue: `ASC` },
-      })
-  )
+  // Use getOrCreate because of schema update
+  const SortInputTC = schemaComposer.getOrCreateITC(typeName + `SortInput`)
+  SortInputTC.addFields({
+    fields: [FieldsEnumTC],
+    order: { type: SortOrderEnum, defaultValue: `ASC` },
+  })
 
   return [SortInputTC, FieldsEnumTC]
 }

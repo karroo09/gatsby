@@ -220,17 +220,15 @@ describe(`Schema builder`, () => {
   })
 
   it(`updates schema with SitePage type`, async () => {
-    getNodesByType.mockReturnValue([{ keywords: [`foo`] }])
+    getNodesByType.mockReturnValue([{ title: `Foo`, keywords: [`foo`] }])
     await updateSchema()
-    const SitePage = schema.getQueryType().getFields().sitePage.type
-    expect(SitePage.name).toBe(`SitePage`)
-    expect(Object.keys(SitePage.getFields())).toEqual([
-      `title`,
-      `id`,
-      `parent`,
-      `children`,
-      `internal`,
-      `keywords`,
-    ])
+    const SitePage = schema.getQueryType().getFields().sitePage
+    expect(SitePage.type.name).toBe(`SitePage`)
+    expect(Object.keys(SitePage.type.getFields())).toEqual(
+      expect.arrayContaining([`title`, `keywords`])
+    )
+    expect(SitePage.args.map(({ name }) => name)).toEqual(
+      expect.arrayContaining([`title`, `keywords`])
+    )
   })
 })
