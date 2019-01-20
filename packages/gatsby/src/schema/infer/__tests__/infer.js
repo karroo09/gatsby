@@ -312,4 +312,54 @@ describe(`Type inference`, () => {
     const filePathsField = tc.getField(`filePaths`)
     expect(filePathsField.type).toEqual([[`String`]])
   })
+
+  describe(`Invalid characters in field name`, () => {
+    it(`converts invalid characters to underscores`, () => {
+      const exampleValue = { ünvälid: true }
+
+      const typeName = `Foo`
+      const tc = TypeComposer.createTemp(typeName)
+      addInferredFields(tc, exampleValue, typeName)
+
+      expect(tc.hasField(`_nv_lid`)).toBeTruthy()
+      expect(tc.hasField(`ünvälid`)).toBeFalsy()
+    })
+
+    it(`adds a proxy resolver to the original field name`, () => {
+      const exampleValue = { ünvälid: true }
+
+      const typeName = `Foo`
+      const tc = TypeComposer.createTemp(typeName)
+      addInferredFields(tc, exampleValue, typeName)
+
+      const { resolve } = tc.getFieldConfig(`_nv_lid`)
+      expect(resolve).toBeInstanceOf(Function)
+
+      let result
+      result = resolve({ ünvälid: `foo` }, {}, {}, { fieldName: `_nv_alid` })
+      expect(result).toBe(`foo`)
+      result = resolve({ _nv_alid: `foo` }, {}, {}, { fieldName: `_nv_alid` })
+      expect(result).toBeUndefined()
+    })
+
+    it(`throws when converted field name already exists`, () => {
+      const exampleValue = { ünvälid: true, _nv_lid: true }
+
+      const typeName = `Foo`
+      const tc = TypeComposer.createTemp(typeName)
+      const fn = () => addInferredFields(tc, exampleValue, typeName)
+
+      expect(fn).toThrow()
+    })
+
+    it(`throws when converted field name results in leading double underscore`, () => {
+      const exampleValue = { [`0ünvälid`]: true }
+
+      const typeName = `Foo`
+      const tc = TypeComposer.createTemp(typeName)
+      const fn = () => addInferredFields(tc, exampleValue, typeName)
+
+      expect(fn).toThrow()
+    })
+  })
 })
