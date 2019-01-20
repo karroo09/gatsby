@@ -1,3 +1,4 @@
+const buildSelectionSet = require(`./build-selection-set`)
 const capitalize = require(`./capitalize`)
 const createFieldName = require(`./create-field-name`)
 const createSelector = require(`./create-selector`)
@@ -25,6 +26,7 @@ const withBaseDir = require(`./with-base-dir`)
 const { getParentNodeId, trackObjects } = require(`./node-tracking`)
 
 module.exports = {
+  buildSelectionSet,
   capitalize,
   createFieldName,
   createSelector,
