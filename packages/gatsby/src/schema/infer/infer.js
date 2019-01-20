@@ -130,9 +130,9 @@ const addInferredFields = (tc, obj, prefix, depth = 0) => {
       // Don't create a field with the sanitized key if a field with that name already exists
       invariant(
         obj[key] == null && !tc.hasField(key),
-        `Invalid key ${selector}. GraphQL field names must only contain ` +
-          `characters matching /^[a-zA-Z][_a-zA-Z0-9]*$/. and must not start ` +
-          `with a double underscore.`
+        `Invalid key ${unsanitizedKey} on ${prefix}. GraphQL field names must ` +
+          `only contain characters matching /^[a-zA-Z][_a-zA-Z0-9]*$/. and ` +
+          `must not start with a double underscore.`
       )
 
       const resolver = fieldConfig.resolve || defaultFieldResolver
