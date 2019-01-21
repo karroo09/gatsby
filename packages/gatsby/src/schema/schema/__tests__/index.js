@@ -78,6 +78,8 @@ jest.mock(`../../../utils/api-runner-node`, () => (api, options) => {
     case `addResolvers`: {
       const resolvers = {
         Author: {
+          // When the schema is built, access the resolvers from `context.resolvers`!
+          // See the tests in `../../__tests__/index.js`
           posts: async (source, ignoredArgs, context, info) => {
             const {
               resolve,
@@ -93,7 +95,9 @@ jest.mock(`../../../utils/api-runner-node`, () => (api, options) => {
                 },
               },
             }
-            return (await resolve(source, args, context, info)).items
+            return (await resolve(source, args, context, info)).edges.map(
+              ({ node }) => node
+            )
           },
         },
       }
