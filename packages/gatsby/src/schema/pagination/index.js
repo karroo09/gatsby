@@ -1,12 +1,12 @@
-const { TypeComposer } = require(`graphql-compose`)
+const { schemaComposer, TypeComposer } = require(`graphql-compose`)
 const { getNullableType } = require(`graphql`)
 
 const { getValueAtSelector, getUniqueValues, isDefined } = require(`../utils`)
 
 const distinct = (source, args, context, info) => {
   const { field } = args
-  const { items } = source
-  const values = items.reduce((acc, node) => {
+  const { edges } = source
+  const values = edges.reduce((acc, { node }) => {
     const value = getValueAtSelector(node, field)
     return value != null ? acc.concat(value) : acc
   }, [])
@@ -15,8 +15,8 @@ const distinct = (source, args, context, info) => {
 
 const group = (source, args, context, info) => {
   const { field } = args
-  const { items } = source
-  const groupedResults = items.reduce((acc, node) => {
+  const { edges } = source
+  const groupedResults = edges.reduce((acc, { node }) => {
     const value = getValueAtSelector(node, field)
     const values = Array.isArray(value) ? value : [value]
     values
@@ -50,8 +50,12 @@ const paginate = (results, { skip = 0, limit }) => {
   const hasNextPage = skip + limit < count // currentPage < pageCount
 
   return {
-    count: items.length,
-    items,
+    totalCount: items.length,
+    edges: items.map((item, i, arr) => ({
+      node: item,
+      next: arr[i + 1],
+      previous: arr[i - 1],
+    })),
     pageInfo: {
       currentPage,
       hasNextPage,
@@ -75,12 +79,23 @@ const PageInfoTC = TypeComposer.create({
   },
 })
 
+const getEdgeTC = tc => {
+  const typeName = tc.getTypeName() + `Edge`
+  return schemaComposer.getOrCreateTC(typeName, EdgeTC =>
+    EdgeTC.addFields({
+      next: tc,
+      node: tc,
+      previous: tc,
+    })
+  )
+}
+
 const createPaginationTC = (tc, fields, name) =>
   TypeComposer.create({
     name,
     fields: {
-      count: `Int`,
-      items: [tc],
+      totalCount: `Int`,
+      edges: [getEdgeTC(tc)],
       pageInfo: PageInfoTC,
       ...fields,
     },

@@ -5,14 +5,22 @@ describe(`Paginate query results`, () => {
 
   it(`returns results`, async () => {
     const args = { limit: 1 }
-    const { items } = paginate(results, args)
-    expect(items).toEqual([results[0]])
+    const nodes = paginate(results, args).edges.map(({ node }) => node)
+    expect(nodes).toEqual([results[0]])
+  })
+
+  it(`returns next and previos nodes`, async () => {
+    const args = { limit: 3 }
+    const next = paginate(results, args).edges.map(({ next }) => next)
+    const prev = paginate(results, args).edges.map(({ previous }) => previous)
+    expect(next).toEqual([results[1], results[2], undefined])
+    expect(prev).toEqual([undefined, results[0], results[1]])
   })
 
   it(`returns correct pagination info with limit only`, async () => {
     const args = { limit: 2 }
-    const { pageInfo, count } = paginate(results, args)
-    expect(count).toBe(2)
+    const { pageInfo, totalCount } = paginate(results, args)
+    expect(totalCount).toBe(2)
     expect(pageInfo).toEqual({
       currentPage: 1,
       hasNextPage: true,
@@ -25,8 +33,8 @@ describe(`Paginate query results`, () => {
 
   it(`returns correct pagination info with skip and limit`, async () => {
     const args = { skip: 1, limit: 2 }
-    const { pageInfo, count } = paginate(results, args)
-    expect(count).toBe(2)
+    const { pageInfo, totalCount } = paginate(results, args)
+    expect(totalCount).toBe(2)
     expect(pageInfo).toEqual({
       currentPage: 2,
       hasNextPage: true,
@@ -39,8 +47,8 @@ describe(`Paginate query results`, () => {
 
   it(`returns correct pagination info with skip and limit`, async () => {
     const args = { skip: 2, limit: 2 }
-    const { pageInfo, count } = paginate(results, args)
-    expect(count).toBe(2)
+    const { pageInfo, totalCount } = paginate(results, args)
+    expect(totalCount).toBe(2)
     expect(pageInfo).toEqual({
       currentPage: 2,
       hasNextPage: false,
@@ -53,8 +61,8 @@ describe(`Paginate query results`, () => {
 
   it(`returns correct pagination info with skip only`, async () => {
     const args = { skip: 1 }
-    const { pageInfo, count } = paginate(results, args)
-    expect(count).toBe(3)
+    const { pageInfo, totalCount } = paginate(results, args)
+    expect(totalCount).toBe(3)
     expect(pageInfo).toEqual({
       currentPage: 2,
       hasNextPage: false,

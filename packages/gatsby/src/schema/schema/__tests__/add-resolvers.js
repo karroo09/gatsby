@@ -39,10 +39,10 @@ describe(`Add resolvers (fieldConfigs)`, () => {
     expect(tc.getResolver(`findManyPaginated`).args.limit).toBeDefined()
     expect(tc.getResolver(`findManyPaginated`).resolve).toBeInstanceOf(Function)
     expect(
-      tc.getResolver(`findManyPaginated`).type.getFields().items
+      tc.getResolver(`findManyPaginated`).type.getFields().edges
     ).toBeInstanceOf(Array)
     expect(
-      tc.getResolver(`findManyPaginated`).type.getFields().count
+      tc.getResolver(`findManyPaginated`).type.getFields().totalCount
     ).toBeDefined()
     expect(
       tc.getResolver(`findManyPaginated`).type.getFields().pageInfo

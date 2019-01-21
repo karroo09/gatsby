@@ -160,21 +160,23 @@ describe(`Schema query`, () => {
     const query = `
       query {
         allMarkdown {
-          items {
-            frontmatter {
-              title
-              date(formatString: "MM-dd-yyyy")
-              published
-              authors {
-                name
-                email
-                posts {
-                  frontmatter {
-                    title
+          edges {
+            node {
+              frontmatter {
+                title
+                date(formatString: "MM-dd-yyyy")
+                published
+                authors {
+                  name
+                  email
+                  posts {
+                    frontmatter {
+                      title
+                    }
                   }
                 }
+                authorNames
               }
-              authorNames
             }
           }
         }
@@ -183,46 +185,50 @@ describe(`Schema query`, () => {
     const results = await graphql(query)
     const expected = {
       allMarkdown: {
-        items: [
+        edges: [
           {
-            frontmatter: {
-              authorNames: [`Author 1`, `Author 2`],
-              authors: [
-                {
-                  email: `author1@example.com`,
-                  name: `Author 1`,
-                  posts: [
-                    { frontmatter: { title: `Markdown File 1` } },
-                    { frontmatter: { title: `Markdown File 2` } },
-                  ],
-                },
-                {
-                  email: `author2@example.com`,
-                  name: `Author 2`,
-                  posts: [{ frontmatter: { title: `Markdown File 1` } }],
-                },
-              ],
-              date: `01-01-2019`,
-              published: null,
-              title: `Markdown File 1`,
+            node: {
+              frontmatter: {
+                authorNames: [`Author 1`, `Author 2`],
+                authors: [
+                  {
+                    email: `author1@example.com`,
+                    name: `Author 1`,
+                    posts: [
+                      { frontmatter: { title: `Markdown File 1` } },
+                      { frontmatter: { title: `Markdown File 2` } },
+                    ],
+                  },
+                  {
+                    email: `author2@example.com`,
+                    name: `Author 2`,
+                    posts: [{ frontmatter: { title: `Markdown File 1` } }],
+                  },
+                ],
+                date: `01-01-2019`,
+                published: null,
+                title: `Markdown File 1`,
+              },
             },
           },
           {
-            frontmatter: {
-              authorNames: [`Author 1`],
-              authors: [
-                {
-                  email: `author1@example.com`,
-                  name: `Author 1`,
-                  posts: [
-                    { frontmatter: { title: `Markdown File 1` } },
-                    { frontmatter: { title: `Markdown File 2` } },
-                  ],
-                },
-              ],
-              date: null,
-              published: false,
-              title: `Markdown File 2`,
+            node: {
+              frontmatter: {
+                authorNames: [`Author 1`],
+                authors: [
+                  {
+                    email: `author1@example.com`,
+                    name: `Author 1`,
+                    posts: [
+                      { frontmatter: { title: `Markdown File 1` } },
+                      { frontmatter: { title: `Markdown File 2` } },
+                    ],
+                  },
+                ],
+                date: null,
+                published: false,
+                title: `Markdown File 2`,
+              },
             },
           },
         ],
@@ -236,13 +242,15 @@ describe(`Schema query`, () => {
     const query = `
       query {
         allFile {
-          items {
-            children {
-              ... on Markdown { frontmatter { title } }
-              ... on Author { name }
+          edges {
+            node {
+              children {
+                ... on Markdown { frontmatter { title } }
+                ... on Author { name }
+              }
+              childMarkdown { frontmatter { title } }
+              childrenAuthor { name }
             }
-            childMarkdown { frontmatter { title } }
-            childrenAuthor { name }
           }
         }
       }
@@ -250,21 +258,27 @@ describe(`Schema query`, () => {
     const results = await graphql(query)
     const expected = {
       allFile: {
-        items: [
+        edges: [
           {
-            childMarkdown: { frontmatter: { title: `Markdown File 1` } },
-            children: [{ frontmatter: { title: `Markdown File 1` } }],
-            childrenAuthor: [],
+            node: {
+              childMarkdown: { frontmatter: { title: `Markdown File 1` } },
+              children: [{ frontmatter: { title: `Markdown File 1` } }],
+              childrenAuthor: [],
+            },
           },
           {
-            childMarkdown: { frontmatter: { title: `Markdown File 2` } },
-            children: [{ frontmatter: { title: `Markdown File 2` } }],
-            childrenAuthor: [],
+            node: {
+              childMarkdown: { frontmatter: { title: `Markdown File 2` } },
+              children: [{ frontmatter: { title: `Markdown File 2` } }],
+              childrenAuthor: [],
+            },
           },
           {
-            childMarkdown: null,
-            children: [{ name: `Author 2` }, { name: `Author 1` }],
-            childrenAuthor: [{ name: `Author 2` }, { name: `Author 1` }],
+            node: {
+              childMarkdown: null,
+              children: [{ name: `Author 2` }, { name: `Author 1` }],
+              childrenAuthor: [{ name: `Author 2` }, { name: `Author 1` }],
+            },
           },
         ],
       },
@@ -288,10 +302,12 @@ describe(`Schema query`, () => {
           filter: { children: { internal: { type: { eq: "Markdown" } } } }
           sort: { fields: [id], order: DESC }
         ) {
-          items {
-            name
-            children {
-              id
+          edges {
+            node {
+              name
+              children {
+                id
+              }
             }
           }
         }
@@ -306,9 +322,13 @@ describe(`Schema query`, () => {
         name: `Author 2`,
       },
       allFile: {
-        items: [
-          { name: `2.md`, children: [{ id: `md2` }] },
-          { name: `1.md`, children: [{ id: `md1` }] },
+        edges: [
+          {
+            node: { name: `2.md`, children: [{ id: `md2` }] },
+          },
+          {
+            node: { name: `1.md`, children: [{ id: `md1` }] },
+          },
         ],
       },
     }
@@ -335,11 +355,13 @@ describe(`Schema query`, () => {
           }
           sort: { fields: [frontmatter___title], order: DESC }
         ) {
-          items {
-            id
-            frontmatter {
-              authors {
-                name
+          edges {
+            node {
+              id
+              frontmatter {
+                authors {
+                  name
+                }
               }
             }
           }
@@ -349,12 +371,19 @@ describe(`Schema query`, () => {
     const results = await graphql(query)
     const expected = {
       allMarkdown: {
-        items: [
-          { id: `md2`, frontmatter: { authors: [{ name: `Author 1` }] } },
+        edges: [
           {
-            id: `md1`,
-            frontmatter: {
-              authors: [{ name: `Author 1` }, { name: `Author 2` }],
+            node: {
+              id: `md2`,
+              frontmatter: { authors: [{ name: `Author 1` }] },
+            },
+          },
+          {
+            node: {
+              id: `md1`,
+              frontmatter: {
+                authors: [{ name: `Author 1` }, { name: `Author 2` }],
+              },
             },
           },
         ],
@@ -368,12 +397,14 @@ describe(`Schema query`, () => {
     const query = `
       query {
         pages: allMarkdown {
-          count
-          items {
-            frontmatter {
-              title
-              authors {
-                name
+          totalCount
+          edges {
+            node {
+              frontmatter {
+                title
+                authors {
+                  name
+                }
               }
             }
           }
@@ -382,19 +413,21 @@ describe(`Schema query`, () => {
           skip: 1
           limit: 1
         ) {
-          count
-          items { id }
+          totalCount
+          edges { node { id } }
         }
         findsort: allMarkdown(
           filter: { frontmatter: { authors: { name: { regex: "/^Author\\\\s\\\\d/" }}} }
           sort: { fields: [frontmatter___title], order: DESC }
         ) {
-          count
-          items {
-            frontmatter {
-              title
-              authors {
-                name
+          totalCount
+          edges {
+            node {
+              frontmatter {
+                title
+                authors {
+                  name
+                }
               }
             }
           }
@@ -404,40 +437,48 @@ describe(`Schema query`, () => {
     const results = await graphql(query)
     const expected = {
       findsort: {
-        count: 2,
-        items: [
+        totalCount: 2,
+        edges: [
           {
-            frontmatter: {
-              authors: [{ name: `Author 1` }],
-              title: `Markdown File 2`,
+            node: {
+              frontmatter: {
+                authors: [{ name: `Author 1` }],
+                title: `Markdown File 2`,
+              },
             },
           },
           {
-            frontmatter: {
-              authors: [{ name: `Author 1` }, { name: `Author 2` }],
-              title: `Markdown File 1`,
+            node: {
+              frontmatter: {
+                authors: [{ name: `Author 1` }, { name: `Author 2` }],
+                title: `Markdown File 1`,
+              },
             },
           },
         ],
       },
       pages: {
-        count: 2,
-        items: [
+        totalCount: 2,
+        edges: [
           {
-            frontmatter: {
-              authors: [{ name: `Author 1` }, { name: `Author 2` }],
-              title: `Markdown File 1`,
+            node: {
+              frontmatter: {
+                authors: [{ name: `Author 1` }, { name: `Author 2` }],
+                title: `Markdown File 1`,
+              },
             },
           },
           {
-            frontmatter: {
-              authors: [{ name: `Author 1` }],
-              title: `Markdown File 2`,
+            node: {
+              frontmatter: {
+                authors: [{ name: `Author 1` }],
+                title: `Markdown File 2`,
+              },
             },
           },
         ],
       },
-      skiplimit: { count: 1, items: [{ id: `md2` }] },
+      skiplimit: { totalCount: 1, edges: [{ node: { id: `md2` } }] },
     }
     expect(results.errors).toBeUndefined()
     expect(results.data).toEqual(expected)
@@ -449,10 +490,12 @@ describe(`Schema query`, () => {
         allMarkdown {
           group(field: frontmatter___title) {
             fieldValue
-            items {
-              frontmatter {
-                title
-                date
+            edges {
+              node {
+                frontmatter {
+                  title
+                  date
+                }
               }
             }
           }
@@ -465,22 +508,26 @@ describe(`Schema query`, () => {
         group: [
           {
             fieldValue: `Markdown File 1`,
-            items: [
+            edges: [
               {
-                frontmatter: {
-                  title: `Markdown File 1`,
-                  date: `2019-01-01`,
+                node: {
+                  frontmatter: {
+                    title: `Markdown File 1`,
+                    date: `2019-01-01`,
+                  },
                 },
               },
             ],
           },
           {
             fieldValue: `Markdown File 2`,
-            items: [
+            edges: [
               {
-                frontmatter: {
-                  title: `Markdown File 2`,
-                  date: null,
+                node: {
+                  frontmatter: {
+                    title: `Markdown File 2`,
+                    date: null,
+                  },
                 },
               },
             ],
@@ -498,10 +545,12 @@ describe(`Schema query`, () => {
         allMarkdown {
           group(field: frontmatter___date) {
             fieldValue
-            items {
-              frontmatter {
-                title
-                date(formatString: "yyyy/MM/dd")
+            edges {
+              node {
+                frontmatter {
+                  title
+                  date(formatString: "yyyy/MM/dd")
+                }
               }
             }
           }
@@ -514,11 +563,13 @@ describe(`Schema query`, () => {
         group: [
           {
             fieldValue: `2019-01-01`,
-            items: [
+            edges: [
               {
-                frontmatter: {
-                  title: `Markdown File 1`,
-                  date: `2019/01/01`,
+                node: {
+                  frontmatter: {
+                    title: `Markdown File 1`,
+                    date: `2019/01/01`,
+                  },
                 },
               },
             ],
@@ -536,10 +587,12 @@ describe(`Schema query`, () => {
         allMarkdown {
           group(field: frontmatter___authors___name) {
             fieldValue
-            items {
-              frontmatter {
-                title
-                date
+            edges {
+              node {
+                frontmatter {
+                  title
+                  date
+                }
               }
             }
           }
@@ -552,28 +605,34 @@ describe(`Schema query`, () => {
         group: [
           {
             fieldValue: `Author 1`,
-            items: [
+            edges: [
               {
-                frontmatter: {
-                  title: `Markdown File 1`,
-                  date: `2019-01-01`,
+                node: {
+                  frontmatter: {
+                    title: `Markdown File 1`,
+                    date: `2019-01-01`,
+                  },
                 },
               },
               {
-                frontmatter: {
-                  title: `Markdown File 2`,
-                  date: null,
+                node: {
+                  frontmatter: {
+                    title: `Markdown File 2`,
+                    date: null,
+                  },
                 },
               },
             ],
           },
           {
             fieldValue: `Author 2`,
-            items: [
+            edges: [
               {
-                frontmatter: {
-                  title: `Markdown File 1`,
-                  date: `2019-01-01`,
+                node: {
+                  frontmatter: {
+                    title: `Markdown File 1`,
+                    date: `2019-01-01`,
+                  },
                 },
               },
             ],
