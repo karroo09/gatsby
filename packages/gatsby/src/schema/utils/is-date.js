@@ -1,4 +1,4 @@
-const { isValid, parseISO } = require(`date-fns`)
+const { isValid, parseISO } = require(`@stefanprobst/date-fns`)
 
 const isDate = string => isValid(parseISO(string))
 
