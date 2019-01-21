@@ -3,7 +3,7 @@ const createSortKey = require(`../create-sort-key`)
 describe(`createSortKey util`, () => {
   it(`creates a valid sort key from a selector`, () => {
     const selector = `foo.bar.baz`
-    const sortKey = createSortKey(selector, `.`)
+    const sortKey = createSortKey(selector, `_`)
     const expected = `foo_bar_baz`
     expect(sortKey).toBe(expected)
   })
