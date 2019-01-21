@@ -1,9 +1,9 @@
-const buildSelectionSet = require(`./build-selection-set`)
 const capitalize = require(`./capitalize`)
 const createFieldName = require(`./create-field-name`)
 const createSelector = require(`./create-selector`)
 const createSortKey = require(`./create-sort-key`)
 const createTypeName = require(`./create-type-name`)
+const extendSelectionSet = require(`./extend-selection-set`)
 const findAncestorNode = require(`./find-ancestor-node`)
 const getAbsolutePath = require(`./get-absolute-path`)
 const getBaseDir = require(`./get-base-dir`)
@@ -26,12 +26,12 @@ const withBaseDir = require(`./with-base-dir`)
 const { getParentNodeId, trackObjects } = require(`./node-tracking`)
 
 module.exports = {
-  buildSelectionSet,
   capitalize,
   createFieldName,
   createSelector,
   createSortKey,
   createTypeName,
+  extendSelectionSet,
   findAncestorNode,
   getAbsolutePath,
   getBaseDir,
