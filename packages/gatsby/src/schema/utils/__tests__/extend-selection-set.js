@@ -1,6 +1,6 @@
-const buildSelectionSet = require(`../build-selection-set`)
+const extendSelectionSet = require(`../extend-selection-set`)
 
-describe(`buildSelectionSet util`, () => {
+describe(`extendSelectionSet util`, () => {
   it(`adds projection fields to selection set`, () => {
     const selectionSet = {
       kind: `SelectionSet`,
@@ -18,7 +18,7 @@ describe(`buildSelectionSet util`, () => {
             selections: [
               {
                 kind: `Field`,
-                name: { kind: `Name`, value: `first` },
+                name: { kind: `Name`, value: `second_first` },
                 selectionSet: undefined,
               },
             ],
@@ -32,13 +32,13 @@ describe(`buildSelectionSet util`, () => {
             selections: [
               {
                 kind: `Field`,
-                name: { kind: `Name`, value: `first` },
+                name: { kind: `Name`, value: `third_first` },
                 selectionSet: {
                   kind: `SelectionSet`,
                   selections: [
                     {
                       kind: `Field`,
-                      name: { kind: `Name`, value: `second` },
+                      name: { kind: `Name`, value: `third_first_first` },
                       selectionSet: undefined,
                     },
                   ],
@@ -51,74 +51,22 @@ describe(`buildSelectionSet util`, () => {
     }
 
     const projection = {
-      fourth: true,
       third: {
-        first: {
-          first: true,
-          second: true,
+        third_first: {
+          third_first_first: true,
+          third_first_second: true,
         },
-        second: true,
-        third: {
-          first: true,
+        third_second: true,
+        third_third: {
+          third_third_first: true,
         },
       },
+      fourth: true,
     }
 
     const expected = {
       kind: `SelectionSet`,
       selections: [
-        {
-          kind: `Field`,
-          name: { kind: `Name`, value: `fourth` },
-          selectionSet: undefined,
-        },
-        {
-          kind: `Field`,
-          name: { kind: `Name`, value: `third` },
-          selectionSet: {
-            kind: `SelectionSet`,
-            selections: [
-              {
-                kind: `Field`,
-                name: { kind: `Name`, value: `first` },
-                selectionSet: {
-                  kind: `SelectionSet`,
-                  selections: [
-                    {
-                      kind: `Field`,
-                      name: { kind: `Name`, value: `first` },
-                      selectionSet: undefined,
-                    },
-                    {
-                      kind: `Field`,
-                      name: { kind: `Name`, value: `second` },
-                      selectionSet: undefined,
-                    },
-                  ],
-                },
-              },
-              {
-                kind: `Field`,
-                name: { kind: `Name`, value: `second` },
-                selectionSet: undefined,
-              },
-              {
-                kind: `Field`,
-                name: { kind: `Name`, value: `third` },
-                selectionSet: {
-                  kind: `SelectionSet`,
-                  selections: [
-                    {
-                      kind: `Field`,
-                      name: { kind: `Name`, value: `first` },
-                      selectionSet: undefined,
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
         {
           kind: `Field`,
           name: { kind: `Name`, value: `first` },
@@ -132,16 +80,69 @@ describe(`buildSelectionSet util`, () => {
             selections: [
               {
                 kind: `Field`,
-                name: { kind: `Name`, value: `first` },
+                name: { kind: `Name`, value: `second_first` },
                 selectionSet: undefined,
               },
             ],
           },
         },
+        {
+          kind: `Field`,
+          name: { kind: `Name`, value: `third` },
+          selectionSet: {
+            kind: `SelectionSet`,
+            selections: [
+              {
+                kind: `Field`,
+                name: { kind: `Name`, value: `third_first` },
+                selectionSet: {
+                  kind: `SelectionSet`,
+                  selections: [
+                    {
+                      kind: `Field`,
+                      name: { kind: `Name`, value: `third_first_first` },
+                      selectionSet: undefined,
+                    },
+                    {
+                      kind: `Field`,
+                      name: { kind: `Name`, value: `third_first_second` },
+                      selectionSet: undefined,
+                    },
+                  ],
+                },
+              },
+              {
+                kind: `Field`,
+                name: { kind: `Name`, value: `third_second` },
+                selectionSet: undefined,
+              },
+              {
+                kind: `Field`,
+                name: { kind: `Name`, value: `third_third` },
+                selectionSet: {
+                  kind: `SelectionSet`,
+                  selections: [
+                    {
+                      kind: `Field`,
+                      name: { kind: `Name`, value: `third_third_first` },
+                      selectionSet: undefined,
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: `Field`,
+          name: { kind: `Name`, value: `fourth` },
+          selectionSet: undefined,
+        },
       ],
     }
 
-    const result = buildSelectionSet(selectionSet, projection)
-    expect(result).toEqual(expected)
+    extendSelectionSet(selectionSet, projection)
+    // NOTE: selectionSet is mutated on purpose
+    expect(selectionSet).toEqual(expected)
   })
 })

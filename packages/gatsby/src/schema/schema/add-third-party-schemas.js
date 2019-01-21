@@ -1,7 +1,7 @@
 const { schemaComposer, TypeComposer } = require(`graphql-compose`)
 
 const { store } = require(`../../redux`)
-const { buildSelectionSet } = require(`../utils`)
+const { extendSelectionSet } = require(`../utils`)
 
 // TODO: Maybe use graphql-compose Resolver, which
 // would provides the projected fields out of the box.
@@ -16,7 +16,7 @@ const addProjectedFields = fields =>
         const { getProjectionFromAST } = require(`graphql-compose`)
         const projection = getProjectionFromAST(info)
         const { selectionSet } = info.fieldNodes[0]
-        info.fieldNodes[0] = buildSelectionSet(selectionSet, projection)
+        extendSelectionSet(selectionSet, projection)
         return resolve(source, args, context, info)
       },
     }
