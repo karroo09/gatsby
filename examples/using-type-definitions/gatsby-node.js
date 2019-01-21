@@ -33,13 +33,18 @@ exports.addResolvers = ({
   const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
   const { createNode } = actions
   const resolvers = {
-    GraphCMS: {
+    GraphCMS_BlogPost: {
       // Wrap the resolver on an existing field by providing a function.
       // The original resolver is available on `info.resolver`.
-      // This works fine if the returnType stays the same.
-      assets: async (source, args, context, info) => {
-        const results = await info.resolver(source, args, context, info)
-        return results
+      // This approach works fine if the returnType stays the same.
+      post: async (source, args, context, info) => {
+        const remark = require(`remark`)
+        const html = require(`remark-html`)
+        const result = await info.resolver(source, args, context, info)
+        // return a Promise with the markdown string converted to html
+        return remark()
+          .use(html)
+          .process(result)
       },
     },
     GraphCMS_Asset: {
