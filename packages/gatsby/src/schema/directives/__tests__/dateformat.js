@@ -1,6 +1,6 @@
 const { TypeComposer, schemaComposer } = require(`graphql-compose`)
 const { SchemaDirectiveVisitor } = require(`graphql-tools`)
-const { GraphQLString } = require(`graphql`)
+const { GraphQLString, GraphQLNonNull, GraphQLList } = require(`graphql`)
 
 const { directives, visitors } = require(`..`)
 const addResolvers = require(`../../schema/add-resolvers`)
@@ -11,6 +11,7 @@ const tc = TypeComposer.create(`
     formatted: Date @dateformat(formatString: "dd. MMMM yyyy", locale: "de")
     fromNow: Date @dateformat(fromNow: true, locale: "de")
     difference: Date @dateformat(difference: "2019-01-01")
+    many: [Date!]! @dateformat(formatString: "dd/MM/yyyy")
   }
 `)
 
@@ -47,6 +48,12 @@ describe(`@dateformat directive`, () => {
     expect(differenceDirective.arguments.map(arg => arg.name.value)).toEqual([
       `difference`,
     ])
+
+    const manyDirective = fields.many.astNode.directives[0]
+    expect(manyDirective.name.value).toBe(`dateformat`)
+    expect(manyDirective.arguments.map(arg => arg.name.value)).toEqual([
+      `formatString`,
+    ])
   })
 
   it(`adds input args to field`, () => {
@@ -71,6 +78,20 @@ describe(`@dateformat directive`, () => {
       `locale`,
       `timeZone`,
     ])
+    expect(fields.difference.args.map(arg => arg.name)).toEqual([
+      `difference`,
+      `formatString`,
+      `fromNow`,
+      `locale`,
+      `timeZone`,
+    ])
+    expect(fields.many.args.map(arg => arg.name)).toEqual([
+      `difference`,
+      `formatString`,
+      `fromNow`,
+      `locale`,
+      `timeZone`,
+    ])
   })
 
   it(`adds field resolver`, () => {
@@ -78,6 +99,7 @@ describe(`@dateformat directive`, () => {
     expect(fields.formatted.resolve).toBeInstanceOf(Function)
     expect(fields.fromNow.resolve).toBeInstanceOf(Function)
     expect(fields.difference.resolve).toBeInstanceOf(Function)
+    expect(fields.many.resolve).toBeInstanceOf(Function)
   })
 
   it(`sets field type to String`, () => {
@@ -85,6 +107,10 @@ describe(`@dateformat directive`, () => {
     expect(fields.formatted.type).toBe(GraphQLString)
     expect(fields.fromNow.type).toBe(GraphQLString)
     expect(fields.difference.type).toBe(GraphQLString)
+    expect(fields.many.type).toBeInstanceOf(GraphQLNonNull)
+    expect(fields.many.type.ofType).toBeInstanceOf(GraphQLList)
+    expect(fields.many.type.ofType.ofType).toBeInstanceOf(GraphQLNonNull)
+    expect(fields.many.type.ofType.ofType.ofType).toBe(GraphQLString)
   })
 
   it(`keeps Date type of input filter`, () => {
@@ -93,6 +119,7 @@ describe(`@dateformat directive`, () => {
     expect(filterFields[1].type.name).toBe(`DateQueryOperatorInput`)
     expect(filterFields[2].type.name).toBe(`DateQueryOperatorInput`)
     expect(filterFields[3].type.name).toBe(`DateQueryOperatorInput`)
+    expect(filterFields[4].type.name).toBe(`DateQueryOperatorInput`)
   })
 
   it(`uses default directive args`, async () => {
@@ -174,5 +201,19 @@ describe(`@dateformat directive`, () => {
       { fieldName: `date` }
     )
     expect(difference).toBe(`4 days ago`)
+  })
+
+  it(`handles arrays of dates`, async () => {
+    const dates = [
+      new Date(Date.UTC(2018, 0, 1)),
+      new Date(Date.UTC(2019, 0, 1)),
+    ]
+    const many = await fields.many.resolve(
+      { dates },
+      {},
+      {},
+      { fieldName: `dates` }
+    )
+    expect(many).toEqual([`01/01/2018`, `01/01/2019`])
   })
 })
