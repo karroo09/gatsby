@@ -59,7 +59,7 @@ describe(`Type inference`, () => {
     addInferredType(`Foo`)
     expect(getExampleValue).toHaveBeenCalledWith(
       expect.objectContaining({
-        ignoreFields: [`id`, `parent`, `children`, `internal`],
+        ignoreFields: [`id`, `parent`, `children`, `internal`, `$loki`],
       })
     )
   })
