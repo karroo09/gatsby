@@ -10,10 +10,6 @@ const {
 } = require(`../utils`)
 const { trackObjects } = require(`../utils/node-tracking`)
 
-const { emitter } = require(`../../redux`)
-let isBootstrapFinished = false
-emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
-
 const cache = new Map()
 const nodeCache = new Map()
 
@@ -96,7 +92,7 @@ const getNodesForQuery = async (
   if (!Object.keys(fields).length) return nodes
 
   let cacheKey
-  if (isProductionBuild || !isBootstrapFinished) {
+  if (isProductionBuild) {
     cacheKey = JSON.stringify({ typeName, count: nodes.length, fields })
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey)
@@ -129,7 +125,7 @@ const getNodesForQuery = async (
     })
   )
 
-  if (isProductionBuild || !isBootstrapFinished) {
+  if (isProductionBuild) {
     cache.set(cacheKey, queryNodes)
   }
 
