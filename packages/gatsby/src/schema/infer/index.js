@@ -9,7 +9,7 @@ const addInferredType = typeName => {
   const exampleValue = getExampleValue({
     nodes: getNodesByType(typeName),
     typeName,
-    ignoreFields: getNodeInterfaceFields(),
+    ignoreFields: [...getNodeInterfaceFields(), `$loki`],
   })
 
   const tc = schemaComposer.getOrCreateTC(typeName, tc => {
