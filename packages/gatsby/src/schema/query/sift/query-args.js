@@ -6,10 +6,7 @@ const { isObject, stringToRegExp } = require(`../../utils`)
 const prepareQueryArgs = filterFields =>
   Object.entries(filterFields).reduce((acc, [key, value]) => {
     if (isObject(value)) {
-      if (key === `elemMatch`) {
-        acc[`$elemMatch`] = prepareQueryArgs(value)
-      }
-      acc[key] = prepareQueryArgs(value)
+      acc[key === `elemMatch` ? `$elemMatch` : key] = prepareQueryArgs(value)
     } else {
       switch (key) {
         case `regex`:
@@ -25,13 +22,15 @@ const prepareQueryArgs = filterFields =>
     return acc
   }, {})
 
-const dropQueryOperators = filterFields =>
-  Object.entries(filterFields).reduce((acc, [key, value]) => {
-    if (key === `elemMatch`) {
-      const [k, v] = Object.entries(value)[0]
-      acc[k] = dropQueryOperators(v)
-    } else if (isObject(value) && isObject(Object.values(value)[0])) {
-      acc[key] = dropQueryOperators(value)
+const dropQueryOperators = filter =>
+  Object.entries(filter).reduce((acc, [key, value]) => {
+    const [k, v] = Object.entries(value)[0]
+    if (isObject(value) && isObject(v)) {
+      // If `elemMatch` has sibling fields, they are exactly the same as the
+      // fields on `elemMatch` (see `input/filter.js`), so we can just
+      // continue one level down.
+      acc[key] =
+        k === `elemMatch` ? dropQueryOperators(v) : dropQueryOperators(value)
     } else {
       acc[key] = true
     }
