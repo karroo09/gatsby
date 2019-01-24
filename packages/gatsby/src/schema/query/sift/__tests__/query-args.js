@@ -52,6 +52,72 @@ describe(`Drop query operators`, () => {
     }
     expect(dropQueryOperators(filter)).toEqual(expected)
   })
+
+  it(`handles elemMatch operator fields`, () => {
+    const filter = {
+      foo: {
+        elemMatch: {
+          foo: { eq: true },
+          bar: {
+            foo: { eq: true },
+            bar: {
+              foo: {
+                foo: { eq: true },
+              },
+              bar: { eq: true },
+            },
+            baz: {
+              elemMatch: {
+                foo: { eq: true },
+                bar: { eq: true },
+              },
+            },
+            qux: {
+              elemMatch: {
+                foo: {
+                  elemMatch: {
+                    foo: { eq: true },
+                    bar: {
+                      foo: { eq: true },
+                    },
+                  },
+                },
+                bar: { eq: true },
+              },
+            },
+          },
+        },
+      },
+    }
+    const expected = {
+      foo: {
+        foo: true,
+        bar: {
+          foo: true,
+          bar: {
+            foo: {
+              foo: true,
+            },
+            bar: true,
+          },
+          baz: {
+            foo: true,
+            bar: true,
+          },
+          qux: {
+            foo: {
+              foo: true,
+              bar: {
+                foo: true,
+              },
+            },
+            bar: true,
+          },
+        },
+      },
+    }
+    expect(dropQueryOperators(filter)).toEqual(expected)
+  })
 })
 
 describe(`Prepare query arguments for Sift`, () => {
@@ -102,5 +168,33 @@ describe(`Prepare query arguments for Sift`, () => {
     expect(result.foo.$regex).toBeInstanceOf(RegExp)
     expect(result.foo.$regex.test(`foo.png`)).toBeFalsy()
     expect(result.foo.$regex.test(`foo.png.bak`)).toBeTruthy()
+  })
+
+  it(`handles elemMatch operator fields`, () => {
+    const filter = {
+      foo: {
+        elemMatch: {
+          foo: {
+            elemMatch: {
+              foo: { eq: true },
+              bar: { eq: true },
+            },
+          },
+        },
+      },
+    }
+    const expected = {
+      foo: {
+        $elemMatch: {
+          foo: {
+            $elemMatch: {
+              foo: { $eq: true },
+              bar: { $eq: true },
+            },
+          },
+        },
+      },
+    }
+    expect(prepareQueryArgs(filter)).toEqual(expected)
   })
 })

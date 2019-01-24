@@ -31,12 +31,15 @@ const convert = itc => {
 
       if (type instanceof GraphQLInputObjectType) {
         const OperatorsInputTC = convert(new InputTypeComposer(type))
-        acc[fieldName] = OperatorsInputTC
 
         // TODO: array of arrays?
-        if (getNullableType(fieldConfig.type) instanceof GraphQLList) {
-          acc.elemMatch = OperatorsInputTC
+        const isListType =
+          getNullableType(fieldConfig.type) instanceof GraphQLList
+        if (isListType) {
+          OperatorsInputTC.addFields({ elemMatch: OperatorsInputTC })
         }
+
+        acc[fieldName] = OperatorsInputTC
       } else {
         // GraphQLScalarType || GraphQLEnumType
         const operatorFields = getQueryOperators(type)
