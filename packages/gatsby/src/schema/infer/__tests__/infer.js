@@ -2,33 +2,74 @@ const { TypeComposer, GraphQLJSON, schemaComposer } = require(`graphql-compose`)
 const { GraphQLBoolean, GraphQLList, GraphQLObjectType } = require(`graphql`)
 
 const { addInferredFields } = require(`../infer`)
-// const { getExampleValue } = require(`../example-value`)
 
-// TODO: Make sure we test all the fields we have in the example-value fixture
-
-// TODO: Make this a fixture, and use in all the tests.
-// FIXME: It's confusing to have this globally for this file, but only
-// use it in the first test
-let nodes = [
+const nodes = [
   {
-    id: 1,
+    id: `file1`,
     parent: null,
     internal: { type: `File` },
     dir: `/home/me/foo`,
   },
   {
-    id: 2,
-    parent: 1,
+    id: `foo1`,
+    parent: `file1`,
     internal: { type: `Foo` },
     filePath: `./bar/baz.txt`,
     filePaths: [[`./bar/baz.txt`]],
   },
   {
-    id: 3,
+    id: `file2`,
     parent: null,
     internal: { type: `File` },
     absolutePath: `/home/me/foo/bar/baz.txt`,
   },
+  {
+    id: `link1`,
+    internal: { type: `Link` },
+    linkedById: `link2`,
+    linkedByField: 1,
+    linkedByNestedField: 2,
+    linkeByNestedArray: 3,
+    linkByNestedArrayOfObjectsField: 4,
+    manyLinkedById: [`link2`],
+    manyLinkedByField: [1],
+    manyLinkedByNestedField: [2],
+    manyLinkeByNestedArray: [3],
+    manyLinkByNestedArrayOfObjectsField: [4],
+  },
+  {
+    id: `link2`,
+    internal: { type: `Linked` },
+    foo: 1,
+    nested: {
+      foo: 2,
+      array: [3],
+      arrayOfObjects: [{ foo: 4 }],
+    },
+  },
+  {
+    id: `linkNode1`,
+    internal: { type: `NodeLink` },
+    linkedById___NODE: `linkNode2`,
+    arrayId: [{ linkedById___NODE: `linkNode2` }],
+    manyLinkedById___NODE: [`linkNode2`],
+    manyArrayId: [{ manyLinkedById___NODE: [`linkNode2`] }],
+    linkedByField___NODE___field: 1,
+    arrayField: [{ linkedByField___NODE___field: 1 }],
+    manyLinkedByField___NODE___field: [1],
+    manyArrayField: [{ manyLinkedByField___NODE___field: [1] }],
+  },
+  {
+    id: `linkNode2`,
+    internal: { type: `NodeLinked` },
+    field: 1,
+  },
+  {
+    id: `linkNodeName1`,
+    ünvälid___NODE: `linkNodeName2`,
+    internal: { type: `LinkNode` },
+  },
+  { id: `linkNodeName2`, internal: { type: `LinkedNode` } },
 ]
 
 const { getById, getNodesByType, getNodes } = require(`../../db`)
@@ -133,25 +174,6 @@ describe(`Type inference`, () => {
       .getFieldTC(`bar`)
       .getFieldTC(`qux`)
     expect(addedType.getTypeName()).toBe(`BazFooBarQux`)
-  })
-
-  it(`infers File type from filepath if filepath exists in db`, () => {
-    const exampleValue = nodes[1]
-
-    const typeName = `Foo`
-    const tc = TypeComposer.createTemp(typeName)
-
-    addInferredFields(tc, exampleValue, typeName)
-
-    const filePathField = tc.getField(`filePath`)
-    expect(filePathField.type).toBe(`File`)
-    // expect(typeof filePathField.resolve).toBe(`function`)
-    expect(filePathField.resolve).toBeInstanceOf(Function)
-
-    const filePathsField = tc.getField(`filePaths`)
-    expect(filePathsField.type).toEqual([[`File`]])
-    // expect(typeof filePathsField.resolve).toBe(`function`)
-    expect(filePathsField.resolve).toBeInstanceOf(Function)
   })
 
   it(`extends existing types`, () => {
@@ -286,7 +308,7 @@ describe(`Type inference`, () => {
     const exampleValue = { foo: { bar: { baz: { qux: { foo: true } } } } }
 
     const typeName = `Foo`
-    const tc = TypeComposer.create(typeName)
+    const tc = TypeComposer.createTemp(typeName)
 
     addInferredFields(tc, exampleValue, typeName)
 
@@ -298,20 +320,38 @@ describe(`Type inference`, () => {
     expect(addedType).toBe(GraphQLJSON)
   })
 
-  it(`does not infer File types when File is not registered`, () => {
-    schemaComposer.delete(`File`)
+  describe(`File type inference`, () => {
+    it(`infers File type from filepath if filepath exists in db`, () => {
+      const exampleValue = getById(`foo1`)
 
-    const exampleValue = nodes[1]
+      const typeName = `Foo`
+      const tc = TypeComposer.createTemp(typeName)
+      addInferredFields(tc, exampleValue, typeName)
 
-    const typeName = `Foo`
-    const tc = TypeComposer.createTemp(typeName)
-    addInferredFields(tc, exampleValue, typeName)
+      const filePathField = tc.getField(`filePath`)
+      expect(filePathField.type).toBe(`File`)
+      expect(filePathField.resolve).toBeInstanceOf(Function)
 
-    const filePathField = tc.getField(`filePath`)
-    expect(filePathField.type).toBe(`String`)
+      const filePathsField = tc.getField(`filePaths`)
+      expect(filePathsField.type).toEqual([[`File`]])
+      expect(filePathsField.resolve).toBeInstanceOf(Function)
+    })
 
-    const filePathsField = tc.getField(`filePaths`)
-    expect(filePathsField.type).toEqual([[`String`]])
+    it(`does not infer File types when File is not registered`, () => {
+      schemaComposer.delete(`File`)
+
+      const exampleValue = getById(`foo1`)
+
+      const typeName = `Foo`
+      const tc = TypeComposer.createTemp(typeName)
+      addInferredFields(tc, exampleValue, typeName)
+
+      const filePathField = tc.getField(`filePath`)
+      expect(filePathField.type).toBe(`String`)
+
+      const filePathsField = tc.getField(`filePaths`)
+      expect(filePathsField.type).toEqual([[`String`]])
+    })
   })
 
   describe(`handles mappings defined in gatsby-config.js`, () => {
@@ -334,39 +374,16 @@ describe(`Type inference`, () => {
       },
     })
 
-    const linkExampleValue = {
-      id: `link1`,
-      internal: { type: `Link` },
-      linkedById: `link2`,
-      linkedByField: 1,
-      linkedByNestedField: 2,
-      linkeByNestedArray: 3,
-      linkByNestedArrayOfObjectsField: 4,
-      manyLinkedById: [`link2`],
-      manyLinkedByField: [1],
-      manyLinkedByNestedField: [2],
-      manyLinkeByNestedArray: [3],
-      manyLinkByNestedArrayOfObjectsField: [4],
-    }
+    const linkExampleValue = getById(`link1`)
     const linkTypeName = `Link`
     const LinkTC = TypeComposer.create(linkTypeName)
 
-    const linkedExampleValue = {
-      id: `link2`,
-      internal: { type: `Linked` },
-      foo: 1,
-      nested: {
-        foo: 2,
-        array: [3],
-        arrayOfObjects: [{ foo: 4 }],
-      },
-    }
+    const linkedExampleValue = getById(`link2`)
     const linkedTypeName = `Linked`
     const LinkedTC = TypeComposer.create(linkedTypeName)
 
     addInferredFields(LinkTC, linkExampleValue, linkTypeName)
     addInferredFields(LinkedTC, linkedExampleValue, linkedTypeName)
-    nodes = [linkExampleValue, linkedExampleValue]
 
     it(`infers correct type of foreign-key fields`, () => {
       const linkFields = LinkTC.getFields()
@@ -429,36 +446,15 @@ describe(`Type inference`, () => {
     })
   })
 
-  describe.only(`handles foreign-key fields with ___NODE convention`, () => {
-    const linkExampleValue = {
-      id: `linkNode1`,
-      internal: { type: `NodeLink` },
-      linkedById___NODE: `linkNode2`,
-      arrayId: [{ linkedById___NODE: `linkNode2` }],
-      manyLinkedById___NODE: [`linkNode2`],
-      manyArrayId: [{ manyLinkedById___NODE: [`linkNode2`] }],
-      linkedByField___NODE___field: 1,
-      arrayField: [{ linkedByField___NODE___field: 1 }],
-      manyLinkedByField___NODE___field: [1],
-      manyArrayField: [{ manyLinkedByField___NODE___field: [1] }],
-    }
+  describe(`handles foreign-key fields with ___NODE convention`, () => {
+    const linkExampleValue = getById(`linkNode1`)
     const linkTypeName = `NodeLink`
     const LinkTC = TypeComposer.create(linkTypeName)
 
-    const linkedExampleValue = {
-      id: `linkNode2`,
-      internal: { type: `NodeLinked` },
-      field: 1,
-      // nested: {
-      //   foo: 2,
-      //   array: [3],
-      //   arrayOfObjects: [{ foo: 4 }],
-      // },
-    }
+    const linkedExampleValue = getById(`linkNode2`)
     const linkedTypeName = `NodeLinked`
     const LinkedTC = TypeComposer.create(linkedTypeName)
 
-    nodes = [linkExampleValue, linkedExampleValue]
     addInferredFields(LinkTC, linkExampleValue, linkTypeName)
     addInferredFields(LinkedTC, linkedExampleValue, linkedTypeName)
 
@@ -543,9 +539,9 @@ describe(`Type inference`, () => {
       expect(resolve).toBeInstanceOf(Function)
 
       let result
-      result = resolve({ ünvälid: `foo` }, {}, {}, { fieldName: `_nv_alid` })
+      result = resolve({ ünvälid: `foo` }, {}, {}, { fieldName: `_nv_lid` })
       expect(result).toBe(`foo`)
-      result = resolve({ _nv_alid: `foo` }, {}, {}, { fieldName: `_nv_alid` })
+      result = resolve({ _nv_alid: `foo` }, {}, {}, { fieldName: `_nv_lid` })
       expect(result).toBeUndefined()
     })
 
@@ -567,6 +563,47 @@ describe(`Type inference`, () => {
       const fn = () => addInferredFields(tc, exampleValue, typeName)
 
       expect(fn).toThrow()
+    })
+
+    it(`converts invalid characters in ___NODE fields to underscores`, () => {
+      const exampleValue = { ünvälid___NODE: `linkNodeName2` }
+
+      const typeName = `Foo`
+      const tc = TypeComposer.createTemp(typeName)
+      addInferredFields(tc, exampleValue, typeName)
+
+      expect(tc.hasField(`_nv_lid`)).toBeTruthy()
+      expect(tc.hasField(`ünvälid`)).toBeFalsy()
+      expect(tc.hasField(`ünvälid___NODE`)).toBeFalsy()
+    })
+
+    it(`adds a proxy resolver on ___NODE fields to the original field name`, async () => {
+      const linkNode = getById(`linkNodeName1`)
+      const linkTypeName = `LinkNode`
+      const LinkTC = TypeComposer.create(linkTypeName)
+
+      const linkedNode = getById(`linkNodeName2`)
+      const linkedTypeName = `LinkedNode`
+      const LinkedTC = TypeComposer.create(linkedTypeName)
+
+      addInferredFields(LinkTC, linkNode, linkTypeName)
+      addInferredFields(LinkedTC, linkedNode, linkedTypeName)
+
+      schemaComposer.Query.addFields({ link: LinkTC, linked: LinkedTC })
+      const schema = schemaComposer.buildSchema()
+      const returnType = LinkedTC
+
+      const { resolve } = LinkTC.getFieldConfig(`_nv_lid`)
+      expect(resolve).toBeInstanceOf(Function)
+
+      let result
+      result = await resolve(
+        linkNode,
+        {},
+        {},
+        { fieldName: `_nv_lid`, returnType, schema }
+      )
+      expect(result).toBe(linkedNode)
     })
   })
 })

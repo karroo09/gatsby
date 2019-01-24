@@ -56,7 +56,7 @@ const getFieldConfigFromFieldNameConvention = (value, selector, key) => {
 
   invariant(
     linkedTypes.length,
-    `Could not infer a GraphQL type for the field ${selector}.`
+    `Could not infer a GraphQL type for the field ${selector}.${key}.`
   )
 
   let type
@@ -174,6 +174,8 @@ const addInferredFields = (tc, obj, prefix, depth = 0) => {
 
       let fieldConfig
       if (hasMapping(selector)) {
+        // TODO: Use prefix instead of selector in hasMapping and getFromMapping?
+        // i.e. does the config contain sanitized field names?
         fieldConfig = getFieldConfigFromMapping(selector)
       } else if (key.includes(`___NODE`)) {
         fieldConfig = getFieldConfigFromFieldNameConvention(
