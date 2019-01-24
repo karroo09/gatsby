@@ -5,10 +5,6 @@ const { reportConflict } = require(`../type-conflict-reporter`)
 jest.mock(`../type-conflict-reporter`)
 
 describe(`Example value`, () => {
-  // beforeEach(() => {
-  //   clearExampleValueCache()
-  // })
-
   const exampleValue = getExampleValue({ nodes })
 
   it(`builds correct example value from array of nodes`, () => {
@@ -43,7 +39,33 @@ describe(`Example value`, () => {
     expect(exampleValueWithIgnoredFields.object.date).toBeDefined()
   })
 
-  // Also tested with snapshot
+  it(`keeps all array values on ___NODE foreign-key fields`, () => {
+    // We do this so we can later infer a GraphQLUnionType. Note that we only
+    // collect all values from arrays.
+    const nodes = [
+      {
+        noUnion___NODE: `foo`,
+        unions___NODE: [`foo`, `bar`],
+        arrayOfNoUnion: [{ union___NODE: `foo` }, { union___NODE: `bar` }],
+        arrayOfUnions: [{ union___NODE: [`foo`] }, { union___NODE: [`bar`] }],
+      },
+      {
+        noUnion___NODE: `baz`,
+        unions___NODE: [`baz`, `qux`],
+        arrayOfNoUnion: [{ union___NODE: `baz` }, { union___NODE: `qux` }],
+        arrayOfUnions: [{ union___NODE: [`baz`] }, { union___NODE: [`qux`] }],
+      },
+    ]
+    const exampleValue = getExampleValue({ nodes, typeName: `ForeignKey` })
+    expect(exampleValue.noUnion___NODE).toBe(`foo`)
+    expect(exampleValue.unions___NODE).toEqual([`foo`, `bar`, `baz`, `qux`])
+    expect(exampleValue.arrayOfNoUnion).toEqual([{ union___NODE: `foo` }])
+    expect(exampleValue.arrayOfUnions).toEqual([
+      { union___NODE: [`foo`, `bar`, `baz`, `qux`] },
+    ])
+  })
+
+  // Also tested with snapshot:
 
   it(`skips null fields`, () => {
     expect(exampleValue.null).toBeUndefined()
