@@ -9,6 +9,7 @@ const {
 const addResolvers = tc => {
   const typeName = tc.getTypeName()
   const [filter, sort, fields] = getInputArgs(tc)
+  // TODO: Also add `findById` and `findByIds`, and add them as root query fields?
   tc.addResolver({
     name: `findOne`,
     type: tc,

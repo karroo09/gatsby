@@ -1,4 +1,9 @@
-const { getNamedType, GraphQLInputObjectType } = require(`graphql`)
+const {
+  getNamedType,
+  getNullableType,
+  GraphQLInputObjectType,
+  GraphQLList,
+} = require(`graphql`)
 const { InputTypeComposer } = require(`graphql-compose`)
 
 const { getQueryOperators } = require(`../query`)
@@ -25,7 +30,13 @@ const convert = itc => {
       const type = getNamedType(fieldConfig.type)
 
       if (type instanceof GraphQLInputObjectType) {
-        acc[fieldName] = convert(new InputTypeComposer(type))
+        const OperatorsInputTC = convert(new InputTypeComposer(type))
+        acc[fieldName] = OperatorsInputTC
+
+        // TODO: array of arrays?
+        if (getNullableType(fieldConfig.type) instanceof GraphQLList) {
+          acc.elemMatch = OperatorsInputTC
+        }
       } else {
         // GraphQLScalarType || GraphQLEnumType
         const operatorFields = getQueryOperators(type)
@@ -33,6 +44,7 @@ const convert = itc => {
           acc[fieldName] = operatorFields
         }
       }
+
       return acc
     },
     {}
