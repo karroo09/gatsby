@@ -121,6 +121,15 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
       const exampleObject = getExampleObject(objects, selector)
       if (!Object.keys(exampleObject).length) return acc
       exampleFieldValue = exampleObject
+    } else if (key.includes(`___NODE`) && arrayWrappers) {
+      // For arrays on ___NODE foreign-key fields we return all values,
+      // because the array values are allowed to link to nodes of different types.
+      // For those we will create a GraphQLUnionType later.
+      arrayWrappers--
+      exampleFieldValue = entries.reduce(
+        (acc, entry) => acc.concat(entry.value),
+        []
+      )
     } else {
       // FIXME: Why not simply treat every number as float (instead of looping through all values again)?
       exampleFieldValue =

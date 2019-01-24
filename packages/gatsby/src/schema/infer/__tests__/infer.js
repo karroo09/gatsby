@@ -9,7 +9,7 @@ const { addInferredFields } = require(`../infer`)
 // TODO: Make this a fixture, and use in all the tests.
 // FIXME: It's confusing to have this globally for this file, but only
 // use it in the first test
-const nodes = [
+let nodes = [
   {
     id: 1,
     parent: null,
@@ -31,12 +31,13 @@ const nodes = [
   },
 ]
 
-const { getById, getNodesByType } = require(`../../db`)
-jest.mock(`../../db`) // TODO: Maybe jest.mock(`../../db`, () => ({ getById: jest.fn().mockImplementation(/* ... */) }))
-getById.mockImplementation(id => nodes.find(n => n.id === id))
+const { getById, getNodesByType, getNodes } = require(`../../db`)
+jest.mock(`../../db`)
+getById.mockImplementation(id => nodes.find(node => node.id === id))
 getNodesByType.mockImplementation(type =>
-  nodes.filter(n => n.internal.type === type)
+  nodes.filter(node => node.internal.type === type)
 )
+getNodes.mockImplementation(() => nodes)
 
 TypeComposer.create(`File`)
 
@@ -135,7 +136,7 @@ describe(`Type inference`, () => {
   })
 
   it(`infers File type from filepath if filepath exists in db`, () => {
-    const exampleValue = nodes[1] // FIXME:
+    const exampleValue = nodes[1]
 
     const typeName = `Foo`
     const tc = TypeComposer.createTemp(typeName)
@@ -311,6 +312,212 @@ describe(`Type inference`, () => {
 
     const filePathsField = tc.getField(`filePaths`)
     expect(filePathsField.type).toEqual([[`String`]])
+  })
+
+  describe(`handles mappings defined in gatsby-config.js`, () => {
+    const { store } = require(`../../../redux`)
+    store.dispatch({
+      type: `SET_SITE_CONFIG`,
+      payload: {
+        mapping: {
+          [`Link.linkedById`]: `Linked`,
+          [`Link.linkedByField`]: `Linked.foo`,
+          [`Link.linkedByNestedField`]: `Linked.nested.foo`,
+          [`Link.linkeByNestedArray`]: `Linked.nested.array`,
+          [`Link.linkByNestedArrayOfObjectsField`]: `Linked.nested.arrayOfObjects.foo`,
+          [`Link.manyLinkedById`]: `Linked`,
+          [`Link.manyLinkedByField`]: `Linked.foo`,
+          [`Link.manyLinkedByNestedField`]: `Linked.nested.foo`,
+          [`Link.manyLinkeByNestedArray`]: `Linked.nested.array`,
+          [`Link.manyLinkByNestedArrayOfObjectsField`]: `Linked.nested.arrayOfObjects.foo`,
+        },
+      },
+    })
+
+    const linkExampleValue = {
+      id: `link1`,
+      internal: { type: `Link` },
+      linkedById: `link2`,
+      linkedByField: 1,
+      linkedByNestedField: 2,
+      linkeByNestedArray: 3,
+      linkByNestedArrayOfObjectsField: 4,
+      manyLinkedById: [`link2`],
+      manyLinkedByField: [1],
+      manyLinkedByNestedField: [2],
+      manyLinkeByNestedArray: [3],
+      manyLinkByNestedArrayOfObjectsField: [4],
+    }
+    const linkTypeName = `Link`
+    const LinkTC = TypeComposer.create(linkTypeName)
+
+    const linkedExampleValue = {
+      id: `link2`,
+      internal: { type: `Linked` },
+      foo: 1,
+      nested: {
+        foo: 2,
+        array: [3],
+        arrayOfObjects: [{ foo: 4 }],
+      },
+    }
+    const linkedTypeName = `Linked`
+    const LinkedTC = TypeComposer.create(linkedTypeName)
+
+    addInferredFields(LinkTC, linkExampleValue, linkTypeName)
+    addInferredFields(LinkedTC, linkedExampleValue, linkedTypeName)
+    nodes = [linkExampleValue, linkedExampleValue]
+
+    it(`infers correct type of foreign-key fields`, () => {
+      const linkFields = LinkTC.getFields()
+      expect(linkFields.linkedById.type).toBe(`Linked`)
+      expect(linkFields.linkedByField.type).toBe(`Linked`)
+      expect(linkFields.linkedByNestedField.type).toBe(`Linked`)
+      expect(linkFields.linkeByNestedArray.type).toBe(`Linked`)
+      expect(linkFields.linkByNestedArrayOfObjectsField.type).toBe(`Linked`)
+      expect(linkFields.manyLinkedById.type).toEqual([`Linked`])
+      expect(linkFields.manyLinkedByField.type).toEqual([`Linked`])
+      expect(linkFields.manyLinkedByNestedField.type).toEqual([`Linked`])
+      expect(linkFields.manyLinkeByNestedArray.type).toEqual([`Linked`])
+      expect(linkFields.manyLinkByNestedArrayOfObjectsField.type).toEqual([
+        `Linked`,
+      ])
+    })
+
+    it(`adds resolvers`, async () => {
+      const linkFields = LinkTC.getFields()
+      const returnType = LinkedTC.getType()
+      const returnTypeList = LinkedTC.getTypePlural()
+      schemaComposer.Query.addFields({ link: LinkTC, linked: LinkedTC })
+      const schema = schemaComposer.buildSchema()
+
+      const getResult = async fieldName => {
+        const resolver = linkFields[fieldName].resolve
+        expect(resolver).toBeInstanceOf(Function)
+        return resolver(
+          linkExampleValue,
+          {},
+          {},
+          {
+            fieldName,
+            returnType: fieldName.startsWith(`many`)
+              ? returnTypeList
+              : returnType,
+            schema,
+          }
+        )
+      }
+
+      expect(await getResult(`linkedById`)).toEqual(linkedExampleValue)
+      expect(await getResult(`linkedByField`)).toEqual(linkedExampleValue)
+      expect(await getResult(`linkedByNestedField`)).toEqual(linkedExampleValue)
+      expect(await getResult(`linkeByNestedArray`)).toEqual(linkedExampleValue)
+      expect(await getResult(`linkByNestedArrayOfObjectsField`)).toEqual(
+        linkedExampleValue
+      )
+      expect(await getResult(`manyLinkedById`)).toEqual([linkedExampleValue])
+      expect(await getResult(`manyLinkedByField`)).toEqual([linkedExampleValue])
+      expect(await getResult(`manyLinkedByNestedField`)).toEqual([
+        linkedExampleValue,
+      ])
+      expect(await getResult(`manyLinkeByNestedArray`)).toEqual([
+        linkedExampleValue,
+      ])
+      expect(await getResult(`manyLinkByNestedArrayOfObjectsField`)).toEqual([
+        linkedExampleValue,
+      ])
+    })
+  })
+
+  describe.only(`handles foreign-key fields with ___NODE convention`, () => {
+    const linkExampleValue = {
+      id: `linkNode1`,
+      internal: { type: `NodeLink` },
+      linkedById___NODE: `linkNode2`,
+      arrayId: [{ linkedById___NODE: `linkNode2` }],
+      manyLinkedById___NODE: [`linkNode2`],
+      manyArrayId: [{ manyLinkedById___NODE: [`linkNode2`] }],
+      linkedByField___NODE___field: 1,
+      arrayField: [{ linkedByField___NODE___field: 1 }],
+      manyLinkedByField___NODE___field: [1],
+      manyArrayField: [{ manyLinkedByField___NODE___field: [1] }],
+    }
+    const linkTypeName = `NodeLink`
+    const LinkTC = TypeComposer.create(linkTypeName)
+
+    const linkedExampleValue = {
+      id: `linkNode2`,
+      internal: { type: `NodeLinked` },
+      field: 1,
+      // nested: {
+      //   foo: 2,
+      //   array: [3],
+      //   arrayOfObjects: [{ foo: 4 }],
+      // },
+    }
+    const linkedTypeName = `NodeLinked`
+    const LinkedTC = TypeComposer.create(linkedTypeName)
+
+    nodes = [linkExampleValue, linkedExampleValue]
+    addInferredFields(LinkTC, linkExampleValue, linkTypeName)
+    addInferredFields(LinkedTC, linkedExampleValue, linkedTypeName)
+
+    it(`infers correct type of foreign-key fields and strips postfix from field name`, () => {
+      const {
+        linkedById,
+        arrayId,
+        manyLinkedById,
+        manyArrayId,
+        linkedByField,
+        arrayField,
+        manyLinkedByField,
+        manyArrayField,
+      } = LinkTC.getFields()
+      expect(linkedById.type).toBe(`NodeLinked`)
+      expect(arrayId.type[0].getFields().linkedById.type).toBe(`NodeLinked`)
+      expect(manyLinkedById.type).toEqual([`NodeLinked`])
+      expect(manyArrayId.type[0].getFields().manyLinkedById.type).toEqual([
+        `NodeLinked`,
+      ])
+      expect(linkedByField.type).toBe(`NodeLinked`)
+      expect(arrayField.type[0].getFields().linkedByField.type).toBe(
+        `NodeLinked`
+      )
+      expect(manyLinkedByField.type).toEqual([`NodeLinked`])
+      expect(manyArrayField.type[0].getFields().manyLinkedByField.type).toEqual(
+        [`NodeLinked`]
+      )
+    })
+
+    it(`adds resolvers`, async () => {
+      const linkFields = LinkTC.getFields()
+      const returnType = LinkedTC.getType()
+      const returnTypeList = LinkedTC.getTypePlural()
+      schemaComposer.Query.addFields({ link: LinkTC, linked: LinkedTC })
+      const schema = schemaComposer.buildSchema()
+
+      const getResult = async fieldName => {
+        const resolver = linkFields[fieldName].resolve
+        expect(resolver).toBeInstanceOf(Function)
+        return resolver(
+          linkExampleValue,
+          {},
+          {},
+          {
+            fieldName,
+            returnType: fieldName.startsWith(`many`)
+              ? returnTypeList
+              : returnType,
+            schema,
+          }
+        )
+      }
+
+      expect(await getResult(`linkedById`)).toEqual(linkedExampleValue)
+      expect(await getResult(`manyLinkedById`)).toEqual([linkedExampleValue])
+      expect(await getResult(`linkedByField`)).toEqual(linkedExampleValue)
+      expect(await getResult(`manyLinkedByField`)).toEqual([linkedExampleValue])
+    })
   })
 
   describe(`Invalid characters in field name`, () => {

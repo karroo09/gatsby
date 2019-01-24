@@ -11,7 +11,7 @@ const { isObject } = require(`../utils`)
 // FIXME: Handle array of arrays
 // Maybe TODO: should we check fieldValue *and* info.returnType?
 const link = ({ by, from }) => async (source, args, context, info) => {
-  const fieldValue = source[from || info.fieldName]
+  const fieldValue = source && source[from || info.fieldName]
 
   if (fieldValue == null || isObject(fieldValue)) return fieldValue
   if (
