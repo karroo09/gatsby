@@ -12,7 +12,10 @@ const {
   GraphQLString,
 } = require(`graphql`)
 
-const getQueryOperators = require(`../query-operators`)
+const {
+  getQueryOperators,
+  getListQueryOperator,
+} = require(`../query-operators`)
 
 describe(`Get query operators`, () => {
   it(`gets operator fields for built-in scalars (except JSON)`, () => {
@@ -116,5 +119,13 @@ describe(`Get query operators`, () => {
     expect(operatorFields.getFieldNames()).toEqual([`eq`, `ne`, `in`, `nin`])
     expect(operatorFields.getFieldType(`eq`)).toBeInstanceOf(GraphQLEnumType)
     expect(operatorFields.getFieldType(`eq`).name).toBe(`BarEnum`)
+  })
+
+  it(`creates a query operator type for list fields`, () => {
+    const itc = InputTypeComposer.create(`input FooInput { foo: Boolean }`)
+    const ListITC = getListQueryOperator(itc)
+    expect(ListITC.getFieldNames()).toEqual([`elemMatch`, `foo`])
+    expect(ListITC.getFieldTC(`elemMatch`).getTypeName()).toBe(`FooInput`)
+    expect(ListITC.getFieldTC(`elemMatch`).getFieldNames()).toEqual([`foo`])
   })
 })

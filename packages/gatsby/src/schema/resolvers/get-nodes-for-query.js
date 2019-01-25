@@ -92,7 +92,7 @@ const getNodesForQuery = async (
   const { group, distinct } = projection || {}
 
   const filterFields = filter ? dropQueryOperators(filter) : {}
-  const sortFields = sort ? sort.fields : []
+  const sortFields = (sort && sort.fields) || []
 
   const fields = merge(
     filterFields,

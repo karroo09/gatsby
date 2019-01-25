@@ -60,13 +60,25 @@ describe(`Filter input`, () => {
   })
 
   it(`adds query operator fields for nested fields`, () => {
-    expect(filter.getFieldTC(`nested`).getFieldNames()).toEqual([`bool`])
+    expect(filter.getFieldTC(`nested`).getFieldNames()).toEqual([
+      `elemMatch`,
+      `bool`,
+    ])
     expect(
       filter
         .getFieldTC(`nested`)
         .getFieldTC(`bool`)
         .getFieldNames()
     ).toEqual(operators.bool)
+  })
+
+  it(`adds query operator field for arrays of objects`, () => {
+    expect(
+      filter
+        .getFieldTC(`nested`)
+        .getFieldTC(`elemMatch`)
+        .getFieldNames()
+    ).toEqual([`bool`])
   })
 
   it(`adds query operator fields for enum fields`, () => {
@@ -93,9 +105,9 @@ describe(`Filter input`, () => {
     expect(filter.getFieldType(`children`)).toBeInstanceOf(
       GraphQLInputObjectType
     )
-    expect(filter.getFieldType(`children`).name).toBe(`NodeInput`)
+    expect(filter.getFieldType(`children`).name).toBe(`NodeListInput`)
     expect(filter.getFieldTC(`children`).getFieldNames()).toEqual(
-      nodeInterfaceFields
+      expect.arrayContaining([...nodeInterfaceFields, `elemMatch`])
     )
 
     expect(filter.getFieldType(`internal`)).toBeInstanceOf(
