@@ -1,4 +1,4 @@
-const { schemaComposer } = require(`graphql-compose`)
+const { schemaComposer, InputTypeComposer } = require(`graphql-compose`)
 const { GraphQLEnumType } = require(`graphql`)
 
 const EQ = `eq`
@@ -16,7 +16,7 @@ const GLOB = `glob`
 //        Currently, we just omit them.
 // FIXME: Which enum operators?
 const allowedOperators = {
-  Boolean: [EQ, NE],
+  Boolean: [EQ, NE], // TODO: IN?, NIN? @see #11197
   Date: [EQ, NE, GT, GTE, LT, LTE, IN, NIN],
   Float: [EQ, NE, GT, GTE, LT, LTE, IN, NIN],
   ID: [EQ, NE, IN, NIN],
@@ -38,7 +38,7 @@ const getOperatorFields = (fieldType, operators) =>
 
 const getQueryOperators = type => {
   const operators =
-    // FIXME: Do we have to check for EnumTypeComposer as well?
+    // FIXME: Do we have to check for `EnumTypeComposer` as well?
     allowedOperators[type instanceof GraphQLEnumType ? `Enum` : type.name]
   return operators
     ? schemaComposer.getOrCreateITC(type.name + `QueryOperatorInput`, itc =>
@@ -47,4 +47,21 @@ const getQueryOperators = type => {
     : null
 }
 
-module.exports = getQueryOperators
+const getListQueryOperator = itc => {
+  const typeName = itc.getTypeName().replace(/Input$/, `ListInput`)
+  // We cannot use `schemaComposer.getOrCreateITC` here because we need to delay
+  // field creation with a thunk.
+  return schemaComposer.has(typeName)
+    ? schemaComposer.getITC(typeName)
+    : InputTypeComposer.create({
+        name: typeName,
+        fields: () => ({
+          // TODO: Should the `elemMatch` field get a new type with a name
+          // ending in `ListQueryOperatorInput`?
+          elemMatch: itc,
+          ...itc.getFields(),
+        }),
+      })
+}
+
+module.exports = { getListQueryOperator, getQueryOperators }

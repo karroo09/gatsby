@@ -6,7 +6,7 @@ const {
 } = require(`graphql`)
 const { InputTypeComposer } = require(`graphql-compose`)
 
-const { getQueryOperators } = require(`../query`)
+const { getListQueryOperator, getQueryOperators } = require(`../query`)
 
 const cache = new Map()
 
@@ -35,11 +35,11 @@ const convert = itc => {
         // TODO: array of arrays?
         const isListType =
           getNullableType(fieldConfig.type) instanceof GraphQLList
-        if (isListType) {
-          OperatorsInputTC.addFields({ elemMatch: OperatorsInputTC })
-        }
 
-        acc[fieldName] = OperatorsInputTC
+        // elemMatch operator
+        acc[fieldName] = isListType
+          ? getListQueryOperator(OperatorsInputTC)
+          : OperatorsInputTC
       } else {
         // GraphQLScalarType || GraphQLEnumType
         const operatorFields = getQueryOperators(type)

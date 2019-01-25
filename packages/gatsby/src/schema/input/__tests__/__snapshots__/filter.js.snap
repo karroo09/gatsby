@@ -88,9 +88,10 @@ Array [
     "field": "nested",
     "type": Object {
       "fields": Array [
+        "elemMatch",
         "bool",
       ],
-      "name": "FooNestedInput",
+      "name": "FooNestedListInput",
     },
   },
   Object {
@@ -133,12 +134,13 @@ Array [
     "field": "children",
     "type": Object {
       "fields": Array [
+        "elemMatch",
         "id",
         "parent",
         "children",
         "internal",
       ],
-      "name": "NodeInput",
+      "name": "NodeListInput",
     },
   },
   Object {

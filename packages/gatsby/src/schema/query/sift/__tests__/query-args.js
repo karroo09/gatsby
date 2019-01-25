@@ -84,9 +84,17 @@ describe(`Drop query operators`, () => {
                 },
                 bar: { eq: true },
               },
+              foo: {
+                bar: {
+                  foo: { eq: true },
+                  bar: { eq: true },
+                },
+              },
+              bar: { eq: true },
             },
           },
         },
+        foo: { eq: true },
       },
     }
     const expected = {
@@ -109,6 +117,7 @@ describe(`Drop query operators`, () => {
               foo: true,
               bar: {
                 foo: true,
+                bar: true,
               },
             },
             bar: true,
