@@ -10,7 +10,7 @@ const {
 const { SchemaDirectiveVisitor } = require(`graphql-tools`)
 const {
   format,
-  formatDistance,
+  formatDistanceStrict,
   formatRelative,
   isValid,
   parseISO,
@@ -25,7 +25,13 @@ const convertFormatString = str =>
   // `DD` refers to day of year, not day of month (this would be `dd`).
   // This would be a breaking change, so we emulate the old behavior here.
   // @see https://git.io/fxCyr
-  str && str.replace(/D/g, `d`).replace(/Y/g, `y`)
+  str &&
+  str
+    // FIXME: We cannot enable this if we want to support both
+    // momentjs and date-fns formatting at the same time.
+    // .replace(/d/g, `i`)
+    .replace(/D/g, `d`)
+    .replace(/YY/g, `yy`)
 
 const toDate = date => (typeof date === `string` ? parseISO(date) : date)
 
@@ -45,8 +51,10 @@ const formatDate = (
   }
   const baseDate = toDate(difference)
   if (isValid(baseDate)) {
-    // TODO: Use formatDistanceStrict?
-    return formatDistance(date, baseDate, { locale, addSuffix: true })
+    // TODO: Although `differenceIn*` methods match `moment.diff`,
+    // maybe use `formatDistance` or `formatDistanceStruct`?
+    // FIXME: Actually use differenceIn*, and accept optional arg
+    return formatDistanceStrict(date, baseDate, { locale, addSuffix: true })
   }
   return format(date, formatString, {
     locale,
