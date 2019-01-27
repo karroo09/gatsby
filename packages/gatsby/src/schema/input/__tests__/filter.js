@@ -165,4 +165,31 @@ describe(`Filter input`, () => {
       }))
     ).toMatchSnapshot()
   })
+
+  it(`does not add fields without query operators`, () => {
+    // JSON fields don't have query operators
+    TypeComposer.create(`type EmptyNested { json: JSON }`)
+    TypeComposer.create(
+      `type EmptyNestedNested { json: JSON, nested: EmptyNested }`
+    )
+    const tc = TypeComposer.create(
+      `type Empty {
+        json: JSON
+        nested: EmptyNested
+        nestedNested: EmptyNestedNested
+      }`
+    )
+    addNodeInterface(tc)
+    const itc = tc.getITC()
+    const filter = getFilterInput(itc)
+    expect(filter.getTypeName()).toBe(`EmptyInput`)
+    expect(filter.getFields().nested).toBeUndefined()
+    expect(filter.getFields().nestedNested).toBeUndefined()
+    expect(filter.getFieldNames()).toEqual([
+      `id`,
+      `parent`,
+      `children`,
+      `internal`,
+    ])
+  })
 })
