@@ -162,7 +162,7 @@ describe(`@dateformat directive`, () => {
       {},
       { fieldName: `date` }
     )
-    expect(difference).toBe(`in about 10 hours`)
+    expect(difference).toBe(`in 10 hours`)
   })
 
   it(`uses input args`, async () => {
