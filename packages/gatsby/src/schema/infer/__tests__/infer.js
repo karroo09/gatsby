@@ -260,8 +260,9 @@ describe(`Type inference`, () => {
     const deeplyNestedFooFields = deeplyNestedFooType.getFieldNames()
     expect(deeplyNestedFooFields).toEqual([`baz`, `bar`, `qux`])
 
-    const deeplyNestedFooAddedType = deeplyNestedFooType.getFieldType(`qux`)
-    expect(deeplyNestedFooAddedType).toBe(GraphQLJSON)
+    const deeplyNestedFooAddedType = deeplyNestedFooType.getFieldTC(`qux`)
+    const deeplyNestedFooAddedFields = deeplyNestedFooAddedType.getFieldNames()
+    expect(deeplyNestedFooAddedFields).toEqual([`foo`])
   })
 
   it(`does not overwrite pre-existing fields`, () => {
@@ -305,7 +306,9 @@ describe(`Type inference`, () => {
   })
 
   it(`honors MAX_DEPTH setting`, () => {
-    const exampleValue = { foo: { bar: { baz: { qux: { foo: true } } } } }
+    const exampleValue = {
+      foo: { bar: { baz: { qux: { foo: { bar: { baz: true } } } } } },
+    }
 
     const typeName = `Foo`
     const tc = TypeComposer.createTemp(typeName)
@@ -316,7 +319,9 @@ describe(`Type inference`, () => {
       .getFieldTC(`foo`)
       .getFieldTC(`bar`)
       .getFieldTC(`baz`)
-      .getFieldType(`qux`)
+      .getFieldTC(`qux`)
+      .getFieldTC(`foo`)
+      .getFieldType(`bar`)
     expect(addedType).toBe(GraphQLJSON)
   })
 
