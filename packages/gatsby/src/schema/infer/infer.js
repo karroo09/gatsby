@@ -19,7 +19,7 @@ const {
 const { store } = require(`../../redux`)
 
 // Deeper nested levels should be inferred as JSON.
-const MAX_DEPTH = 3
+const MAX_DEPTH = 5
 
 const hasMapping = selector => {
   const { mapping } = store.getState().config
@@ -32,7 +32,7 @@ const getFieldConfigFromMapping = selector => {
   return { type, resolve: link({ by: path.join(`.`) || `id` }) }
 }
 
-const getFieldConfigFromFieldNameConvention = (value, selector, key) => {
+const getFieldConfigFromFieldNameConvention = (value, key) => {
   const { GraphQLUnionType } = require(`graphql`)
   const { getById, getNodes } = require(`../db`)
   const { getUniqueValues, getValueAtSelector } = require(`../utils`)
@@ -56,7 +56,7 @@ const getFieldConfigFromFieldNameConvention = (value, selector, key) => {
 
   invariant(
     linkedTypes.length,
-    `Could not infer a GraphQL type for the field ${selector}.${key}.`
+    `Could not infer a GraphQL type for the field "${key}".`
   )
 
   let type
@@ -70,17 +70,20 @@ const getFieldConfigFromFieldNameConvention = (value, selector, key) => {
   // the type name includes the key, which is (i) potentially not unique, and
   // (ii) hinders reusing types.
   if (linkedTypes.length > 1) {
-    const typeName = linkedTypes.sort().join() + `Union`
-    type = schemaComposer.has(typeName)
-      ? schemaComposer.get(typeName)
-      : new GraphQLUnionType({
-          name: typeName,
-          types: linkedTypes.map(typeName =>
-            schemaComposer.getOrCreateTC(typeName).getType()
-          ),
-          // NOTE: not strictly necessary because we have isTypeOf
-          resolveType: node => node.internal.type,
-        })
+    const typeName = linkedTypes.sort().join(``) + `Union`
+    if (schemaComposer.has(typeName)) {
+      type = schemaComposer.get(typeName)
+    } else {
+      type = new GraphQLUnionType({
+        name: typeName,
+        types: linkedTypes.map(typeName =>
+          schemaComposer.getOrCreateTC(typeName).getType()
+        ),
+        // NOTE: not strictly necessary because we have isTypeOf
+        resolveType: node => node.internal.type,
+      })
+      schemaComposer.add(type)
+    }
   } else {
     type = linkedTypes[0]
   }
@@ -180,7 +183,6 @@ const addInferredFields = (tc, obj, prefix, depth = 0) => {
       } else if (key.includes(`___NODE`)) {
         fieldConfig = getFieldConfigFromFieldNameConvention(
           exampleValue,
-          prefix,
           unsanitizedKey
         )
         key = key.split(`___NODE`)[0]
