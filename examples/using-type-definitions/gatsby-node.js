@@ -63,16 +63,18 @@ exports.addResolvers = ({
         projection: { url: true, fileName: true },
         resolve: async (source, args, context, info) => {
           const { fileName, url } = source
-          const ext = `.` + fileName.match(/[^.]*$/)
+          const [ext] = fileName.match(/[^.]*$/)
           const node = await createRemoteFileNode({
             url,
             store,
             cache,
             createNode,
             createNodeId,
-            ext,
-            // name: fileName, // Needs #11054
+            ext: `.` + ext,
+            name: fileName,
           })
+          // The created File node has all fields you would expect,
+          // including `childImageSharp`.
           return node
         },
       },
