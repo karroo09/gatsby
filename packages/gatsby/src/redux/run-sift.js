@@ -46,6 +46,15 @@ function siftifyArgs(object) {
   return newObject
 }
 
+// Convert sort fields array into object
+const getSortFieldsToSift = fields =>
+  fields.reduce((acc, selector) => {
+    const field = selector
+      .split(`.`)
+      .reduceRight((acc, field) => ({ [field]: acc }), true) // eslint-disable-line
+    return { ...acc, ...field }
+  }, {})
+
 // Build an object that excludes the innermost leafs,
 // this avoids including { eq: x } when resolving fields.
 const extractFieldsToSift = filter =>
@@ -251,9 +260,7 @@ function handleMany(siftArgs, nodes, sort) {
   if (sort) {
     // create functions that return the item to compare on
     // uses _.get so nested fields can be retrieved
-    const convertedFields = sort.fields
-      .map(field => field.replace(/___/g, `.`))
-      .map(field => v => _.get(v, field))
+    const convertedFields = sort.fields.map(field => v => _.get(v, field))
 
     // Gatsby's sort interface only allows one sort order (e.g `desc`)
     // to be specified. However, multiple sort fields can be
@@ -288,7 +295,11 @@ module.exports = (args: Object) => {
   // If nodes weren't provided, then load them from the DB
   const nodes = args.nodes || getNodesByType(gqlType.name)
 
-  const { siftArgs, fieldsToSift } = parseFilter(clonedArgs.filter)
+  const { siftArgs, filterFieldsToSift } = parseFilter(clonedArgs.filter)
+  const { sort } = clonedArgs
+  const sortFieldsToSift =
+    sort && sort.fields && getSortFieldsToSift(sort.fields)
+  const fieldsToSift = { ...filterFieldsToSift, ...sortFieldsToSift }
 
   // If the the query for single node only has a filter for an "id"
   // using "eq" operator, then we'll just grab that ID and return it.
