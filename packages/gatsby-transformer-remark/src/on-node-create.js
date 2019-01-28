@@ -2,7 +2,7 @@ const grayMatter = require(`gray-matter`)
 const crypto = require(`crypto`)
 
 module.exports = async function onCreateNode(
-  { node, getNode, loadNodeContent, actions, createNodeId, reporter },
+  { node, loadNodeContent, actions, createNodeId, reporter },
   pluginOptions
 ) {
   const { createNode, createParentChildLink } = actions
@@ -18,7 +18,7 @@ module.exports = async function onCreateNode(
   const content = await loadNodeContent(node)
 
   try {
-    let data = grayMatter(content, pluginOptions)
+    const data = grayMatter(content, pluginOptions)
 
     const markdownNode = {
       id: createNodeId(`${node.id} >>> MarkdownRemark`),
