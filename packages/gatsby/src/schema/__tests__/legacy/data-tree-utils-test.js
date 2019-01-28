@@ -137,7 +137,10 @@ describe(`[legacy] Gatsby data tree utils`, () => {
     const fields = getInputArgs(tc)[2]
       .getType()
       .getValues()
-      .map(value => value.name)
+      .reduce((acc, { name, value }) => {
+        acc[name] = { field: value }
+        return acc
+      }, {})
     expect(fields).toMatchSnapshot()
   })
 

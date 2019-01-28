@@ -95,16 +95,16 @@ async function runQuery(nodes, query) {
   return graphql(schema, `{ listNode { ${query} } }`, context, context)
 }
 
-beforeEach(() => {
-  store.dispatch({ type: `DELETE_CACHE` })
-  const { schemaComposer } = require(`graphql-compose`)
-  schemaComposer.clear()
-  jest.isolateModules(() => {
-    buildSchema = require(`../../schema`).buildSchema
-  })
-})
-
 describe(`[legacy] GraphQL type inferance`, () => {
+  beforeEach(() => {
+    store.dispatch({ type: `DELETE_CACHE` })
+    const { schemaComposer } = require(`graphql-compose`)
+    schemaComposer.clear()
+    jest.isolateModules(() => {
+      buildSchema = require(`../../schema`).buildSchema
+    })
+  })
+
   it(`filters out null example values`, async () => {
     let result = await runQuery(
       [

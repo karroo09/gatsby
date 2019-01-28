@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Gatsby data tree utils build enum values for fields from array on nodes 1`] = `
+exports[`[legacy] Gatsby data tree utils build enum values for fields from array on nodes 1`] = `
 Object {
   "anArray": Object {
     "field": "anArray",
@@ -47,7 +47,7 @@ Object {
 }
 `;
 
-exports[`Gatsby data tree utils builds field examples from an array of nodes 1`] = `
+exports[`[legacy] Gatsby data tree utils builds field examples from an array of nodes 1`] = `
 Object {
   "anArray": Array [
     1,
