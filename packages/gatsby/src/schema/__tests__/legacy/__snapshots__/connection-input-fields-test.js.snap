@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`[legacy] connection input fields can query object arrays 1`] = `
+exports[`connection input fields can query object arrays 1`] = `
 Object {
   "data": Object {
     "allTest": Object {

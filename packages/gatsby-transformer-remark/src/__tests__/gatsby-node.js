@@ -1,17 +1,7 @@
-const Promise = require(`bluebird`)
-const _ = require(`lodash`)
+const { graphql } = require(`gatsby/graphql`)
+const { store } = require(`../../../gatsby/src/redux`)
 
 const { onCreateNode } = require(`../gatsby-node`)
-
-const {
-  graphql,
-  GraphQLObjectType,
-  GraphQLList,
-  GraphQLSchema,
-} = require(`gatsby/graphql`)
-const {
-  inferObjectStructureFromNodes,
-} = require(`../../../gatsby/src/schema/infer-graphql-type`)
 
 describe(`Process markdown content correctly`, () => {
   const node = {
@@ -49,9 +39,9 @@ Where oh where is my little pony?
         createNodeId,
       }).then(() => {
         expect(createNode.mock.calls).toMatchSnapshot()
-        expect(
-          _.isString(createNode.mock.calls[0][0].frontmatter.date)
-        ).toBeTruthy()
+        expect(typeof createNode.mock.calls[0][0].frontmatter.date).toBe(
+          `string`
+        )
         expect(createParentChildLink.mock.calls).toMatchSnapshot()
         expect(createNode).toHaveBeenCalledTimes(1)
         expect(createParentChildLink).toHaveBeenCalledTimes(1)
@@ -94,7 +84,7 @@ Sed bibendum sem iaculis, pellentesque leo sed, imperdiet ante. Sed consequat ma
         { excerpt_separator: `<!-- end -->` }
       ).then(() => {
         expect(createNode.mock.calls).toMatchSnapshot()
-        expect(_.isString(createNode.mock.calls[0][0].excerpt)).toBeTruthy()
+        expect(typeof createNode.mock.calls[0][0].excerpt).toBe(`string`)
         expect(createNode.mock.calls[0][0].excerpt).not.toEqual(0)
         expect(createParentChildLink.mock.calls).toMatchSnapshot()
         expect(createNode).toHaveBeenCalledTimes(1)
@@ -104,44 +94,34 @@ Sed bibendum sem iaculis, pellentesque leo sed, imperdiet ante. Sed consequat ma
   })
 
   describe(`process graphql correctly`, () => {
-    // given a set of nodes and a query, return the result of the query
-    async function queryResult(nodes, fragment, { types = [] } = {}) {
-      const schema = new GraphQLSchema({
-        query: new GraphQLObjectType({
-          name: `RootQueryType`,
-          fields: () => {
-            return {
-              listNode: {
-                name: `LISTNODE`,
-                type: new GraphQLList(
-                  new GraphQLObjectType({
-                    name: `MarkdownRemark`,
-                    fields: inferObjectStructureFromNodes({
-                      nodes,
-                      types: [...types],
-                    }),
-                  })
-                ),
-                resolve() {
-                  return nodes
-                },
-              },
-            }
-          },
-        }),
-      })
+    let buildSchema
+    async function runQuery(nodes, query) {
+      for (const node of nodes) {
+        store.dispatch({ type: `CREATE_NODE`, payload: node })
+      }
 
-      const result = await graphql(
-        schema,
-        `query {
-                    listNode {
-                        ${fragment}
-                    }
-                }
-                `
-      )
-      return result
+      const { schemaComposer } = require(`graphql-compose`)
+      schemaComposer.Query.addFields({
+        listNode: {
+          type: [`MarkdownRemark`],
+          resolve: () =>
+            nodes.filter(node => node.internal.type === `MarkdownRemark`),
+        },
+      })
+      const schema = await buildSchema()
+
+      const context = { path: `/` }
+      return graphql(schema, `{ listNode { ${query} } }`, context, context)
     }
+
+    beforeEach(() => {
+      store.dispatch({ type: `DELETE_CACHE` })
+      const { schemaComposer } = require(`graphql-compose`)
+      schemaComposer.clear()
+      jest.isolateModules(() => {
+        buildSchema = require(`../../../gatsby/src/schema/schema`).buildSchema
+      })
+    })
 
     it(`Correctly queries an excerpt for a node with an excerpt separator`, done => {
       const content = `---
@@ -165,15 +145,14 @@ Sed bibendum sem iaculis, pellentesque leo sed, imperdiet ante. Sed consequat ma
 
       let createdNode
       const createNode = markdownNode =>
-        queryResult(
+        runQuery(
           [markdownNode],
           `
-                    excerpt
-                    frontmatter {
-                        title
-                    }
-                `,
-          { types: [{ name: `MarkdownRemark` }] }
+            excerpt
+            frontmatter {
+              title
+            }
+          `
         ).then(result => {
           try {
             createdNode = result.data.listNode[0]
@@ -226,15 +205,14 @@ Sed bibendum sem iaculis, pellentesque leo sed, imperdiet ante. Sed consequat ma
 
       let createdNode
       const createNode = markdownNode =>
-        queryResult(
+        runQuery(
           [markdownNode],
           `
-                    excerpt
-                    frontmatter {
-                        title
-                    }
-                `,
-          { types: [{ name: `MarkdownRemark` }] }
+            excerpt
+            frontmatter {
+              title
+            }
+          `
         ).then(result => {
           try {
             createdNode = result.data.listNode[0]

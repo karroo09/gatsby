@@ -1,87 +1,58 @@
-const {
-  graphql,
-  GraphQLObjectType,
-  GraphQLList,
-  GraphQLSchema,
-} = require(`gatsby/graphql`)
+const { graphql } = require(`gatsby/graphql`)
+const { store } = require(`../../../gatsby/src/redux`)
+const { getNode, getNodesByType } = require(`../../../gatsby/src/redux/nodes`)
+
 const { onCreateNode } = require(`../gatsby-node`)
-const {
-  inferObjectStructureFromNodes,
-} = require(`../../../gatsby/src/schema/infer-graphql-type`)
-const extendNodeType = require(`../extend-node-type`)
 
 // given a set of nodes and a query, return the result of the query
-async function queryResult(
-  nodes,
-  fragment,
-  { types = [] } = {},
-  additionalParameters
-) {
-  const inferredFields = inferObjectStructureFromNodes({
-    nodes,
-    types: [...types],
-  })
-  const extendNodeTypeFields = await extendNodeType(
-    {
-      type: { name: `MarkdownRemark` },
-      cache: {
-        get: () => null,
-        set: () => null,
-      },
-      getNodesByType: type => [],
-      ...additionalParameters,
-    },
-    {
-      plugins: [],
-    }
-  )
-
-  const markdownRemarkFields = {
-    ...inferredFields,
-    ...extendNodeTypeFields,
+let buildSchema
+async function runQuery(nodes, query, options = {}) {
+  const { pathPrefix } = options
+  if (pathPrefix) {
+    store.dispatch({ type: `SET_SITE_CONFIG`, payload: { pathPrefix } })
   }
 
-  const schema = new GraphQLSchema({
-    query: new GraphQLObjectType({
-      name: `RootQueryType`,
-      fields: () => {
-        return {
-          listNode: {
-            name: `LISTNODE`,
-            type: new GraphQLList(
-              new GraphQLObjectType({
-                name: `MarkdownRemark`,
-                fields: markdownRemarkFields,
-              })
-            ),
-            resolve() {
-              return nodes
-            },
-          },
-        }
-      },
-    }),
-  })
+  for (const node of nodes) {
+    store.dispatch({ type: `CREATE_NODE`, payload: node })
+  }
 
-  const result = await graphql(
-    schema,
-    `query {
-            listNode {
-                ${fragment}
-            }
-          }
-        `
-  )
-  return result
+  const { schemaComposer } = require(`graphql-compose`)
+  schemaComposer.Query.addFields({
+    listNode: {
+      type: [`MarkdownRemark`],
+      resolve: () =>
+        nodes.filter(node => node.internal.type === `MarkdownRemark`),
+    },
+  })
+  const schema = await buildSchema()
+
+  const context = { path: `/` }
+  return graphql(schema, `{ listNode { ${query} } }`, context, context)
 }
 
-const bootstrapTest = (
-  label,
-  content,
-  query,
-  test,
-  additionalParameters = {}
-) => {
+jest.mock(`../../../gatsby/src/utils/api-runner-node`)
+const apiRunner = require(`../../../gatsby/src/utils/api-runner-node`)
+apiRunner.mockImplementation(async (api, options) => {
+  if (api === `setFieldsOnGraphQLNodeType`) {
+    const extendNodeType = require(`../extend-node-type`)
+    const { pathPrefix } = store.getState().config
+    const fields = await extendNodeType(
+      {
+        type: { name: `MarkdownRemark` },
+        cache: new Map(),
+        reporter: jest.fn(),
+        getNode,
+        getNodesByType,
+        pathPrefix,
+      },
+      { plugins: [], ...options }
+    )
+    return [fields]
+  }
+  return []
+})
+
+const bootstrapTest = (label, content, query, test, options = {}) => {
   const node = {
     id: `whatever`,
     children: [],
@@ -96,14 +67,7 @@ const bootstrapTest = (
   it(label, async done => {
     node.content = content
     const createNode = markdownNode => {
-      queryResult(
-        [markdownNode],
-        query,
-        {
-          types: [{ name: `MarkdownRemark` }],
-        },
-        additionalParameters
-      ).then(result => {
+      runQuery([markdownNode], query, options).then(result => {
         try {
           test(result.data.listNode[0])
           done()
@@ -123,50 +87,60 @@ const bootstrapTest = (
         actions,
         createNodeId,
       },
-      { ...additionalParameters }
+      { ...options }
     )
   })
 }
 
-describe(`Excerpt is generated correctly from schema`, () => {
-  bootstrapTest(
-    `correctly loads an excerpt`,
-    `---
+describe(`Extend fields on MarkdownRemark nodes`, () => {
+  beforeEach(() => {
+    store.dispatch({ type: `DELETE_CACHE` })
+    const { schemaComposer } = require(`graphql-compose`)
+    schemaComposer.clear()
+    jest.isolateModules(() => {
+      buildSchema = require(`../../../gatsby/src/schema/schema`).buildSchema
+    })
+  })
+
+  describe(`Excerpt is generated correctly from schema`, () => {
+    bootstrapTest(
+      `correctly loads an excerpt`,
+      `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---
 Where oh where is my little pony?`,
-    `excerpt
-    frontmatter {
-        title
-    }
+      `excerpt
+       frontmatter {
+         title
+       }
     `,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.excerpt).toMatch(`Where oh where is my little pony?`)
-    }
-  )
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.excerpt).toMatch(`Where oh where is my little pony?`)
+      }
+    )
 
-  bootstrapTest(
-    `correctly loads a default excerpt`,
-    `---
+    bootstrapTest(
+      `correctly loads a default excerpt`,
+      `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---`,
-    `excerpt
-    frontmatter {
-        title
-    }
+      `excerpt
+       frontmatter {
+         title
+       }
     `,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.excerpt).toMatch(``)
-    }
-  )
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.excerpt).toMatch(``)
+      }
+    )
 
-  bootstrapTest(
-    `correctly uses excerpt separator`,
-    `---
+    bootstrapTest(
+      `correctly uses excerpt separator`,
+      `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---
@@ -176,19 +150,19 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi auctor sit amet v
 
 In quis lectus sed eros efficitur luctus. Morbi tempor, nisl eget feugiat tincidunt, sem velit vulputate enim, nec interdum augue enim nec mauris. Nulla iaculis ante sed enim placerat pretium. Nulla metus odio, facilisis vestibulum lobortis vitae, bibendum at nunc. Donec sit amet efficitur metus, in bibendum nisi. Vivamus tempus vel turpis sit amet auctor. Maecenas luctus vestibulum velit, at sagittis leo volutpat quis. Praesent posuere nec augue eget sodales. Pellentesque vitae arcu ut est varius venenatis id maximus sem. Curabitur non consectetur turpis.
     `,
-    `excerpt
-    frontmatter {
-        title
-    }
+      `excerpt
+       frontmatter {
+         title
+       }
     `,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.excerpt).toMatch(`Where oh where is my little pony?`)
-    },
-    { excerpt_separator: `<!-- end -->` }
-  )
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.excerpt).toMatch(`Where oh where is my little pony?`)
+      },
+      { excerpt_separator: `<!-- end -->` }
+    )
 
-  const content = `---
+    const content = `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---
@@ -196,53 +170,53 @@ Where oh where is my little pony? Lorem ipsum dolor sit amet, consectetur adipis
 In quis lectus sed eros efficitur luctus. Morbi tempor, nisl eget feugiat tincidunt, sem velit vulputate enim, nec interdum augue enim nec mauris. Nulla iaculis ante sed enim placerat pretium. Nulla metus odio, facilisis vestibulum lobortis vitae, bibendum at nunc. Donec sit amet efficitur metus, in bibendum nisi. Vivamus tempus vel turpis sit amet auctor. Maecenas luctus vestibulum velit, at sagittis leo volutpat quis. Praesent posuere nec augue eget sodales. Pellentesque vitae arcu ut est varius venenatis id maximus sem. Curabitur non consectetur turpis.
 `
 
-  bootstrapTest(
-    `correctly prunes length to default value`,
-    content,
-    `excerpt
-    frontmatter {
-        title
-    }
+    bootstrapTest(
+      `correctly prunes length to default value`,
+      content,
+      `excerpt
+       frontmatter {
+         title
+       }
     `,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.excerpt.length).toBe(139)
-    }
-  )
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.excerpt.length).toBe(139)
+      }
+    )
 
-  bootstrapTest(
-    `correctly prunes length to provided parameter`,
-    content,
-    `excerpt(pruneLength: 50)
-    frontmatter {
-        title
-    }
+    bootstrapTest(
+      `correctly prunes length to provided parameter`,
+      content,
+      `excerpt(pruneLength: 50)
+       frontmatter {
+         title
+       }
     `,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.excerpt.length).toBe(46)
-    }
-  )
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.excerpt.length).toBe(46)
+      }
+    )
 
-  bootstrapTest(
-    `correctly prunes length to provided parameter with truncate`,
-    content,
-    `excerpt(pruneLength: 50, truncate: true)
-    frontmatter {
-        title
-    }
+    bootstrapTest(
+      `correctly prunes length to provided parameter with truncate`,
+      content,
+      `excerpt(pruneLength: 50, truncate: true)
+       frontmatter {
+         title
+       }
     `,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.excerpt.length).toBe(50)
-    }
-  )
-})
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.excerpt.length).toBe(50)
+      }
+    )
+  })
 
-describe(`Wordcount and timeToRead are generated correctly from schema`, () => {
-  bootstrapTest(
-    `correctly uses wordCount parameters`,
-    `---
+  describe(`Wordcount and timeToRead are generated correctly from schema`, () => {
+    bootstrapTest(
+      `correctly uses wordCount parameters`,
+      `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---
@@ -250,72 +224,72 @@ Where oh where is my little pony? Lorem ipsum dolor sit amet, consectetur adipis
 
 In quis lectus sed eros efficitur luctus. Morbi tempor, nisl eget feugiat tincidunt, sem velit vulputate enim, nec interdum augue enim nec mauris. Nulla iaculis ante sed enim placerat pretium. Nulla metus odio, facilisis vestibulum lobortis vitae, bibendum at nunc. Donec sit amet efficitur metus, in bibendum nisi. Vivamus tempus vel turpis sit amet auctor. Maecenas luctus vestibulum velit, at sagittis leo volutpat quis. Praesent posuere nec augue eget sodales. Pellentesque vitae arcu ut est varius venenatis id maximus sem. Curabitur non consectetur turpis.
 `,
-    `wordCount {
-      words
-      paragraphs
-      sentences
-    }
-    frontmatter {
-        title
-    }`,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.wordCount).toEqual({
-        paragraphs: 2,
-        sentences: 19,
-        words: 150,
-      })
-    }
-  )
+      `wordCount {
+         words
+         paragraphs
+         sentences
+       }
+       frontmatter {
+         title
+       }`,
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.wordCount).toEqual({
+          paragraphs: 2,
+          sentences: 19,
+          words: 150,
+        })
+      }
+    )
 
-  const content = `---
+    const content = `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---
 `
 
-  bootstrapTest(
-    `correctly uses a default value for wordCount`,
-    content,
-    `wordCount {
-      words
-      paragraphs
-      sentences
-    }
-    frontmatter {
-        title
-    }`,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.wordCount).toEqual({
-        paragraphs: null,
-        sentences: null,
-        words: null,
-      })
-    }
-  )
+    bootstrapTest(
+      `correctly uses a default value for wordCount`,
+      content,
+      `wordCount {
+         words
+         paragraphs
+         sentences
+       }
+       frontmatter {
+         title
+       }`,
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.wordCount).toEqual({
+          paragraphs: null,
+          sentences: null,
+          words: null,
+        })
+      }
+    )
 
-  bootstrapTest(
-    `correctly uses a default value for timeToRead`,
-    content,
-    `timeToRead
-    frontmatter {
-        title
-    }`,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.timeToRead).toBe(1)
-    }
-  )
-})
+    bootstrapTest(
+      `correctly uses a default value for timeToRead`,
+      content,
+      `timeToRead
+       frontmatter {
+         title
+       }`,
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.timeToRead).toBe(1)
+      }
+    )
+  })
 
-describe(`Table of contents is generated correctly from schema`, () => {
-  // Used to verify that console.warn is called when field not found
-  jest.spyOn(global.console, `warn`)
+  describe(`Table of contents is generated correctly from schema`, () => {
+    // Used to verify that console.warn is called when field not found
+    jest.spyOn(global.console, `warn`)
 
-  bootstrapTest(
-    `returns null on non existing table of contents field`,
-    `---
+    bootstrapTest(
+      `returns null on non existing table of contents field`,
+      `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---
@@ -327,20 +301,20 @@ some text
 
 some other text
 `,
-    `tableOfContents
-    frontmatter {
-        title
-    }`,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(console.warn).toBeCalled()
-      expect(node.tableOfContents).toBe(null)
-    }
-  )
+      `tableOfContents
+       frontmatter {
+         title
+       }`,
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(console.warn).toBeCalled()
+        expect(node.tableOfContents).toBe(null)
+      }
+    )
 
-  bootstrapTest(
-    `correctly generates table of contents`,
-    `---
+    bootstrapTest(
+      `correctly generates table of contents`,
+      `---
 title: "my little pony"
 date: "2017-09-18T23:19:51.246Z"
 ---
@@ -356,32 +330,33 @@ some other text
 
 final text
 `,
-    `tableOfContents(pathToSlugField: "frontmatter.title")
-    frontmatter {
-        title
-    }`,
-    node => {
-      expect(node).toMatchSnapshot()
-    }
-  )
-})
+      `tableOfContents(pathToSlugField: "frontmatter.title")
+       frontmatter {
+         title
+       }`,
+      node => {
+        expect(node).toMatchSnapshot()
+      }
+    )
+  })
 
-describe(`Links are correctly prefixed`, () => {
-  bootstrapTest(
-    `correctly prefixes links`,
-    `
+  describe(`Links are correctly prefixed`, () => {
+    bootstrapTest(
+      `correctly prefixes links`,
+      `
 This is [a link](/path/to/page1).
 
 This is [a reference]
 
 [a reference]: /path/to/page2
 `,
-    `html`,
-    node => {
-      expect(node).toMatchSnapshot()
-      expect(node.html).toMatch(`<a href="/prefix/path/to/page1">`)
-      expect(node.html).toMatch(`<a href="/prefix/path/to/page2">`)
-    },
-    { pathPrefix: `/prefix` }
-  )
+      `html`,
+      node => {
+        expect(node).toMatchSnapshot()
+        expect(node.html).toMatch(`<a href="/prefix/path/to/page1">`)
+        expect(node.html).toMatch(`<a href="/prefix/path/to/page2">`)
+      },
+      { pathPrefix: `/prefix` }
+    )
+  })
 })
