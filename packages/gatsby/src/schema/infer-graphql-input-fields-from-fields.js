@@ -190,7 +190,7 @@ function extractFieldNamesFromInputField(
   } else if (type instanceof GraphQLInputObjectType) {
     _.each(type.getFields(), (fieldConfig, key) => {
       extractFieldNamesFromInputField(
-        `${prefix}___${key}`,
+        `${prefix}.${key}`,
         fieldConfig.type,
         accu
       )

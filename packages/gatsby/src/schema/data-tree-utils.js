@@ -344,7 +344,7 @@ const extractFieldNames = (nodes: Object[]) => {
     {
       maxDepth: 3,
       safe: true, // don't flatten arrays.
-      delimiter: `___`,
+      delimiter: `.`,
     }
   )
 

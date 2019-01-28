@@ -15,7 +15,7 @@ module.exports = function createSortField(
 ) {
   const enumValues = {}
   fieldNames.forEach(field => {
-    enumValues[createKey(field)] = { value: field }
+    enumValues[createKey(field.replace(/\./g, `___`))] = { value: field }
   })
 
   const SortByType = new GraphQLEnumType({
