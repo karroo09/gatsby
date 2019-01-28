@@ -4,13 +4,15 @@ const { getNode, getNodesByType } = require(`../../../gatsby/src/redux/nodes`)
 
 const { onCreateNode } = require(`../gatsby-node`)
 
-// given a set of nodes and a query, return the result of the query
 let buildSchema
+let pluginOptions
+
 async function runQuery(nodes, query, options = {}) {
   const { pathPrefix } = options
   if (pathPrefix) {
     store.dispatch({ type: `SET_SITE_CONFIG`, payload: { pathPrefix } })
   }
+  pluginOptions = options
 
   for (const node of nodes) {
     store.dispatch({ type: `CREATE_NODE`, payload: node })
@@ -45,7 +47,7 @@ apiRunner.mockImplementation(async (api, options) => {
         getNodesByType,
         pathPrefix,
       },
-      { plugins: [], ...options }
+      { plugins: [], ...options, ...pluginOptions }
     )
     return [fields]
   }
@@ -87,7 +89,7 @@ const bootstrapTest = (label, content, query, test, options = {}) => {
         actions,
         createNodeId,
       },
-      { ...options }
+      options
     )
   })
 }

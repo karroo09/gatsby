@@ -143,7 +143,8 @@ Object {
 
 exports[`Extend fields on MarkdownRemark nodes given an html format, it respects the excerpt_separator 1`] = `
 Object {
-  "excerpt": "<p>Where oh where is that <em>pony</em>? Is he in the stable…</p>",
+  "excerpt": "<p>Where oh where is that <em>pony</em>? Is he in the stable or by the stream?</p>
+",
   "frontmatter": Object {
     "title": "my little pony",
   },
