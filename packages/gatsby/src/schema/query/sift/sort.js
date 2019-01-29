@@ -36,28 +36,15 @@ const compareValues = (a, b) => {
   }
 }
 
-// const sort = ({ fields = [`id`], order = `ASC` } = {}) => {
-//   const reverse = order !== `ASC` ? -1 : 1
-
-//   const compare = (a, b, sortFields = fields) => {
-//     const sortField = sortFields[0]
-//     const firstValue = getValueAtSelector(a, sortField)
-//     const secondValue = getValueAtSelector(b, sortField)
-//     return (
-//       compareValues(firstValue, secondValue) * reverse ||
-//       (sortFields.length > 1 && compare(a, b, sortFields.slice(1)))
-//     )
-//   }
-//   return compare
-// }
-
-const sort = ({ fields = [`id`], order = `ASC` } = {}) => {
-  const reverse = order !== `ASC` ? -1 : 1
-
-  const compare = (a, b, sortFields = fields) => {
+const sort = ({ fields = [`id`], order = [] } = {}) => {
+  const sortOrder = Array.from(fields.keys()).map(i =>
+    order[i] === `DESC` ? -1 : 1
+  )
+  const compare = (a, b) => {
     let i = -1
-    while (++i < sortFields.length) {
-      const sortField = sortFields[i]
+    while (++i < fields.length) {
+      const sortField = fields[i]
+      const reverse = sortOrder[i]
       const firstValue = getValueAtSelector(a, sortField)
       const secondValue = getValueAtSelector(b, sortField)
       const result = compareValues(firstValue, secondValue) * reverse
@@ -67,22 +54,5 @@ const sort = ({ fields = [`id`], order = `ASC` } = {}) => {
   }
   return compare
 }
-
-// const sort = ({ fields = [`id`], order = `ASC` } = {}) => {
-//   const reverse = order !== `ASC` ? -1 : 1
-
-//   const compare = (a, b) => {
-//     let result
-//     fields.some(
-//       field =>
-//         (result = compareValues(
-//           getValueAtSelector(a, field),
-//           getValueAtSelector(b, field)
-//         ))
-//     )
-//     return result * reverse
-//   }
-//   return compare
-// }
 
 module.exports = sort
