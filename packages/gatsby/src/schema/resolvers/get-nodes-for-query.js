@@ -13,8 +13,6 @@ const { trackObjects } = require(`../utils/node-tracking`)
 const cache = new Map()
 const nodeCache = new Map()
 
-// TODO: Filter sparse arrays?
-
 const resolveValue = (value, filterValue, type, context, schema) => {
   const nullableType = getNullableType(type)
   // FIXME: We probably have to check that node data and schema are actually in sync,
@@ -52,13 +50,6 @@ const prepareForQuery = (node, filter, parentType, context, schema) => {
       }
 
       // `dropQueryOperators` sets value to `true` for leaf values.
-      // Maybe be more explicit: `const isLeaf = !isObject(filterValue)`
-      // TODO:
-      // * Do we have to check if
-      //   - isObject(value) || Array.isArray(value) ?
-      //   i.e. can we rely on the filter being correct? or the node data not being wrong?
-      //   also: do we have to check that TC and field value are in sync with regards to
-      //   being scalar or array?
       const isLeaf = filterValue === true
       const value = node[fieldName]
 

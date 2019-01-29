@@ -18,13 +18,6 @@ const trackObjects = node => {
 
 const getParentNodeId = obj => parentNodes.get(obj)
 
-// FIXME: This should be done when nodes are loaded from cache.
-// Or why not persist the node-tracking cache as well?
-// => ../../redux/index.js
-// require(`../db`)
-//   .getNodes()
-//   .forEach(trackObjects)
-
 module.exports = {
   getParentNodeId,
   trackObjects,

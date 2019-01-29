@@ -1,11 +1,3 @@
-// TODO:
-// clearTypeExampleValues/clearConflicts ???
-// ___NODE fields
-// caching
-// ignoreFields
-// FIXME: Currently, mix of `date` and `string` is not handled:
-// should this be handled explicitly with typeDef?
-
 const { reportConflict } = require(`./type-conflict-reporter`)
 const {
   createSelector,
@@ -117,7 +109,8 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
         // FIXME: is a mix of date *objects* and strings problematic?
         // I.e. when date objects will be treated as strings,
         // are they automatically stringified? Probably yes, because
-        // `Date` has `toString` method.
+        // `Date` has `toString` method. In current master, we return
+        // InvalidValue.
         value = `String`
       } else {
         reportConflict(selector, entriesByType)
@@ -132,11 +125,7 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
         let arrays = arrayWrappers - 1
         while (arrays-- > 0) value = value[0]
         return acc.concat(value)
-        // TODO: return Object.keys(value).length ? acc.concat(value) : acc
-        // and then below only check objects.length
       }, [])
-      // if (!objects.length) return acc
-      // exampleFieldValue = getExampleObject(objects);
       const exampleObject = getExampleObject(objects, selector)
       if (!Object.keys(exampleObject).length) return acc
       exampleFieldValue = exampleObject
@@ -166,16 +155,8 @@ const getExampleObject = (nodes, prefix, ignoreFields = []) => {
   return exampleValue
 }
 
-// TODO: cache hit when?
-// const cache = new Map()
-// const clearExampleValueCache = () => cache.clear()
-
 const getExampleValue = ({ nodes, typeName, ignoreFields }) => {
-  // if (cache.has(typeName)) {
-  //   return cache.get(typeName)
-  // }
   const exampleValue = getExampleObject(nodes, typeName, ignoreFields)
-  // cache.set(typeName, exampleValue)
   return exampleValue
 }
 

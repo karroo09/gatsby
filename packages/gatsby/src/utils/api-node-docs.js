@@ -178,8 +178,13 @@ exports.addTypeDefs = true
  * Should be used in tandem with `addTypeDefs`.
  *
  * @param {object} $0
- * @param {function} $0.addResolvers Add custom resolvers to GraphQL field configs.
- * Useful helper functions are passed with `context`.
+ * @param {function} $0.addResolvers Add custom resolvers to GraphQL field configs
+ * by providing a resolve function. Gatsby's internal resolvers are available
+ * on `context.resolvers`. It is also possible to provide a full field config
+ * object for a *new* field. An additional `projection` property can be specified
+ * for fields that should automatically be included in the selection set.
+ * See [`using-type-definitions`](https://github.com/gatsbyjs/gatsby/examples/using-type-definitions)
+ * for a full example.
  * @param {object} $1
  * @param {string} resolvers Resolvers from plugin options in `gatsby-config.js`.
  * @example
@@ -189,8 +194,14 @@ exports.addTypeDefs = true
  *     Author: {
  *       fullName: {
  *         resolve: (source, args, context, info) => {
- *           // const { schemaComposer } = context
+ *           // const { findById } = context.resolvers
  *           return source.firstName + source.lastName
+ *         }
+ *       },
+ *       helloWorld: {
+ *         type: `String`,
+ *         resolve: (source, args, context, info) => {
+ *           return `Hello World`
  *         }
  *       }
  *     }

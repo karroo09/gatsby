@@ -11,10 +11,6 @@ const IN = `in[]`
 const NIN = `nin[]`
 const REGEX = `regex`
 const GLOB = `glob`
-// const ELEMMATCH = 'elemMatch';
-// const WHERE = 'where';
-// const AND; OR; NOT; NOR;
-// const SIZE;
 
 // FIXME: What to do with custom scalars, and with JSON?
 //        Currently, we just omit them.
@@ -67,20 +63,5 @@ const getListQueryOperator = itc => {
         }),
       })
 }
-
-// const getQueryOperators = type => {
-//   const name = type.name + `QueryOperatorInput`
-//   if (schemaComposer.has(name)) {
-//     return schemaComposer.getITC(name)
-//   }
-//   const operators =
-//     allowedOperators[type instanceof GraphQLEnumType ? `Enum` : type.name]
-//   return operators
-//     ? InputTypeComposer.create({
-//         name,
-//         fields: getOperatorFields(type, operators),
-//       })
-//     : null
-// }
 
 module.exports = { getListQueryOperator, getQueryOperators }

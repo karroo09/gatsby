@@ -1,6 +1,3 @@
-// FIXME: Use hasOwnProperty
-// FIXME: Dont't keep reducing when encountering non-existing prop
-//        (i.e. use [].every())
 const getValueAtSelector = (obj, selector) => {
   const selectors = Array.isArray(selector) ? selector : selector.split(`.`)
   return selectors.reduce((acc, key) => {

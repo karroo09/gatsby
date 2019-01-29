@@ -1,0 +1,91 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`[legacy] Gatsby data tree utils build enum values for fields from array on nodes 1`] = `
+Object {
+  "anArray": Object {
+    "field": "anArray",
+  },
+  "context___nestedObject___name": Object {
+    "field": "context.nestedObject.name",
+  },
+  "context___nestedObject___someOtherProperty": Object {
+    "field": "context.nestedObject.someOtherProperty",
+  },
+  "date": Object {
+    "field": "date",
+  },
+  "frontmatter___blue": Object {
+    "field": "frontmatter.blue",
+  },
+  "frontmatter___circle": Object {
+    "field": "frontmatter.circle",
+  },
+  "frontmatter___date": Object {
+    "field": "frontmatter.date",
+  },
+  "frontmatter___draft": Object {
+    "field": "frontmatter.draft",
+  },
+  "frontmatter___title": Object {
+    "field": "frontmatter.title",
+  },
+  "hair": Object {
+    "field": "hair",
+  },
+  "key_with__unsupported_values": Object {
+    "field": "key_with__unsupported_values",
+  },
+  "name": Object {
+    "field": "name",
+  },
+  "nestedArrays": Object {
+    "field": "nestedArrays",
+  },
+  "objectsInArray___field1": Object {
+    "field": "objectsInArray.field1",
+  },
+  "objectsInArray___field2": Object {
+    "field": "objectsInArray.field2",
+  },
+  "objectsInArray___field3": Object {
+    "field": "objectsInArray.field3",
+  },
+}
+`;
+
+exports[`[legacy] Gatsby data tree utils builds field examples from an array of nodes 1`] = `
+Object {
+  "anArray": Array [
+    1,
+  ],
+  "context": Object {
+    "nestedObject": Object {
+      "name": "Inner name",
+      "someOtherProperty": 1,
+    },
+  },
+  "date": "2006-07-22T22:39:53.000Z",
+  "frontmatter": Object {
+    "blue": 100,
+    "circle": "happy",
+    "date": "2006-07-22T22:39:53.000Z",
+    "draft": false,
+    "title": "The world of dash and adventure",
+  },
+  "hair": 1,
+  "key-with..unsupported-values": true,
+  "name": "The Mad Max",
+  "nestedArrays": Array [
+    Array [
+      1,
+    ],
+  ],
+  "objectsInArray": Array [
+    Object {
+      "field1": true,
+      "field2": 1,
+      "field3": "foo",
+    },
+  ],
+}
+`;

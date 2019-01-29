@@ -136,7 +136,7 @@ describe(`Resolvers`, () => {
 
     it(`sorts nodes matching filter`, async () => {
       const filter = { baz: { ne: `foo` } }
-      const sort = { fields: [`foo.bar.baz`], order: `DESC` }
+      const sort = { fields: [`foo.bar.baz`], order: [`DESC`] }
       const result = await findMany(type)({
         args: { filter, sort },
         info: { schema },

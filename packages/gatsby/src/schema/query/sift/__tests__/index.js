@@ -104,7 +104,7 @@ describe(`Query with Sift`, () => {
 
   it(`returns sorted nodes when no filter specified`, () => {
     const args = {
-      sort: { fields: [`float`], order: `DESC` },
+      sort: { fields: [`float`], order: [`DESC`] },
     }
     const results = query(nodes, args)
     expect(results.length).toBe(3)

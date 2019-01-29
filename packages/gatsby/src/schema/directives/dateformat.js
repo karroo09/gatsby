@@ -17,7 +17,7 @@ const {
 } = require(`date-fns`)
 
 // UPSTREAM: GraphQLDate.parseLiteral should accept date strings in other
-// formats but toISOString (could use utils/isDate)
+// formats (could use utils/isDate)
 // TODO: `difference` arg should be GraphQLDate?
 
 const convertFormatString = str =>
@@ -25,6 +25,7 @@ const convertFormatString = str =>
   // `DD` refers to day of year, not day of month (this would be `dd`).
   // This would be a breaking change, so we emulate the old behavior here.
   // @see https://git.io/fxCyr
+  // TODO: Just use moment for now
   str &&
   str
     // FIXME: We cannot enable this if we want to support both
@@ -52,7 +53,7 @@ const formatDate = (
   const baseDate = toDate(difference)
   if (isValid(baseDate)) {
     // TODO: Although `differenceIn*` methods match `moment.diff`,
-    // maybe use `formatDistance` or `formatDistanceStruct`?
+    // maybe use `formatDistance` or `formatDistanceStrict`?
     // FIXME: Actually use differenceIn*, and accept optional arg
     return formatDistanceStrict(date, baseDate, { locale, addSuffix: true })
   }

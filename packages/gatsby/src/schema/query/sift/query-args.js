@@ -37,8 +37,8 @@ const prepareQueryArgs = filterFields =>
 const dropQueryOperators = filter =>
   Object.entries(filter).reduce((acc, [key, value]) => {
     if (isObject(value) && isObject(Object.values(value)[0])) {
-      // Merging here is not strictly necessary because elemMatch does not
-      // allow sibling fields, but do this for future-proofing.
+      // Merging here is not necessary if elemMatch does not
+      // allow sibling fields.
       const { elemMatch, ...rest } = value
       const newValue = merge(rest, elemMatch)
       acc[key] = dropQueryOperators(newValue)

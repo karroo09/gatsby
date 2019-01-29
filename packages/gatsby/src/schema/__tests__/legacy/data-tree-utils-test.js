@@ -132,7 +132,7 @@ describe(`[legacy] Gatsby data tree utils`, () => {
     const { getInputArgs } = require(`../../input`)
     const { addInferredFields } = require(`../../infer/infer`)
     const { getExampleValue } = require(`../../infer/example-value`)
-    const tc = TypeComposer.create(`type FieldsType { foo: Int, bar: Int }`)
+    const tc = TypeComposer.create(`FieldsType`)
     addInferredFields(tc, getExampleValue({ nodes }))
     const fields = getInputArgs(tc)[2]
       .getType()

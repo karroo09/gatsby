@@ -8,10 +8,6 @@ const { InputTypeComposer } = require(`graphql-compose`)
 
 const { getListQueryOperator, getQueryOperators } = require(`../query`)
 
-// TODO: Clean this up a bit. There should be no need for local caching,
-// should be possible to just use schemaComposer(?).
-// FIXME: No need for `new InputTypeComposer` if we call `convert(itc.getType())`
-// in `getFilterInput`.
 const cache = new Map()
 
 const convert = itc => {

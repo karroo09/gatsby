@@ -270,10 +270,8 @@ describe(`[legacy] build-node-types`, () => {
   })
 
   it.skip(`should not report conflicts on plugin fields`, () => {
-    // TODO: Check if this is still relevant.
-    // This is about fields that are set in setFieldsOnGraphQLNodeType,
-    // which are added to ignoreFields before getExampleValue
-    // here: https://github.com/pieh/gatsby/blob/b152d4f26980aecd447e6269e0e590d77b3d80cd/packages/gatsby/src/schema/build-node-types.js#L209
+    // This should not be an issue since plugin fields are added
+    // *after* type inference.
     expect(typeConflictReporter.reportConflict).not.toBeCalled()
   })
 })

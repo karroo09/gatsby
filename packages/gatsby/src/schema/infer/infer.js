@@ -65,7 +65,8 @@ const getFieldConfigFromFieldNameConvention = (value, key) => {
   // scalar fields link to different types. Similarly, an array of objects
   // with foreign-key fields will produce union types if those foreign-key
   // fields are arrays, but not if they are scalars. See the tests for an example.
-  // NOTE: There is no dedicated `graphql-compose` class for union types yet.
+  // NOTE: There is no dedicated `graphql-compose` class for union types yet,
+  // but maybe soon. see #162.
   // FIXME: The naming of union types is a breaking change. In current master,
   // the type name includes the key, which is (i) potentially not unique, and
   // (ii) hinders reusing types.
@@ -103,9 +104,6 @@ const getFieldConfig = (value, selector, depth) => {
       }
       // FIXME: The weird thing is that we are trying to infer a File,
       // but cannot assume that a source plugin for File nodes is actually present.
-      // Same goes for special cases. The alternative would be for plugins to be
-      // able to register special cases and type inference rules, but that seems
-      // like overkill. Or: promote source-filesystem to an internal plugin.
       if (schemaComposer.has(`File`) && isFile(selector, value)) {
         // NOTE: For arrays of files, where not every path references
         // a File node in the db, it is semi-random if the field is
@@ -122,12 +120,6 @@ const getFieldConfig = (value, selector, depth) => {
         return `String`
       }
       if (value && depth < MAX_DEPTH) {
-        // TODO: Be consistent: use getOrCreateTC everywhere, or:
-        // : TypeComposer.createTemp({
-        //   name: createTypeName(selector),
-        //   fields: {},
-        // }),
-        // : new TypeComposer(new GraphQLObjectType())
         return addInferredFields(
           schemaComposer.getOrCreateTC(createTypeName(selector)),
           value,
@@ -177,7 +169,7 @@ const addInferredFields = (tc, obj, prefix, depth = 0) => {
 
       let fieldConfig
       if (hasMapping(selector)) {
-        // TODO: Use prefix instead of selector in hasMapping and getFromMapping?
+        // TODO: Use `prefix` instead of `selector` in hasMapping and getFromMapping?
         // i.e. does the config contain sanitized field names?
         fieldConfig = getFieldConfigFromMapping(selector)
       } else if (key.includes(`___NODE`)) {

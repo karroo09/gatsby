@@ -40,6 +40,9 @@ const makeNodes = () => [
       { aString: `some string`, aNumber: 2, anArray: [1, 2] },
     ],
     boolean: true,
+    nestedRegex: {
+      field: `har har`,
+    },
   },
   {
     id: `1`,
@@ -82,6 +85,9 @@ const makeNodes = () => [
           },
         },
       ],
+    },
+    nestedRegex: {
+      field: ``,
     },
   },
   {
@@ -232,6 +238,13 @@ describe(`[legacy] Filter fields`, () => {
     let result = await runFilter({ name: { regex: `/^the.*wax/i` } })
     expect(result.length).toEqual(2)
     expect(result[0].name).toEqual(`The Mad Wax`)
+  })
+
+  it(`handles the nested regex operator`, async () => {
+    let result = await runFilter({ nestedRegex: { field: { regex: `/.*/` } } })
+    expect(result.length).toEqual(2)
+    expect(result[0].id).toEqual(`0`)
+    expect(result[1].id).toEqual(`1`)
   })
 
   it(`handles the in operator for strings`, async () => {
@@ -414,7 +427,7 @@ describe(`[legacy] collection fields`, () => {
       limit: 10,
       sort: {
         fields: [`frontmatter.blue`],
-        order: `DESC`,
+        order: [`DESC`],
       },
     })
 
@@ -422,13 +435,13 @@ describe(`[legacy] collection fields`, () => {
     expect(result[0].name).toEqual(`The Mad Wax`)
   })
 
-  it(`sorts results with desc has null fields first`, async () => {
+  it(`sorts results with DESC has null fields first`, async () => {
     // FIXME: Do we really want this?
     let result = await runQuery({
       limit: 10,
       sort: {
         fields: [`waxOnly`],
-        order: `DESC`,
+        order: [`DESC`],
       },
     })
 
@@ -438,13 +451,13 @@ describe(`[legacy] collection fields`, () => {
     expect(result[2].id).toEqual(`1`)
   })
 
-  it(`sorts results with asc has null fields last`, async () => {
+  it(`sorts results with ASC has null fields last`, async () => {
     // FIXME: Do we really want this?
     let result = await runQuery({
       limit: 10,
       sort: {
         fields: [`waxOnly`],
-        order: `ASC`,
+        order: [`ASC`],
       },
     })
 
@@ -454,20 +467,35 @@ describe(`[legacy] collection fields`, () => {
     expect(result[2].id).toEqual(`0`)
   })
 
-  it(`applies order (asc/desc) to all sort fields`, async () => {
+  it(`applies specified sort order, and sorts asc by default`, async () => {
     // FIXME: This tests that sort order is only applied to the first field!
     // What is the expectation?
     let result = await runQuery({
       limit: 10,
       sort: {
         fields: [`frontmatter.blue`, `id`],
-        order: `DESC`,
+        order: [`DESC`], // `id` field will be sorted ASC
       },
     })
 
     expect(result.length).toEqual(3)
     expect(result[0].id).toEqual(`1`) // blue = 10010, id = 1
     expect(result[1].id).toEqual(`2`) // blue = 10010, id = 2
+    expect(result[2].id).toEqual(`0`) // blue = 100, id = 0
+  })
+
+  it(`applies specified sort order per field`, async () => {
+    let result = await runQuery({
+      limit: 10,
+      sort: {
+        fields: [`frontmatter.blue`, `id`],
+        order: [`DESC`, `DESC`], // `id` field will be sorted DESC
+      },
+    })
+
+    expect(result.length).toEqual(3)
+    expect(result[0].id).toEqual(`2`) // blue = 10010, id = 2
+    expect(result[1].id).toEqual(`1`) // blue = 10010, id = 1
     expect(result[2].id).toEqual(`0`) // blue = 100, id = 0
   })
 })

@@ -20,7 +20,9 @@ const report = require(`gatsby-cli/lib/reporter`)
 const getConfigFile = require(`./get-config-file`)
 const tracer = require(`opentracing`).globalTracer()
 const preferDefault = require(`./prefer-default`)
-const nodeTracking = require(`../db/node-tracking`)
+const { getNodes } = require(`../db/nodes`)
+const { trackObjects } = require(`../schema/utils/node-tracking`)
+
 require(`../db`).startAutosave()
 
 // Show stack trace on unhandled promises.
@@ -228,7 +230,7 @@ module.exports = async (args: BootstrapArgs) => {
 
   // By now, our nodes database has been loaded, so ensure that we
   // have tracked all inline objects
-  nodeTracking.trackDbNodes()
+  getNodes().forEach(trackObjects)
 
   // Copy our site files to the root of the site.
   activity = report.activityTimer(`copy gatsby files`, {
