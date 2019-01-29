@@ -53,7 +53,7 @@ const getSortInput = itc => {
   const SortInputTC = schemaComposer.getOrCreateITC(typeName + `SortInput`)
   SortInputTC.addFields({
     fields: [FieldsEnumTC],
-    order: { type: SortOrderEnum, defaultValue: `ASC` },
+    order: { type: [SortOrderEnum], defaultValue: [`ASC`] },
   })
 
   return [SortInputTC, FieldsEnumTC]

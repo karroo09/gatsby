@@ -11,7 +11,7 @@ describe(`Sort query results`, () => {
   it(`sorts results in descending order`, () => {
     const results = [{ id: `third` }, { id: `first` }, { id: `second` }]
     const expected = [{ id: `third` }, { id: `second` }, { id: `first` }]
-    const sorted = results.sort(sort({ order: `DESC` }))
+    const sorted = results.sort(sort({ order: [`DESC`] }))
     expect(sorted).toEqual(expected)
   })
 
@@ -135,6 +135,26 @@ describe(`Sort query results`, () => {
     expect(sorted).toEqual(expected)
   })
 
+  it(`sorts results by multiple fields with sort order per field`, () => {
+    const results = [
+      { first: 1, second: 2, third: 2, string: `third` },
+      { first: 1, second: 2, third: 1, string: `fourth` },
+      { first: 2, second: 1, third: 2, string: `first` },
+      { first: 1, second: 1, third: 2, string: `second` },
+    ]
+
+    const expected = [
+      { first: 2, second: 1, third: 2, string: `first` },
+      { first: 1, second: 1, third: 2, string: `second` },
+      { first: 1, second: 2, third: 2, string: `third` },
+      { first: 1, second: 2, third: 1, string: `fourth` },
+    ]
+    const order = [`DESC`, `ASC`, `DESC`]
+    const fields = [`first`, `second`, `third`]
+    const sorted = results.sort(sort({ fields, order }))
+    expect(sorted).toEqual(expected)
+  })
+
   it(`sorts results by nested array field`, () => {
     const results = [
       { array: [{ string: `foo` }, { string: `third` }] },
@@ -177,7 +197,7 @@ describe(`Sort query results`, () => {
   it(`sorts descending null fields to the back `, () => {
     const results = [{ string: `b` }, { string: null }, { string: `a` }]
     const expected = [{ string: `b` }, { string: `a` }, { string: null }]
-    const sorted = results.sort(sort({ fields: [`string`], order: `DESC` }))
+    const sorted = results.sort(sort({ fields: [`string`], order: [`DESC`] }))
     expect(sorted).toEqual(expected)
   })
 })

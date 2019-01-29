@@ -35,9 +35,12 @@ describe(`Sort input`, () => {
   })
 
   it(`adds sort order enum`, () => {
-    expect(SortInputTC.getFieldType(`order`)).toBeInstanceOf(GraphQLEnumType)
-    expect(SortInputTC.getField(`order`).defaultValue).toBe(`ASC`)
-    expect(SortInputTC.getFieldType(`order`).getValues()).toEqual([
+    expect(SortInputTC.getFieldType(`order`)).toBeInstanceOf(GraphQLList)
+    expect(SortInputTC.getFieldType(`order`).ofType).toBeInstanceOf(
+      GraphQLEnumType
+    )
+    expect(SortInputTC.getField(`order`).defaultValue).toEqual([`ASC`])
+    expect(SortInputTC.getFieldType(`order`).ofType.getValues()).toEqual([
       expect.objectContaining({ name: `ASC`, value: `ASC` }),
       expect.objectContaining({ name: `DESC`, value: `DESC` }),
     ])
