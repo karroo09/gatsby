@@ -121,9 +121,11 @@ const onCreateNode = ({ actions, node, createNodeId, createContentDigest }) => {
         createParentChildLink({ parent: node, child })
       }
       const parsed = YAML.parse(content)
-      Array.isArray(parsed)
-        ? parsed.forEach(createYamlNode)
-        : createYamlNode(parsed)
+      if (Array.isArray(parsed)) {
+        parsed.forEach(createYamlNode)
+      } else {
+        createYamlNode(parsed)
+      }
       break
     }
 

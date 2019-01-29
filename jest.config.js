@@ -13,6 +13,7 @@ const builtTestsDirs = pkgs
 const distDirs = pkgs.map(p => path.join(p, `dist`))
 const ignoreDirs = [].concat(gatsbyBuildDirs, builtTestsDirs, distDirs)
 const coverageDirs = pkgs.map(p => path.join(p, `src/**/*.js`))
+const useCoverage = !!process.env.GENERATE_JEST_REPORT
 
 module.exports = {
   notify: true,
@@ -32,7 +33,7 @@ module.exports = {
   moduleNameMapper: {
     "^highlight.js$": `<rootDir>/node_modules/highlight.js/lib/index.js`,
   },
-  collectCoverage: true,
+  collectCoverage: useCoverage,
   coverageReporters: [`json-summary`, `text`, `html`, `cobertura`],
   coverageThreshold: {
     global: {
@@ -43,5 +44,5 @@ module.exports = {
     },
   },
   collectCoverageFrom: coverageDirs,
-  reporters: [`default`, `jest-junit`],
+  reporters: [`default`].concat(useCoverage ? `jest-junit` : []),
 }

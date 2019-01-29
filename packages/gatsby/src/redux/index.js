@@ -2,9 +2,7 @@ const Redux = require(`redux`)
 const _ = require(`lodash`)
 const fs = require(`fs`)
 const mitt = require(`mitt`)
-const v8 = require(`v8`)
-
-const { trackObjects } = require(`../schema/utils/node-tracking`)
+const stringify = require(`json-stringify-safe`)
 
 // Create event emitter for actions
 const emitter = mitt()
@@ -12,32 +10,54 @@ const emitter = mitt()
 // Reducers
 const reducers = require(`./reducers`)
 
-const readFileSync = filePath => v8.deserialize(fs.readFileSync(filePath))
-
-const writeFileSync = (filePath, contents) =>
-  fs.writeFileSync(filePath, v8.serialize(contents))
-
-const filePath = `${process.cwd()}/.cache/redux-state.json`
-
-// Read the old node data from cache.
-let initialState = {}
-try {
-  initialState = readFileSync(filePath)
-} catch (e) {
-  // ignore errors.
+const objectToMap = obj => {
+  let map = new Map()
+  Object.keys(obj).forEach(key => {
+    map.set(key, obj[key])
+  })
+  return map
 }
 
-if (initialState.nodes) {
-  initialState.nodes.forEach(trackObjects)
+const mapToObject = map => {
+  const obj = {}
+  for (let [key, value] of map) {
+    obj[key] = value
+  }
+  return obj
+}
 
-  initialState.nodesByType = new Map()
-  initialState.nodes.forEach(node => {
-    const { type } = node.internal
-    if (!initialState.nodesByType.has(type)) {
-      initialState.nodesByType.set(type, new Map())
-    }
-    initialState.nodesByType.get(type).set(node.id, node)
-  })
+// Read from cache the old node data.
+let initialState = {}
+try {
+  const file = fs.readFileSync(`${process.cwd()}/.cache/redux-state.json`)
+  // Apparently the file mocking in node-tracking-test.js
+  // can override the file reading replacing the mocked string with
+  // an already parsed object.
+  if (Buffer.isBuffer(file) || typeof file === `string`) {
+    initialState = JSON.parse(file)
+  }
+  if (initialState.staticQueryComponents) {
+    initialState.staticQueryComponents = objectToMap(
+      initialState.staticQueryComponents
+    )
+  }
+  if (initialState.components) {
+    initialState.components = objectToMap(initialState.components)
+  }
+  if (initialState.nodes) {
+    initialState.nodes = objectToMap(initialState.nodes)
+
+    initialState.nodesByType = new Map()
+    initialState.nodes.forEach(node => {
+      const { type } = node.internal
+      if (!initialState.nodesByType.has(type)) {
+        initialState.nodesByType.set(type, new Map())
+      }
+      initialState.nodesByType.get(type).set(node.id, node)
+    })
+  }
+} catch (e) {
+  // ignore errors.
 }
 
 const store = Redux.createStore(
@@ -51,7 +71,9 @@ const store = Redux.createStore(
   })
 )
 
-const saveState = state => {
+// Persist state.
+function saveState() {
+  const state = store.getState()
   const pickedState = _.pick(state, [
     `nodes`,
     `status`,
@@ -60,35 +82,26 @@ const saveState = state => {
     `components`,
     `staticQueryComponents`,
   ])
-  writeFileSync(filePath, pickedState)
+
+  pickedState.staticQueryComponents = mapToObject(
+    pickedState.staticQueryComponents
+  )
+  pickedState.components = mapToObject(pickedState.components)
+  pickedState.nodes = pickedState.nodes ? mapToObject(pickedState.nodes) : []
+  const stringified = stringify(pickedState, null, 2)
+  fs.writeFile(
+    `${process.cwd()}/.cache/redux-state.json`,
+    stringified,
+    () => {}
+  )
 }
-const saveStateDebounced = _.debounce(saveState, 1000)
+
+exports.saveState = saveState
 
 store.subscribe(() => {
   const lastAction = store.getState().lastAction
   emitter.emit(lastAction.type, lastAction)
 })
-
-// During development, once bootstrap is finished, persist state on changes.
-if (process.env.gatsby_executing_command === `develop`) {
-  let bootstrapFinished = false
-  emitter.on(`BOOTSTRAP_FINISHED`, () => {
-    bootstrapFinished = true
-    saveState(store.getState())
-  })
-  emitter.on(`*`, () => {
-    if (bootstrapFinished) {
-      saveStateDebounced(store.getState())
-    }
-  })
-}
-
-// During builds, persist state once bootstrap has finished.
-if (process.env.gatsby_executing_command === `build`) {
-  emitter.on(`BOOTSTRAP_FINISHED`, () => {
-    saveState(store.getState())
-  })
-}
 
 /** Event emitter */
 exports.emitter = emitter

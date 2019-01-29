@@ -164,7 +164,7 @@ const addInferredFields = (tc, obj, prefix, depth = 0) => {
           let lists = 0
           let fieldType = tc.getFieldType(key)
           while (fieldType.ofType) {
-            fieldType instanceof GraphQLList && lists++
+            if (fieldType instanceof GraphQLList) lists++
             fieldType = fieldType.ofType
           }
 

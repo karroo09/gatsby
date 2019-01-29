@@ -1,5 +1,3 @@
-const { schemaComposer } = require(`graphql-compose`)
-
 // FIXME: enable after rebase on current master
 // const nodesQuery = require(`../../../db/nodes-query`)
 const { findMany } = require(`../../resolvers/resolvers`)
