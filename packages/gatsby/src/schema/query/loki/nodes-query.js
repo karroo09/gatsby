@@ -1,8 +1,8 @@
 const _ = require(`lodash`)
 const prepareRegex = require(`../../utils/prepare-regex`)
-const { getNodeTypeCollection } = require(`./nodes`)
+const { getNodeTypeCollection } = require(`../../../db/loki/nodes`)
 const sift = require(`sift`)
-const { emitter } = require(`../../redux`)
+const { emitter } = require(`../../../redux`)
 
 // Cleared on DELETE_CACHE
 const fieldUsages = {}

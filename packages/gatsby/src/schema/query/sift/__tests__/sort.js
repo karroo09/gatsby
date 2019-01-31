@@ -187,16 +187,16 @@ describe(`Sort query results`, () => {
     expect(sorted).toEqual(expected)
   })
 
-  it(`sorts null fields to the front`, () => {
+  it(`sorts null fields to the back `, () => {
     const results = [{ string: `b` }, { string: null }, { string: `a` }]
-    const expected = [{ string: null }, { string: `a` }, { string: `b` }]
+    const expected = [{ string: `a` }, { string: `b` }, { string: null }]
     const sorted = results.sort(sort({ fields: [`string`] }))
     expect(sorted).toEqual(expected)
   })
 
-  it(`sorts descending null fields to the back `, () => {
+  it(`sorts descending null fields to the front`, () => {
     const results = [{ string: `b` }, { string: null }, { string: `a` }]
-    const expected = [{ string: `b` }, { string: `a` }, { string: null }]
+    const expected = [{ string: null }, { string: `b` }, { string: `a` }]
     const sorted = results.sort(sort({ fields: [`string`], order: [`DESC`] }))
     expect(sorted).toEqual(expected)
   })

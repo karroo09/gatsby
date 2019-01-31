@@ -2,6 +2,7 @@ const { TypeComposer, schemaComposer } = require(`graphql-compose`)
 const { GraphQLBoolean, GraphQLSchema } = require(`graphql`)
 
 const getNodesForQuery = require(`../get-nodes-for-query`)
+const getQueryFields = require(`../get-query-fields`)
 
 const nodes = [
   { id: 1, internal: { type: `Foo` }, bool: true, array: [0, 1] },
@@ -38,11 +39,7 @@ const nodes = [
   },
 ]
 
-const { getNodesByType } = require(`../../db`)
-jest.mock(`../../db`)
-getNodesByType.mockImplementation(type =>
-  nodes.filter(n => n.internal.type === type)
-)
+const getNodesByType = type => nodes.filter(n => n.internal.type === type)
 
 const { trackObjects } = require(`../../utils/node-tracking`)
 jest.mock(`../../utils/node-tracking`)
@@ -129,27 +126,24 @@ const schema = schemaComposer.buildSchema()
 
 describe(`Get nodes for query`, () => {
   describe(`Development build`, () => {
-    it(`returns unmodified nodes of type when no filter is specified`, async () => {
-      const type = `Foo`
-      const filter = undefined
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
-      expect(queryNodes).toEqual(getNodesByType(type))
-    })
-
-    it(`returns unmodified nodes of type when filter fields have no resolver functions`, async () => {
-      const type = `Foo`
-      const filter = { id: { ne: 0 }, array: { nin: [10] } }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
-      expect(queryNodes).toEqual(getNodesByType(type))
-    })
-
     it(`caches single node`, async () => {
-      const type = `Foo`
+      const typeName = `Foo`
+      const type = schema.getType(typeName)
       const filter = { id: { ne: 0 }, array: { nin: [10] } }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+
+      const nodes = getNodesByType(typeName)
+      const queryFields = getQueryFields({ args: { filter } })
+      const queryNodes = await getNodesForQuery(
+        type,
+        nodes,
+        queryFields,
+        {},
+        schema
+      )
       const sameQueryNodes = await getNodesForQuery(
         type,
-        { filter },
+        nodes,
+        queryFields,
         {},
         schema
       )
@@ -158,26 +152,32 @@ describe(`Get nodes for query`, () => {
 
     it(`tracks objects`, async () => {
       trackObjects.mockReset()
-      const type = `Foo`
 
-      let filter = { id: { ne: 0 }, array: { nin: [10] } }
-      await getNodesForQuery(type, { filter }, {}, schema)
-      expect(trackObjects).not.toHaveBeenCalled() // nodes are cached
+      const typeName = `Foo`
+      const type = schema.getType(typeName)
+      const nodes = getNodesByType(typeName)
 
-      filter = { id: { eq: 0 } }
-      await getNodesForQuery(type, { filter }, {}, schema)
-      expect(trackObjects).not.toHaveBeenCalled() // !hasResolvers
-
-      filter = { id: { eq: 0 }, withResolver: { ne: `` } }
-      await getNodesForQuery(type, { filter }, {}, schema)
+      const filter = { id: { eq: 0 }, withResolver: { ne: `` } }
+      const queryFields = getQueryFields({ args: { filter } })
+      await getNodesForQuery(type, nodes, queryFields, {}, schema)
       expect(trackObjects).toHaveBeenCalledTimes(3)
     })
 
     it(`resolves resolver function for non-null filter fields`, async () => {
-      const type = `Foo`
+      const typeName = `Foo`
+      const type = schema.getType(typeName)
       const filter = { withResolver: { ne: `qux` } }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
-      expect(queryNodes).not.toEqual(getNodesByType(type))
+
+      const nodes = getNodesByType(typeName)
+      const queryFields = getQueryFields({ args: { filter } })
+      const queryNodes = await getNodesForQuery(
+        type,
+        nodes,
+        queryFields,
+        {},
+        schema
+      )
+      expect(queryNodes).not.toEqual(nodes)
 
       expect(nodes[0].withResolver).toBeUndefined()
       expect(queryNodes[0].withResolver).toBe(`bar`)
@@ -190,7 +190,8 @@ describe(`Get nodes for query`, () => {
     })
 
     it(`resolves resolver function for nested non-null filter fields`, async () => {
-      const type = `Foo`
+      const typeName = `Foo`
+      const type = schema.getType(typeName)
       const filter = {
         deeply: {
           counter: { eq: true },
@@ -198,7 +199,16 @@ describe(`Get nodes for query`, () => {
           nestedResolver: { eq: true },
         },
       }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+
+      const nodes = getNodesByType(typeName)
+      const queryFields = getQueryFields({ args: { filter } })
+      const queryNodes = await getNodesForQuery(
+        type,
+        nodes,
+        queryFields,
+        {},
+        schema
+      )
 
       expect(nodes[0].deeply).toBeUndefined()
       expect(queryNodes[0].deeply).toBeUndefined()
@@ -219,20 +229,26 @@ describe(`Get nodes for query`, () => {
     })
 
     it(`does not mutate nodes`, async () => {
-      const type = `Foo`
+      const typeName = `Foo`
+      const type = schema.getType(typeName)
       const filter = {
         array: { nin: [10] },
         withResolver: { eq: true },
         deeply: { nestedResolver: { eq: true } },
       }
+      const queryFields = getQueryFields({ args: { filter } })
+
+      const nodes = getNodesByType(typeName)
       const nodesCopy = JSON.parse(JSON.stringify(nodes))
-      await getNodesForQuery(type, { filter }, {}, schema)
+      await getNodesForQuery(type, nodes, queryFields, {}, schema)
       expect(nodes).toEqual(nodesCopy)
     })
 
     it(`handles filter on field added by resolver`, async () => {
       counter.mockReset()
-      const type = `Foo`
+
+      const typeName = `Foo`
+      const type = schema.getType(typeName)
       const filter = {
         added: {
           added: {
@@ -244,7 +260,16 @@ describe(`Get nodes for query`, () => {
           },
         },
       }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+
+      const nodes = getNodesByType(typeName)
+      const queryFields = getQueryFields({ args: { filter } })
+      const queryNodes = await getNodesForQuery(
+        type,
+        nodes,
+        queryFields,
+        {},
+        schema
+      )
 
       expect(counter).toHaveBeenCalledTimes(12)
       expect(
@@ -259,13 +284,23 @@ describe(`Get nodes for query`, () => {
     })
 
     it(`handles sparse array of arrays`, async () => {
-      const type = `Sparse`
+      const typeName = `Sparse`
+      const type = schema.getType(typeName)
       const filter = {
         null: { eq: true },
         sparse: { eq: true },
         sparseResolver: { eq: true },
       }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+
+      const nodes = getNodesByType(typeName)
+      const queryFields = getQueryFields({ args: { filter } })
+      const queryNodes = await getNodesForQuery(
+        type,
+        nodes,
+        queryFields,
+        {},
+        schema
+      )
       expect(queryNodes[0].null).toBeNull()
       expect(queryNodes[0].sparse[0]).toBeNull()
       expect(queryNodes[0].sparseResolver[0]).toBeNull()
@@ -273,24 +308,31 @@ describe(`Get nodes for query`, () => {
     })
 
     it(`passes default values to the resolver`, async () => {
-      const type = `Arg`
+      const typeName = `Arg`
+      const type = schema.getType(typeName)
       const filter = { arg: { eq: true } }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+
+      const nodes = getNodesByType(typeName)
+      const queryFields = getQueryFields({ args: { filter } })
+      const queryNodes = await getNodesForQuery(
+        type,
+        nodes,
+        queryFields,
+        {},
+        schema
+      )
       expect(queryNodes[0].arg).toBe(2)
     })
   })
 
   describe(`Production build`, () => {
-    // TODO: When Jest 24 is released, use isolateModules()
-    // @see https://github.com/facebook/jest/pull/6701
     jest.resetModules()
+
+    const getNodesForQuery = require(`../get-nodes-for-query`)
 
     jest.mock(`../../utils/is-production-build`, () => true)
 
-    const getNodesForQuery = require(`../get-nodes-for-query`)
-    jest.mock(`../../db`, () => ({
-      getNodesByType: () => [{ id: 1, internal: { type: `Foo` } }],
-    }))
+    const nodes = [{ id: 1, internal: { type: `Foo` } }]
 
     const { TypeComposer } = require(`graphql-compose`)
     TypeComposer.create({
@@ -308,12 +350,22 @@ describe(`Get nodes for query`, () => {
     const schema = schemaComposer.buildSchema()
 
     it(`caches nodes`, async () => {
-      const type = `Foo`
+      const typeName = `Foo`
+      const type = schema.getType(typeName)
       const filter = { id: { ne: 0 }, withResolver: { ne: `` } }
-      const queryNodes = await getNodesForQuery(type, { filter }, {}, schema)
+
+      const queryFields = getQueryFields({ args: { filter } })
+      const queryNodes = await getNodesForQuery(
+        type,
+        nodes,
+        queryFields,
+        {},
+        schema
+      )
       const sameQueryNodes = await getNodesForQuery(
         type,
-        { filter },
+        nodes,
+        queryFields,
         {},
         schema
       )

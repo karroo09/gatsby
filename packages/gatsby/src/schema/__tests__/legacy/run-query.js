@@ -1,10 +1,7 @@
-// FIXME: enable after rebase on current master
-// const nodesQuery = require(`../../../db/nodes-query`)
 const { findMany } = require(`../../resolvers/resolvers`)
 
 const { store } = require(`../../../redux`)
-// FIXME: enable after rebase on current master
-// require(`../../db/__tests__/fixtures/ensure-loki`)()
+require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
 const makeNodes = () => [
   {
@@ -154,7 +151,6 @@ const runQuery = async (args, nodes = makeNodes()) => {
   const schema = await buildSchema()
 
   const context = { path: `foo` }
-  // FIXME: Adjust after rebase on current master
   return findMany(`Test`)({ args, context, info: { schema } })
 }
 
@@ -436,7 +432,6 @@ describe(`[legacy] collection fields`, () => {
   })
 
   it(`sorts results with DESC has null fields first`, async () => {
-    // FIXME: Do we really want this?
     let result = await runQuery({
       limit: 10,
       sort: {
@@ -452,7 +447,6 @@ describe(`[legacy] collection fields`, () => {
   })
 
   it(`sorts results with ASC has null fields last`, async () => {
-    // FIXME: Do we really want this?
     let result = await runQuery({
       limit: 10,
       sort: {
@@ -468,8 +462,6 @@ describe(`[legacy] collection fields`, () => {
   })
 
   it(`applies specified sort order, and sorts asc by default`, async () => {
-    // FIXME: This tests that sort order is only applied to the first field!
-    // What is the expectation?
     let result = await runQuery({
       limit: 10,
       sort: {

@@ -1,6 +1,6 @@
 const { graphql } = require(`gatsby/graphql`)
 const { store } = require(`../../../gatsby/src/redux`)
-const { getNode, getNodesByType } = require(`../../../gatsby/src/redux/nodes`)
+const { getNode, getNodesByType } = require(`../../../gatsby/src/db/nodes`)
 
 const { onCreateNode } = require(`../gatsby-node`)
 

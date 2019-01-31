@@ -7,8 +7,8 @@ const { getValueAtSelector } = require(`../../utils`)
 //        And should we respect sort order, or always sort `null`s
 //        to the front/back?
 const compareValues = (a, b) => {
-  if (a == null) return -1
-  if (b == null) return 1
+  if (a == null) return 1
+  if (b == null) return -1
 
   switch (typeof a) {
     case `string`:

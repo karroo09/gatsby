@@ -1,10 +1,9 @@
 if (process.env.GATSBY_DB_NODES === `loki`) {
-  const _ = require(`lodash`)
-  const nodeTypes = require(`../../../schema/build-node-types`)
   const { store } = require(`../../../redux`)
-  const runQuery = require(`../nodes-query`)
-  const { getNodeTypeCollection } = require(`../nodes`)
-  const lokiDb = require(`../index`)
+  const { getNodeTypeCollection } = require(`../../../db/loki/nodes`)
+  const lokiDb = require(`../../../db/loki/index`)
+  // FIXME: Don't use findMany, use query directly
+  const { findMany } = require(`../../resolvers`)
 
   function makeNodes() {
     return [
@@ -17,26 +16,30 @@ if (process.env.GATSBY_DB_NODES === `loki`) {
     ]
   }
 
+  let buildSchema
+
   async function runQueries(nodes, n) {
     for (const node of nodes) {
       store.dispatch({ type: `CREATE_NODE`, payload: node })
     }
-    const gqlType = nodeTypes.buildNodeObjectType({
-      typeName: `Test`,
-      nodes,
-      pluginFields: [],
-      processedTypes: {},
-    })
-    const queryArgs = { filter: { foo: { eq: `bar` } } }
-    const args = { gqlType, queryArgs }
-    return await Promise.all(_.map(new Array(n), () => runQuery(args)))
+
+    const schema = await buildSchema()
+
+    const args = { filter: { foo: { eq: `bar` } } }
+    return Promise.all(Array(n).fill(() => findMany(`Test`)(args)))
   }
 
   describe(`query indexing`, () => {
     beforeEach(async () => {
       await lokiDb.start()
       store.dispatch({ type: `DELETE_CACHE` })
+      const { schemaComposer } = require(`graphql-compose`)
+      schemaComposer.clear()
+      jest.isolateModules(() => {
+        buildSchema = require(`../../schema`).buildSchema
+      })
     })
+
     it(`does not create index when query run 1 time`, async () => {
       await runQueries(makeNodes(), 1)
       const coll = getNodeTypeCollection(`Test`)

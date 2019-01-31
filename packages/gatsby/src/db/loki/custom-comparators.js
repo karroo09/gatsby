@@ -1,8 +1,8 @@
 // Gatsby has very specific sorting requirements. Specifically,
 // undefined > null > everything else. So, if an orderby `desc` is
 // specified, then nulls and undefined values are of higher rank. This
-// is due to the use of lodash's `orderBy` function in
-// `run-sift`.
+// is due to the fact that we used to use lodash's `orderBy` function
+// for sorting.
 //
 // The below functions are alternate versions of the comparators used
 // by loki that match lodash's behavior

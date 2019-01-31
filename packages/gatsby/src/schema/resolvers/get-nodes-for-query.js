@@ -1,13 +1,6 @@
 const { getNullableType } = require(`graphql`)
 
-const { getNodesByType } = require(`../db`)
-const { dropQueryOperators } = require(`../query`)
-const {
-  hasResolvers,
-  isProductionBuild,
-  merge,
-  pathToObject,
-} = require(`../utils`)
+const { isProductionBuild } = require(`../utils`)
 const { trackObjects } = require(`../utils/node-tracking`)
 
 const cache = new Map()
@@ -70,43 +63,17 @@ const prepareForQuery = (node, filter, parentType, context, schema) => {
   return queryNode
 }
 
-const getNodesForQuery = async (
-  typeName,
-  args,
-  context,
-  schema,
-  projection
-) => {
-  const nodes = await getNodesByType(typeName)
-
-  const { filter, sort } = args || {}
-  const { group, distinct } = projection || {}
-
-  const filterFields = filter ? dropQueryOperators(filter) : {}
-  const sortFields = (sort && sort.fields) || []
-
-  const fields = merge(
-    filterFields,
-    ...sortFields.map(pathToObject),
-    pathToObject(group),
-    pathToObject(distinct)
-  )
-
-  if (!Object.keys(fields).length) return nodes
-
+const getNodesForQuery = (type, nodes, fields, context, schema) => {
   let cacheKey
   if (isProductionBuild) {
-    cacheKey = JSON.stringify({ typeName, count: nodes.length, fields })
+    cacheKey = JSON.stringify({
+      typeName: type.name,
+      count: nodes.length,
+      fields,
+    })
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey)
     }
-  }
-
-  const type = schema.getType(typeName)
-
-  // If there are no resolvers to call manually, we can just return nodes.
-  if (!hasResolvers(type, fields)) {
-    return nodes
   }
 
   const queryNodes = Promise.all(
