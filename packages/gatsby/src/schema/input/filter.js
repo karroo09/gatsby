@@ -24,7 +24,7 @@ const convert = itc => {
   )
   cache.set(type, convertedITC)
 
-  const fields = itc.getFields()
+  const fields = type.getFields()
   const convertedFields = Object.entries(fields).reduce(
     (acc, [fieldName, fieldConfig]) => {
       const type = getNamedType(fieldConfig.type)
