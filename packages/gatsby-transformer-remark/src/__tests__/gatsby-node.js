@@ -1,7 +1,7 @@
 const { graphql } = require(`gatsby/graphql`)
 const { store } = require(`../../../gatsby/src/redux`)
-
 const { onCreateNode } = require(`../gatsby-node`)
+require(`../../../gatsby/src/db/__tests__/fixtures/ensure-loki`)()
 
 describe(`Process markdown content correctly`, () => {
   const node = {

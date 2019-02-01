@@ -54,6 +54,9 @@ const makeNodes = () => [
     anArray: [1, 2, 5, 4],
     waxOnly: {
       foo: true,
+      bar: {
+        baz: true,
+      },
     },
     anotherKey: {
       withANested: {
@@ -154,16 +157,16 @@ const runQuery = async (args, nodes = makeNodes()) => {
   return findMany(`Test`)({ args, context, info: { schema } })
 }
 
-describe(`[legacy] Filter fields`, () => {
-  beforeEach(() => {
-    store.dispatch({ type: `DELETE_CACHE` })
-    const { schemaComposer } = require(`graphql-compose`)
-    schemaComposer.clear()
-    jest.isolateModules(() => {
-      buildSchema = require(`../../schema`).buildSchema
-    })
+beforeEach(() => {
+  store.dispatch({ type: `DELETE_CACHE` })
+  const { schemaComposer } = require(`graphql-compose`)
+  schemaComposer.clear()
+  jest.isolateModules(() => {
+    buildSchema = require(`../../schema`).buildSchema
   })
+})
 
+describe(`[legacy] Filter fields`, () => {
   it(`handles eq operator`, async () => {
     let result = await runFilter({ hair: { eq: 2 } })
 
@@ -192,8 +195,22 @@ describe(`[legacy] Filter fields`, () => {
     expect(result[0].hair).toEqual(1)
   })
 
+  it(`handles ne: true operator`, async () => {
+    let result = await runFilter({ boolean: { ne: true } })
+
+    expect(result.length).toEqual(2)
+  })
+
   it(`handles nested ne: true operator`, async () => {
     let result = await runFilter({ waxOnly: { foo: { ne: true } } })
+
+    expect(result.length).toEqual(2)
+  })
+
+  it(`handles deeply nested ne: true operator`, async () => {
+    let result = await runFilter({
+      waxOnly: { bar: { baz: { ne: true } } },
+    })
 
     expect(result.length).toEqual(2)
   })
@@ -447,6 +464,11 @@ describe(`[legacy] collection fields`, () => {
   })
 
   it(`sorts results with ASC has null fields last`, async () => {
+    // FIXME: Currently, the custom comparators for Loki do *not*
+    // differentiate between `null` and `undefined`. Although we have
+    // Comparators.lt and Comparators.gt, this is ineffective for
+    // comparisons between `null` and `undefined`, which are caught
+    // as a special case in Comparators.aeq.
     let result = await runQuery({
       limit: 10,
       sort: {

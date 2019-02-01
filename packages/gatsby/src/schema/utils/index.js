@@ -20,6 +20,7 @@ const isObject = require(`./is-object`)
 const isProductionBuild = require(`./is-production-build`)
 const merge = require(`./merge`)
 const pathToObject = require(`./path-to-object`)
+const range = require(`./range`)
 const stringToRegExp = require(`./string-to-regexp`)
 const toSnakeCase = require(`./to-snake-case`)
 const withBaseDir = require(`./with-base-dir`)
@@ -49,6 +50,7 @@ module.exports = {
   isProductionBuild,
   merge,
   pathToObject,
+  range,
   stringToRegExp,
   toSnakeCase,
   trackObjects,

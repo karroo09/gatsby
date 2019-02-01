@@ -1,3 +1,6 @@
+const db = require(`../../db`)
+const getById = jest.spyOn(db, `getById`)
+
 const {
   findById,
   findByIds,
@@ -18,54 +21,51 @@ TypeComposer.create(`type Bar { baz: String, foo: Nested }`)
 schemaComposer.Query.addFields({ foo: `Foo`, bar: `Bar`, nested: `Nested` })
 const schema = schemaComposer.buildSchema()
 
-const { getById } = require(`../../db`)
-jest.mock(`../../db`, () => {
-  const nodes = [
-    {
-      id: 1,
-      internal: { type: `Foo` },
-      baz: `qux`,
-      foo: { bar: { baz: `baz` } },
-    },
-    {
-      id: 2,
-      internal: { type: `Bar` },
-      baz: `baz`,
-      foo: { bar: { baz: `baz` } },
-    },
-    {
-      id: 3,
-      internal: { type: `Foo` },
-      baz: `baz`,
-      foo: { bar: { baz: `qux` } },
-    },
-    {
-      id: 4,
-      internal: { type: `Foo` },
-      baz: `foo`,
-      foo: { bar: { baz: `baz` } },
-    },
-    {
-      id: 5,
-      internal: { type: `Bar` },
-      baz: `baz`,
-      foo: { bar: { baz: `baz` } },
-    },
-  ]
-  return {
-    getById: jest
-      .fn()
-      .mockImplementation(id => nodes.find(n => n.id === id) || null),
-    getNodesByType: type => nodes.filter(node => node.internal.type === type),
-  }
-})
+const nodes = [
+  {
+    id: 1,
+    internal: { type: `Foo` },
+    baz: `qux`,
+    foo: { bar: { baz: `baz` } },
+  },
+  {
+    id: 2,
+    internal: { type: `Bar` },
+    baz: `baz`,
+    foo: { bar: { baz: `baz` } },
+  },
+  {
+    id: 3,
+    internal: { type: `Foo` },
+    baz: `baz`,
+    foo: { bar: { baz: `qux` } },
+  },
+  {
+    id: 4,
+    internal: { type: `Foo` },
+    baz: `foo`,
+    foo: { bar: { baz: `baz` } },
+  },
+  {
+    id: 5,
+    internal: { type: `Bar` },
+    baz: `baz`,
+    foo: { bar: { baz: `baz` } },
+  },
+]
 
 const createPageDependency = require(`../../../redux/actions/add-page-dependency`)
 jest.mock(`../../../redux/actions/add-page-dependency`)
-const withPageDependencies = require(`../page-dependencies`)
-jest.spyOn({ withPageDependencies }, `withPageDependencies`)
 
 describe(`Resolvers`, () => {
+  require(`../../../db/__tests__/fixtures/ensure-loki`)()
+  beforeAll(() => {
+    const { store } = require(`../../../redux`)
+    nodes.forEach(node =>
+      store.dispatch({ type: `CREATE_NODE`, payload: node })
+    )
+  })
+
   const type = `Foo`
 
   describe(`findById`, () => {
@@ -196,7 +196,7 @@ describe(`Resolvers`, () => {
       const info = { fieldName: `linkedFoos`, returnType: FoosType, schema }
       const resolver = link({ by: `foo.bar.baz` })
       const resolved = await resolver(source, {}, {}, info)
-      expect(resolved).toEqual([1, 3, 4].map(getById))
+      expect(resolved).toEqual(expect.arrayContaining([1, 3, 4].map(getById)))
     })
 
     it(`resolves nested one-to-many`, async () => {

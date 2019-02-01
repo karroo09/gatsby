@@ -63,10 +63,6 @@ const nodes = [
   },
 ]
 
-nodes.forEach(node => {
-  store.dispatch(actions.createNode(node, { name: `test` }))
-})
-
 jest.mock(`../../utils/api-runner-node`, () => (api, options) => {
   switch (api) {
     case `addTypeDefs`:
@@ -101,7 +97,11 @@ jest.mock(`../../utils/api-runner-node`, () => (api, options) => {
 })
 
 describe(`Abstract types`, () => {
+  require(`../../db/__tests__/fixtures/ensure-loki`)()
   beforeAll(async () => {
+    nodes.forEach(node => {
+      store.dispatch(actions.createNode(node, { name: `test` }))
+    })
     const schema = await buildSchema()
     store.dispatch({
       type: `SET_SCHEMA`,

@@ -1,8 +1,8 @@
 const { graphql } = require(`gatsby/graphql`)
 const { store } = require(`../../../gatsby/src/redux`)
 const { getNode, getNodesByType } = require(`../../../gatsby/src/db/nodes`)
-
 const { onCreateNode } = require(`../gatsby-node`)
+require(`../../../gatsby/src/db/__tests__/fixtures/ensure-loki`)()
 
 let buildSchema
 let pluginOptions

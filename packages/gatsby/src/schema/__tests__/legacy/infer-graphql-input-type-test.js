@@ -1,10 +1,10 @@
 const { graphql } = require(`graphql`)
 
 const { store } = require(`../../../redux`)
-// FIXME: enable after rebase on current master
-// require(`../../db/__tests__/fixtures/ensure-loki`)()
 
 describe(`[legacy] GraphQL Input args`, () => {
+  require(`../../../db/__tests__/fixtures/ensure-loki`)()
+
   let buildSchema, getInputArgs, addInferredType
 
   async function runQuery(nodes, query) {

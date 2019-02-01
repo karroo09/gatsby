@@ -4,8 +4,7 @@ const { reportConflict } = require(`../../infer/type-conflict-reporter`)
 jest.mock(`../../infer/type-conflict-reporter`)
 
 const { store } = require(`../../../redux`)
-// FIXME: enable after rebase on current master
-// require(`../../db/__tests__/fixtures/ensure-loki`)()
+require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
 const path = require(`path`)
 const normalizePath = require(`normalize-path`)

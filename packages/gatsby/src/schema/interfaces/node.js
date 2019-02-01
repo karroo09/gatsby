@@ -7,8 +7,7 @@ const {
 const { findById, findByIds } = require(`../resolvers`)
 
 // TODO: why is `mediaType` on Internal? Applies only to File!?
-// Is `fieldOwners` actually set anywhere? And is it supposed to be an array,
-// as the Joi schema claims, or an object, which is the default in `redux/actions.js`
+// FIXME: `fieldOwners` is an Object (fieldName=>pluginName Map), not an array
 const InternalTC = TypeComposer.create({
   name: `Internal`,
   fields: {

@@ -1,8 +1,6 @@
 const { graphql } = require(`graphql`)
 
 const { store } = require(`../../../redux`)
-// FIXME: enable after rebase on current master
-// require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
 const createPageDependency = require(`../../../redux/actions/add-page-dependency`)
 jest.mock(`../../../redux/actions/add-page-dependency`)
@@ -38,6 +36,8 @@ const makeNodes = () => [
 ]
 
 describe(`[legacy] build-node-connections`, () => {
+  require(`../../../db/__tests__/fixtures/ensure-loki`)()
+
   let buildSchema
 
   async function runQuery(query, nodes = makeNodes()) {

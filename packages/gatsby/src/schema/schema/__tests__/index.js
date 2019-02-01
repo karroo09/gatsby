@@ -2,47 +2,32 @@ const { GraphQLSchema, GraphQLBoolean, GraphQLInt } = require(`graphql`)
 
 const { buildSchema, updateSchema } = require(`..`)
 
-const { getById, getNodesByType } = require(`../../db`)
-jest.mock(`../../db`, () => {
-  const nodes = [
-    {
-      id: 1,
-      parent: 2,
-      children: [],
-      internal: { type: `Markdown` },
-      frontmatter: { important: true, authors: [`Foo`] },
-    },
-    {
-      id: 2,
-      parent: null,
-      children: [1],
-      internal: { type: `File` },
-    },
-    {
-      id: 3,
-      parent: null,
-      children: [],
-      internal: { type: `Author` },
-      lastname: `Foo`,
-      firstname: `Bar`,
-    },
-  ]
-  return {
-    getById: id => nodes.find(node => node.id === id),
-    getNodesByType: jest
-      .fn()
-      .mockImplementation(type =>
-        nodes.filter(node => node.internal.type === type)
-      ),
-    getTypes: () =>
-      Array.from(
-        nodes.reduce(
-          (acc, node) => acc.add(node.internal.type) || acc,
-          new Set()
-        )
-      ),
-  }
-})
+const { store } = require(`../../../redux`)
+const db = require(`../../db`)
+const { getById } = db
+const nodes = [
+  {
+    id: 1,
+    parent: 2,
+    children: [],
+    internal: { type: `Markdown` },
+    frontmatter: { important: true, authors: [`Foo`] },
+  },
+  {
+    id: 2,
+    parent: null,
+    children: [1],
+    internal: { type: `File` },
+  },
+  {
+    id: 3,
+    parent: null,
+    children: [],
+    internal: { type: `Author` },
+    lastname: `Foo`,
+    firstname: `Bar`,
+  },
+]
 
 jest.mock(`../../../utils/api-runner-node`, () => (api, options) => {
   switch (api) {
@@ -122,8 +107,12 @@ jest.mock(`../../../utils/api-runner-node`, () => (api, options) => {
 })
 
 describe(`Schema builder`, () => {
+  require(`../../../db/__tests__/fixtures/ensure-loki`)()
   let schema
   beforeAll(async () => {
+    nodes.forEach(node =>
+      store.dispatch({ type: `CREATE_NODE`, payload: node })
+    )
     schema = await buildSchema()
     require(`../../../redux`).store.dispatch({
       type: `SET_SCHEMA`,
@@ -224,7 +213,15 @@ describe(`Schema builder`, () => {
   })
 
   it(`updates schema with SitePage type`, async () => {
-    getNodesByType.mockReturnValue([{ title: `Foo`, keywords: [`foo`] }])
+    store.dispatch({
+      type: `CREATE_NODE`,
+      payload: {
+        id: `page`,
+        title: `Foo`,
+        keywords: [`foo`],
+        internal: { type: `SitePage` },
+      },
+    })
     await updateSchema()
     const SitePage = schema.getQueryType().getFields().sitePage
     expect(SitePage.type.name).toBe(`SitePage`)

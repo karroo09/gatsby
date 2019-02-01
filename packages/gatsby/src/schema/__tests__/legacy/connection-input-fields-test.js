@@ -1,8 +1,6 @@
 const { graphql } = require(`graphql`)
 
 const { store } = require(`../../../redux`)
-// FIXME: enable after rebase on current master
-// require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
 const makeNodes = () => [
   {
@@ -128,6 +126,8 @@ const makeNodes = () => [
 ]
 
 describe(`[legacy] connection input fields`, () => {
+  require(`../../../db/__tests__/fixtures/ensure-loki`)()
+
   let buildSchema
 
   async function runQuery(query, nodes = makeNodes()) {

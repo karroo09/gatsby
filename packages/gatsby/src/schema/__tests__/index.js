@@ -86,10 +86,6 @@ const nodes = [
   },
 ]
 
-nodes.forEach(node => {
-  store.dispatch(actions.createNode(node, { name: `test` }))
-})
-
 jest.mock(`../../utils/api-runner-node`, () => (api, options) => {
   switch (api) {
     case `addTypeDefs`:
@@ -148,7 +144,11 @@ jest.mock(`../../utils/api-runner-node`, () => (api, options) => {
 })
 
 describe(`Schema query`, () => {
+  require(`../../db/__tests__/fixtures/ensure-loki`)()
   beforeAll(async () => {
+    nodes.forEach(node => {
+      store.dispatch(actions.createNode(node, { name: `test` }))
+    })
     const schema = await buildSchema()
     store.dispatch({
       type: `SET_SCHEMA`,
@@ -382,7 +382,10 @@ describe(`Schema query`, () => {
             node: {
               id: `md1`,
               frontmatter: {
-                authors: [{ name: `Author 1` }, { name: `Author 2` }],
+                authors: expect.arrayContaining([
+                  { name: `Author 1` },
+                  { name: `Author 2` },
+                ]),
               },
             },
           },
@@ -450,7 +453,10 @@ describe(`Schema query`, () => {
           {
             node: {
               frontmatter: {
-                authors: [{ name: `Author 1` }, { name: `Author 2` }],
+                authors: expect.arrayContaining([
+                  { name: `Author 1` },
+                  { name: `Author 2` },
+                ]),
                 title: `Markdown File 1`,
               },
             },
@@ -463,7 +469,10 @@ describe(`Schema query`, () => {
           {
             node: {
               frontmatter: {
-                authors: [{ name: `Author 1` }, { name: `Author 2` }],
+                authors: expect.arrayContaining([
+                  { name: `Author 1` },
+                  { name: `Author 2` },
+                ]),
                 title: `Markdown File 1`,
               },
             },

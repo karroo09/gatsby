@@ -16,7 +16,8 @@ const link = ({ by, from }) => async (source, args, context, info) => {
   if (fieldValue == null || isObject(fieldValue)) return fieldValue
   if (
     Array.isArray(fieldValue) &&
-    // TODO: Do we have to look with fieldValue.some(v => isObject(v))?
+    // TODO: Do we have to look with fieldValue.some(v => isObject(v)),
+    // i.e. can we have sparse arrays here?
     (fieldValue[0] == null || isObject(fieldValue[0]))
   ) {
     return fieldValue

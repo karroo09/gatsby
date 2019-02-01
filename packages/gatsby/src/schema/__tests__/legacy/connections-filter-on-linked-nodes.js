@@ -1,8 +1,6 @@
 const { graphql } = require(`graphql`)
 
 const { store } = require(`../../../redux`)
-// FIXME: enable after rebase on current master
-// require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
 const makeNodes = () => [
   { id: `child_1`, internal: { type: `Child` }, hair: `brown`, children: [] },
@@ -24,6 +22,8 @@ const makeNodes = () => [
 ]
 
 describe(`[legacy] filtering on linked nodes`, () => {
+  require(`../../../db/__tests__/fixtures/ensure-loki`)()
+
   let buildSchema
 
   async function runQuery(query, nodes = makeNodes()) {

@@ -1,8 +1,6 @@
 const { graphql, GraphQLString } = require(`graphql`)
 
 const { store } = require(`../../../redux`)
-// FIXME: enable after rebase on current master
-// require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
 jest.mock(`../../../utils/api-runner-node`)
 const apiRunnerNode = require(`../../../utils/api-runner-node`)
@@ -46,6 +44,8 @@ const makeNodes = () => [
 ]
 
 describe(`[legacy] build-node-types`, () => {
+  require(`../../../db/__tests__/fixtures/ensure-loki`)()
+
   let buildSchema
 
   async function runQuery(query, nodes = makeNodes()) {

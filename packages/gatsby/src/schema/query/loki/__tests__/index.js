@@ -1,9 +1,9 @@
 if (process.env.GATSBY_DB_NODES === `loki`) {
-  const { store } = require(`../../../redux`)
-  const { getNodeTypeCollection } = require(`../../../db/loki/nodes`)
-  const lokiDb = require(`../../../db/loki/index`)
-  // FIXME: Don't use findMany, use query directly
-  const { findMany } = require(`../../resolvers`)
+  const { store } = require(`../../../../redux`)
+  const { getNodeTypeCollection } = require(`../../../../db/loki/nodes`)
+  const lokiDb = require(`../../../../db/loki/index`)
+  const { findMany } = require(`../../../resolvers`)
+  const { range } = require(`../../../utils`)
 
   function makeNodes() {
     return [
@@ -18,7 +18,7 @@ if (process.env.GATSBY_DB_NODES === `loki`) {
 
   let buildSchema
 
-  async function runQueries(nodes, n) {
+  const runQueries = async (nodes, n) => {
     for (const node of nodes) {
       store.dispatch({ type: `CREATE_NODE`, payload: node })
     }
@@ -26,7 +26,10 @@ if (process.env.GATSBY_DB_NODES === `loki`) {
     const schema = await buildSchema()
 
     const args = { filter: { foo: { eq: `bar` } } }
-    return Promise.all(Array(n).fill(() => findMany(`Test`)(args)))
+
+    return Promise.all(
+      range(n).map(() => findMany(`Test`)({ args, info: { schema } }))
+    )
   }
 
   describe(`query indexing`, () => {
@@ -36,7 +39,7 @@ if (process.env.GATSBY_DB_NODES === `loki`) {
       const { schemaComposer } = require(`graphql-compose`)
       schemaComposer.clear()
       jest.isolateModules(() => {
-        buildSchema = require(`../../schema`).buildSchema
+        buildSchema = require(`../../../schema`).buildSchema
       })
     })
 

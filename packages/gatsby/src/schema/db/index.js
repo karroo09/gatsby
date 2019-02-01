@@ -7,8 +7,11 @@ const {
 
 // The `id` field can already be resolved to a full node.
 // In that case just return it.
-const getById = id =>
-  id != null ? (typeof id === `object` ? id : getNode(id)) : null
+const getById = id => {
+  if (id == null) return null
+  const node = typeof id === `object` ? id : getNode(id)
+  return node || null
+}
 
 module.exports = {
   getById,
