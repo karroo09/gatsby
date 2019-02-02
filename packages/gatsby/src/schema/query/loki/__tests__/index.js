@@ -56,7 +56,7 @@ if (process.env.GATSBY_DB_NODES === `loki`) {
     })
   })
 } else {
-  it(`skipping loki nodes-query-test`, () => {
+  it(`skipping loki query-test`, () => {
     expect(true).toEqual(true)
   })
 }

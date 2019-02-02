@@ -596,7 +596,7 @@ describe(`Type inference`, () => {
 
       schemaComposer.Query.addFields({ link: LinkTC, linked: LinkedTC })
       const schema = schemaComposer.buildSchema()
-      const returnType = LinkedTC
+      const returnType = LinkedTC.getType()
 
       const { resolve } = LinkTC.getFieldConfig(`_nv_lid`)
       expect(resolve).toBeInstanceOf(Function)

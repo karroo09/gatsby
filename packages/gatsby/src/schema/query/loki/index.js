@@ -27,6 +27,9 @@ const prepareSortArgs = sort => {
 }
 
 const query = (type, args, firstResultOnly) => {
+  // FIXME: IMPORTANT: This is not wired up yet
+  // We now get types array!!!
+
   const coll = getNodeTypeCollection(type.name)
   let chain = coll.chain()
 

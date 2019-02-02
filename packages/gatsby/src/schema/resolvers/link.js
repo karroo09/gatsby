@@ -1,16 +1,11 @@
-const {
-  GraphQLList,
-  getNullableType,
-  getNamedType,
-  isAbstractType,
-} = require(`graphql`)
+const { GraphQLList, getNullableType, getNamedType } = require(`graphql`)
 
 const { equals, oneOf } = require(`../query`)
 const { isObject } = require(`../utils`)
 
 // FIXME: Handle array of arrays
 // Maybe TODO: should we check fieldValue *and* info.returnType?
-const link = ({ by, from }) => async (source, args, context, info) => {
+const link = ({ by = `id`, from }) => async (source, args, context, info) => {
   const fieldValue = source && source[from || info.fieldName]
 
   if (fieldValue == null || isObject(fieldValue)) return fieldValue
@@ -23,20 +18,10 @@ const link = ({ by, from }) => async (source, args, context, info) => {
     return fieldValue
   }
 
-  const { findById, findByIds, findMany, findOne } = require(`../resolvers`)
+  const { findMany, findOne } = require(`../resolvers`)
 
-  if (by === `id`) {
-    const [resolve, key] = Array.isArray(fieldValue)
-      ? [findByIds, `ids`]
-      : [findById, `id`]
-    return resolve({
-      source,
-      args: { [key]: fieldValue },
-      context,
-      info,
-    })
-  }
-
+  // FIXME: Once we fully move to Loki, beware that the semantics
+  // of oneOf changes - $in vs. $contains
   const operator = Array.isArray(fieldValue) ? oneOf : equals
   args.filter = by.split(`.`).reduceRight(
     (acc, key, i, { length }) => ({
@@ -47,34 +32,21 @@ const link = ({ by, from }) => async (source, args, context, info) => {
 
   const returnType = getNullableType(info.returnType)
   const type = getNamedType(returnType)
-  const possibleTypes = isAbstractType(type)
-    ? info.schema.getPossibleTypes(type)
-    : [type]
 
   if (returnType instanceof GraphQLList) {
-    const results = await Promise.all(
-      possibleTypes.map(type =>
-        findMany(type.name)({
-          source,
-          args,
-          context,
-          info,
-        })
-      )
-    )
-    return results.reduce((acc, r) => acc.concat(r))
+    return findMany(type.name)({
+      source,
+      args,
+      context,
+      info,
+    })
   } else {
-    let result
-    for (const type of possibleTypes) {
-      result = await findOne(type.name)({
-        source,
-        args: args.filter,
-        context,
-        info,
-      })
-      if (result != null) break
-    }
-    return result
+    return findOne(type.name)({
+      source,
+      args: args.filter,
+      context,
+      info,
+    })
   }
 }
 

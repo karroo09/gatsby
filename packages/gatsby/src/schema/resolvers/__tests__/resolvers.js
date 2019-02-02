@@ -1,22 +1,16 @@
-const db = require(`../../db`)
-const getById = jest.spyOn(db, `getById`)
+const { getById } = require(`../../db`)
 
-const {
-  findById,
-  findByIds,
-  findByIdsAndType,
-  findMany,
-  findOne,
-  link,
-} = require(`..`)
+const resolvers = require(`..`)
+const { findById, findByIds, findByIdsAndType, findMany, link } = resolvers
+const findOne = jest.spyOn(resolvers, `findOne`)
 
 const { TypeComposer, schemaComposer } = require(`graphql-compose`)
 TypeComposer.create({
   name: `Nested`,
   fields: { bar: `type Baz { baz: String }` },
 })
-TypeComposer.create(`type Foo { baz: String, foo: Nested }`)
-TypeComposer.create(`type Bar { baz: String, foo: Nested }`)
+TypeComposer.create(`type Foo { id: Int, baz: String, foo: Nested }`)
+TypeComposer.create(`type Bar { id: Int, baz: String, foo: Nested }`)
 
 schemaComposer.Query.addFields({ foo: `Foo`, bar: `Bar`, nested: `Nested` })
 const schema = schemaComposer.buildSchema()
@@ -208,22 +202,18 @@ describe(`Resolvers`, () => {
     })
 
     it(`resolves id`, async () => {
-      getById.mockClear()
       const source = { id: 1000, linkedFoo: 1 }
       const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `id` })
       const resolved = await resolver(source, {}, {}, info)
-      expect(getById).toHaveBeenCalledTimes(1)
       expect(resolved).toEqual(getById(1))
     })
 
     it(`resolves ids`, async () => {
-      getById.mockClear()
       const source = { id: 1000, linkedFoos: [3, 4] }
       const info = { fieldName: `linkedFoos`, returnType: FoosType, schema }
       const resolver = link({ by: `id` })
       const resolved = await resolver(source, {}, {}, info)
-      expect(getById).toHaveBeenCalledTimes(2)
       expect(resolved).toEqual([3, 4].map(getById))
     })
 
@@ -231,9 +221,7 @@ describe(`Resolvers`, () => {
       const source = { id: 1000, linkedFoo: getById(1) }
       const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `id` })
-      getById.mockClear()
       const resolved = await resolver(source, {}, {}, info)
-      expect(getById).not.toHaveBeenCalled()
       expect(resolved).toBe(getById(1))
     })
 
@@ -241,9 +229,9 @@ describe(`Resolvers`, () => {
       const source = { id: 1000, linkedFoo: null }
       const info = { fieldName: `linkedFoo`, returnType: FooType, schema }
       const resolver = link({ by: `id` })
-      getById.mockClear()
+      findOne.mockClear()
       const resolved = await resolver(source, {}, {}, info)
-      expect(getById).not.toHaveBeenCalled()
+      expect(findOne).not.toHaveBeenCalled()
       expect(resolved).toBeNull()
     })
 

@@ -1,3 +1,5 @@
+const { isAbstractType } = require(`graphql`)
+
 const { getById, getNodesByType } = require(`../db`)
 const { query } = require(`../query`)
 const getNodesForQuery = require(`./get-nodes-for-query`)
@@ -6,11 +8,14 @@ const withPageDependencies = require(`./page-dependencies`)
 const withSpecialCases = require(`./special-cases`)
 const { hasResolvers } = require(`../utils`)
 
+// findById and findByIds are only used on fields of type `Node`
+
 const findById = () => ({ args }) => getById(args.id)
 
 const findByIds = () => ({ args }) =>
   Array.isArray(args.ids) ? args.ids.map(getById).filter(Boolean) : []
 
+// TODO: Remove - just use findOne/findMany
 const findByIdsAndType = typeName => ({ args }, firstResultOnly) =>
   Array.isArray(args.ids)
     ? args.ids
@@ -24,15 +29,22 @@ const findByIdsAndType = typeName => ({ args }, firstResultOnly) =>
 
 const find = typeName => async (rp, firstResultOnly) => {
   const queryArgs = withSpecialCases({ type: typeName, ...rp })
-
-  const queryFields = getQueryFields(rp)
-  const nodes = await getNodesByType(typeName)
-
   const { schema } = rp.info
   const type = schema.getType(typeName)
+  const possibleTypes = isAbstractType(type)
+    ? schema.getPossibleTypes(type)
+    : [type]
+
+  const queryFields = getQueryFields(rp)
+  const nodes = (await Promise.all(
+    possibleTypes.map(type => getNodesByType(type.name))
+  )).reduce((acc, nodesOfType) => acc.concat(nodesOfType), [])
 
   let queryNodes
-  if (!Object.keys(queryFields).length || !hasResolvers(type, queryFields)) {
+  if (
+    !Object.keys(queryFields).length ||
+    !possibleTypes.some(type => hasResolvers(type, queryFields))
+  ) {
     queryNodes = nodes
   } else {
     // Don't create page dependencies in getNodesForQuery
@@ -47,14 +59,14 @@ const find = typeName => async (rp, firstResultOnly) => {
     )
   }
 
-  // We pass `queryNodes` *and* `type`, because Loki will fetch
+  // We pass `queryNodes` *and* `types`, because Loki will fetch
   // a node collection by `type.name`, but Sift expects the nodes as an
   // array. Also: we pass the `type` and not `typeName`, because Loki
   // needs the field configs to translate `$in` and `$nin`
   // operators on `GraphQLList` fields into `$containsAny` and `$containsNone`.
   // This should only be a temporary solution.
-  const lokiCollectionType = nodes === queryNodes ? type : undefined
-  return query(queryNodes, queryArgs, firstResultOnly, lokiCollectionType)
+  const typesForLoki = nodes === queryNodes ? possibleTypes : undefined
+  return query(queryNodes, queryArgs, firstResultOnly, typesForLoki)
 }
 
 const findMany = typeName => async rp => find(typeName)(rp, false)
