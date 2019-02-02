@@ -1,5 +1,6 @@
 const { getById, getNodesByType } = require(`../db`)
-const { findByIdsAndType } = require(`../resolvers`)
+const { findOne, findMany } = require(`../resolvers`)
+const { oneOf } = require(`../query`)
 
 const addConvenienceChildrenFields = tc => {
   const typeName = tc.getTypeName()
@@ -20,24 +21,28 @@ const addConvenienceChildrenFields = tc => {
 
   Object.entries(hasChildrenByType).forEach(([typeName, hasChildren]) => {
     const fieldName = (hasChildren ? `children` : `child`) + typeName
-    const type = hasChildren ? [typeName] : typeName
-    const field = {
-      [fieldName]: {
-        type,
-        resolve: (source, args, context, info) =>
-          findByIdsAndType(typeName)(
-            {
+    const fieldConfig = hasChildren
+      ? {
+          type: [typeName],
+          resolve: (source, args, context, info) =>
+            findMany(typeName)({
               source,
-              args: {
-                ids: source.children,
-              },
+              args: { filter: { id: oneOf(source.children) } },
               context,
               info,
-            },
-            !hasChildren
-          ),
-      },
-    }
+            }),
+        }
+      : {
+          type: typeName,
+          resolve: (source, args, context, info) =>
+            findOne(typeName)({
+              source,
+              args: { id: oneOf(source.children) },
+              context,
+              info,
+            }),
+        }
+    const field = { [fieldName]: fieldConfig }
     tc.addFields(field)
   })
 }

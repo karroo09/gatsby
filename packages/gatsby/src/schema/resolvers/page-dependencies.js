@@ -1,8 +1,8 @@
 const createPageDependency = require(`../../redux/actions/add-page-dependency`)
 const { isDefined } = require(`../utils`)
 
-const withPageDependencies = resolve => type => async (rp, firstResultOnly) => {
-  const result = await resolve(type)(rp, firstResultOnly)
+const withPageDependencies = resolve => type => async rp => {
+  const result = await resolve(type)(rp)
   const { path } = rp.context || {}
   if (!path || result == null) return result
 

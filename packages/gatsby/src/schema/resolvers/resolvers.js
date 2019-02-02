@@ -15,18 +15,6 @@ const findById = () => ({ args }) => getById(args.id)
 const findByIds = () => ({ args }) =>
   Array.isArray(args.ids) ? args.ids.map(getById).filter(Boolean) : []
 
-// TODO: Remove - just use findOne/findMany
-const findByIdsAndType = typeName => ({ args }, firstResultOnly) =>
-  Array.isArray(args.ids)
-    ? args.ids
-        .map(getById)
-        [firstResultOnly ? `find` : `filter`](
-          node => node && node.internal.type === typeName
-        ) || null
-    : firstResultOnly
-    ? null
-    : []
-
 const find = typeName => async (rp, firstResultOnly) => {
   const queryArgs = withSpecialCases({ type: typeName, ...rp })
   const { schema } = rp.info
@@ -80,7 +68,6 @@ const findOne = typeName => rp => {
 module.exports = {
   findById: withPageDependencies(findById),
   findByIds: withPageDependencies(findByIds),
-  findByIdsAndType: withPageDependencies(findByIdsAndType),
   findMany: withPageDependencies(findMany),
   findOne: withPageDependencies(findOne),
 }

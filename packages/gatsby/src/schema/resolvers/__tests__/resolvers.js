@@ -1,7 +1,7 @@
 const { getById } = require(`../../db`)
 
 const resolvers = require(`..`)
-const { findById, findByIds, findByIdsAndType, findMany, link } = resolvers
+const { findById, findByIds, findMany, link } = resolvers
 const findOne = jest.spyOn(resolvers, `findOne`)
 
 const { TypeComposer, schemaComposer } = require(`graphql-compose`)
@@ -87,34 +87,6 @@ describe(`Resolvers`, () => {
 
     it(`returns empty array when nothing was found`, async () => {
       expect(await findByIds({ args: { ids: [10, 11] } })).toEqual([])
-    })
-  })
-
-  describe(`findByIdsAndType`, () => {
-    it(`finds nodes by ids and type`, async () => {
-      const result = await findByIdsAndType(type)({ args: { ids: [1, 3] } })
-      expect(result).toEqual([1, 3].map(getById))
-    })
-
-    it(`filters out nodes of wrong type`, async () => {
-      const result = await findByIdsAndType(type)({ args: { ids: [1, 2] } })
-      expect(result).toEqual([getById(1)])
-    })
-
-    it(`finds single node`, async () => {
-      const firstResultOnly = true
-      const result = await findByIdsAndType(type)(
-        { args: { ids: [1] } },
-        firstResultOnly
-      )
-      expect(result).toBe(getById(1))
-    })
-
-    it(`returns null or empty array when nothing was found`, async () => {
-      let result = await findByIdsAndType(type)({ args: { ids: [0] } }, true)
-      expect(result).toBeNull()
-      result = await findByIdsAndType(type)({ args: { ids: [0] } })
-      expect(result).toEqual([])
     })
   })
 

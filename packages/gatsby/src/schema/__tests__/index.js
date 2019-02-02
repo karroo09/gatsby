@@ -277,7 +277,10 @@ describe(`Schema query`, () => {
             node: {
               childMarkdown: null,
               children: [{ name: `Author 2` }, { name: `Author 1` }],
-              childrenAuthor: [{ name: `Author 2` }, { name: `Author 1` }],
+              childrenAuthor: expect.arrayContaining([
+                { name: `Author 2` },
+                { name: `Author 1` },
+              ]),
             },
           },
         ],
