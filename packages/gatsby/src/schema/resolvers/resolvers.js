@@ -53,6 +53,9 @@ const find = typeName => async (rp, firstResultOnly) => {
   // needs the field configs to translate `$in` and `$nin`
   // operators on `GraphQLList` fields into `$containsAny` and `$containsNone`.
   // This should only be a temporary solution.
+  // TODO: For now, only use Loki when we query only one node type.
+  // Figure out a good way to query multiple collections with find(), or
+  // combine ResultSets before chaining sort().
   const typesForLoki = nodes === queryNodes ? possibleTypes : undefined
   return query(queryNodes, queryArgs, firstResultOnly, typesForLoki)
 }

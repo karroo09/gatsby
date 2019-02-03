@@ -27,9 +27,6 @@ const prepareSortArgs = sort => {
 }
 
 const query = (type, args, firstResultOnly) => {
-  // FIXME: IMPORTANT: This is not wired up yet
-  // We now get types array!!!
-
   const coll = getNodeTypeCollection(type.name)
   let chain = coll.chain()
 
@@ -44,10 +41,10 @@ const query = (type, args, firstResultOnly) => {
       args.sort.fields = [`id`]
     }
 
+    args.sort.fields.forEach(field => coll.ensureIndex(field))
+
     const sortArgs = prepareSortArgs(args.sort)
     chain = chain.compoundsort(sortArgs)
-
-    args.sort.fields.forEach(field => coll.ensureIndex(field))
   }
 
   const results = chain.data()
