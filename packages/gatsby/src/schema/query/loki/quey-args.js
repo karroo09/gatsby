@@ -42,6 +42,10 @@ const convert = (filter, type) => {
         acc[`$where`] = obj => obj != null && re.test(obj)
       } else if (key === `glob`) {
         acc[`$regex`] = makeRe(value)
+      } else if (key === `eq` && nullableType instanceof GraphQLList) {
+        acc[`$contains`] = value
+      } else if (key === `ne` && nullableType instanceof GraphQLList) {
+        acc[`$containsNone`] = value
       } else if (key === `in` && nullableType instanceof GraphQLList) {
         acc[`$containsAny`] = value
       } else if (key === `nin` && nullableType instanceof GraphQLList) {
@@ -49,6 +53,7 @@ const convert = (filter, type) => {
       } else if (key === `ne` && value === null) {
         acc[`$ne`] = undefined
       } else if (key === `nin` && nullableType === GraphQLBoolean) {
+        // FIXME: Why?
         acc[`$nin`] = value.concat([false])
       } else {
         acc[`$${key}`] = value

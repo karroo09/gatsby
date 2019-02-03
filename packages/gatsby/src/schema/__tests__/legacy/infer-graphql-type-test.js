@@ -9,7 +9,7 @@ require(`../../../db/__tests__/fixtures/ensure-loki`)()
 const path = require(`path`)
 const normalizePath = require(`normalize-path`)
 
-const nodes = [
+const makeNodes = () => [
   {
     id: `foo`,
     parent: null,
@@ -249,6 +249,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
   })
 
   it(`Handle invalid graphql field names`, async () => {
+    const nodes = makeNodes()
     let result = await runQuery(
       nodes,
       `
@@ -279,7 +280,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
       let result = await runQuery(
         [
           { number: 2018, internal: { type: `Test` }, children: [], id: 1 },
-          { number: 1987, internal: { type: `Test` }, children: [], id: 1 },
+          { number: 1987, internal: { type: `Test` }, children: [], id: 2 },
         ],
         `
           number
@@ -379,17 +380,19 @@ describe(`[legacy] GraphQL type inferance`, () => {
   })
 
   describe(`Linked inference from config mappings`, () => {
-    store.dispatch({
-      type: `SET_SITE_CONFIG`,
-      payload: {
-        mapping: {
-          "Test.linkedOnID": `MappingTest`,
-          "Test.linkedOnCustomField": `MappingTest.nestedField.mapTarget`,
+    beforeAll(() => {
+      store.dispatch({
+        type: `SET_SITE_CONFIG`,
+        payload: {
+          mapping: {
+            "Test.linkedOnID": `MappingTest`,
+            "Test.linkedOnCustomField": `MappingTest.nestedField.mapTarget`,
+          },
         },
-      },
+      })
     })
 
-    const nodes = [
+    const makeNodes = () => [
       {
         id: `node1`,
         children: [],
@@ -421,7 +424,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links to single node by id`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -451,7 +454,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links to array of nodes by id`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -476,7 +479,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links to single node by custom field`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -508,7 +511,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links to array of nodes by custom field`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -537,20 +540,9 @@ describe(`[legacy] GraphQL type inferance`, () => {
   })
 
   describe(`Linked inference from file URIs`, () => {
-    // const fileType = {
-    //   name: `File`,
-    //   nodeObjectType: new GraphQLObjectType({
-    //     name: `File`,
-    //     fields: inferObjectStructureFromNodes({
-    //       nodes: [{ id: `file_1`, absolutePath: `path`, dir: `path` }],
-    //       types: [{ name: `File` }],
-    //     }),
-    //   }),
-    // }
-
     let dir = normalizePath(path.resolve(`/path/`))
 
-    const nodes = [
+    const makeNodes = () => [
       {
         id: `parent`,
         children: [`file1`],
@@ -576,7 +568,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links to file node`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `file1`,
             parent: `parent`,
@@ -600,7 +592,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links to array of file nodes`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `file1`,
             parent: `parent`,
@@ -632,7 +624,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
     const { addInferredFields } = require(`../../infer/infer`)
     const { TypeComposer } = require(`graphql-compose`)
 
-    const nodes = [
+    const makeNodes = () => [
       {
         id: `child_1`,
         children: [],
@@ -655,7 +647,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links nodes`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -675,7 +667,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links an array of nodes`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -696,7 +688,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links nodes by field`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -716,7 +708,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
     it(`Links an array of nodes by field`, async () => {
       let result = await runQuery(
-        nodes.concat([
+        makeNodes().concat([
           {
             id: `test1`,
             children: [],
@@ -754,7 +746,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
     describe(`Creation of union types when array field is linking to multiple types`, () => {
       it(`Creates union types`, async () => {
         let result = await runQuery(
-          nodes.concat([
+          makeNodes().concat([
             {
               id: `test1`,
               children: [],
@@ -786,7 +778,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
       })
 
       it(`Uses same union type for same child node types and key`, () => {
-        nodes.forEach(node =>
+        makeNodes().forEach(node =>
           store.dispatch({ type: `CREATE_NODE`, payload: node })
         )
 
@@ -818,7 +810,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
       })
 
       it(`Uses a different type for different child node types with the same key`, () => {
-        nodes
+        makeNodes()
           .concat([{ id: `toy_1`, internal: { type: `Toy` } }])
           .forEach(node =>
             store.dispatch({ type: `CREATE_NODE`, payload: node })
@@ -865,7 +857,7 @@ describe(`[legacy] GraphQL type inferance`, () => {
 
   it(`Infers graphql type from array of nodes`, () =>
     runQuery(
-      nodes,
+      makeNodes(),
       `
         hair,
         anArray,

@@ -164,6 +164,7 @@ describe(`[legacy] GraphQL Input args`, () => {
     store.dispatch({
       type: `CREATE_NODE`,
       payload: {
+        id: `1`,
         internal: { type: `Test` },
         parent: `parent`,
         children: [`bar`],
@@ -192,6 +193,7 @@ describe(`[legacy] GraphQL Input args`, () => {
     store.dispatch({
       type: `CREATE_NODE`,
       payload: {
+        id: `1`,
         internal: { type: `Numbers` },
         int32: 42,
         float: 2.5,
