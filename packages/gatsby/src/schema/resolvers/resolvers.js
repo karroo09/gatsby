@@ -56,7 +56,8 @@ const find = typeName => async (rp, firstResultOnly) => {
   // TODO: For now, only use Loki when we query only one node type.
   // Figure out a good way to query multiple collections with find(), or
   // combine ResultSets before chaining sort().
-  const typesForLoki = nodes === queryNodes ? possibleTypes : undefined
+  const typesForLoki =
+    nodes === queryNodes && possibleTypes.length === 1 ? type : undefined
   return query(queryNodes, queryArgs, firstResultOnly, typesForLoki)
 }
 
