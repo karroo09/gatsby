@@ -21,6 +21,11 @@ describe(`isObject util`, () => {
     expect(isObject(possibleObject)).toBeFalsy()
   })
 
+  it(`does not identify regular expressions as objects`, () => {
+    const possibleObject = new RegExp(`\\w+`)
+    expect(isObject(possibleObject)).toBeFalsy()
+  })
+
   it(`does not identify null as object`, () => {
     const possibleObject = null
     expect(isObject(possibleObject)).toBeFalsy()
