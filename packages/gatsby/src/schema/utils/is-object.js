@@ -1,11 +1,16 @@
-// TODO: Ok, this is getting out of hand
+// based on https://github.com/reduxjs/redux/blob/master/src/utils/isPlainObject.js
+const isObject = obj => {
+  if (typeof obj !== `object` || obj === null) return false
 
-const isObject = value =>
-  value &&
-  typeof value === `object` &&
-  !Array.isArray(value) &&
-  !(value instanceof Date) &&
-  !(value instanceof String) &&
-  !(value instanceof RegExp)
+  const objProto = Object.getPrototypeOf(obj)
+  if (objProto === null) return true
+
+  let proto = obj
+  while (Object.getPrototypeOf(proto) !== null) {
+    proto = Object.getPrototypeOf(proto)
+  }
+
+  return objProto === proto
+}
 
 module.exports = isObject

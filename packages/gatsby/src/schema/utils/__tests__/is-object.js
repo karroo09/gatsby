@@ -6,6 +6,11 @@ describe(`isObject util`, () => {
     expect(isObject(possibleObject)).toBeTruthy()
   })
 
+  it(`correctly identifies object with null prototype`, () => {
+    const possibleObject = Object.create(null)
+    expect(isObject(possibleObject)).toBeTruthy()
+  })
+
   it(`does not identify arrays as objects`, () => {
     const possibleObject = []
     expect(isObject(possibleObject)).toBeFalsy()
