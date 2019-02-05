@@ -22,6 +22,7 @@ const tracer = require(`opentracing`).globalTracer()
 const preferDefault = require(`./prefer-default`)
 const { getNodes } = require(`../db/nodes`)
 const { trackObjects } = require(`../schema/utils/node-tracking`)
+const { withContext } = require(`../schema/context`)
 
 require(`../db`).startAutosave()
 
@@ -385,7 +386,7 @@ module.exports = async (args: BootstrapArgs) => {
 
   const graphqlRunner = (query, context = {}) => {
     const schema = store.getState().schema
-    return graphql(schema, query, context, context, context)
+    return graphql(schema, query, context, withContext(context), context)
   }
 
   // Collect pages.

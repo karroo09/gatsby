@@ -56,10 +56,10 @@ const buildSchema = async () => {
   return schema
 }
 
-// FIXME: Do we actually need this? @see #11131
+// FIXME: @see #11131 and https://github.com/gatsbyjs/rfcs/pull/26
 const updateSchema = async () => {
   const tc = addInferredType(`SitePage`)
-  delete tc.gqType._gqcInputTypeComposer
+  tc.removeInputTypeComposer()
   addResolvers(tc)
   addTypeToRootQuery(tc)
   return schemaComposer.buildSchema({ directives })

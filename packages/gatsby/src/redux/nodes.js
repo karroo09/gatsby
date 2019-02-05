@@ -43,7 +43,7 @@ const getNodesByType = type => {
 exports.getNodesByType = getNodesByType
 
 /**
- * Get all types from redux store.
+ * Get all type names from redux store.
  *
  * @returns {Array}
  */

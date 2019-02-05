@@ -1,8 +1,8 @@
 const {
   dropQueryOperators,
   equals,
-  getListQueryOperator,
-  getQueryOperators,
+  getQueryOperatorListInput,
+  getQueryOperatorInput,
   oneOf,
   query: queryWithSift,
 } = require(`./sift`)
@@ -17,8 +17,8 @@ const query = (queryNodes, queryArgs, firstResultOnly, types) =>
 module.exports = {
   dropQueryOperators,
   equals,
-  getListQueryOperator,
-  getQueryOperators,
+  getQueryOperatorListInput,
+  getQueryOperatorInput,
   oneOf,
   query,
 }

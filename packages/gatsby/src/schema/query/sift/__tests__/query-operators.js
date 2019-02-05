@@ -13,8 +13,8 @@ const {
 } = require(`graphql`)
 
 const {
-  getQueryOperators,
-  getListQueryOperator,
+  getQueryOperatorInput,
+  getQueryOperatorListInput,
 } = require(`../query-operators`)
 
 describe(`Get query operators`, () => {
@@ -33,7 +33,7 @@ describe(`Get query operators`, () => {
 
     const operatorFields = Object.entries(itc.getFields()).reduce(
       (acc, [name, config]) => {
-        acc[name] = getQueryOperators(config.type)
+        acc[name] = getQueryOperatorInput(config.type)
         return acc
       },
       {}
@@ -113,7 +113,7 @@ describe(`Get query operators`, () => {
         bar: false,
       },
     })
-    const operatorFields = getQueryOperators(etc.getType())
+    const operatorFields = getQueryOperatorInput(etc.getType())
     expect(operatorFields).toBeInstanceOf(InputTypeComposer)
     expect(operatorFields.getTypeName()).toBe(`BarEnumQueryOperatorInput`)
     expect(operatorFields.getFieldNames()).toEqual([`eq`, `ne`, `in`, `nin`])
@@ -123,7 +123,7 @@ describe(`Get query operators`, () => {
 
   it(`creates a query operator type for list fields`, () => {
     const itc = InputTypeComposer.create(`input FooInput { foo: Boolean }`)
-    const ListITC = getListQueryOperator(itc)
+    const ListITC = getQueryOperatorListInput(itc)
     expect(ListITC.getFieldNames()).toEqual([`elemMatch`, `foo`])
     expect(ListITC.getFieldTC(`elemMatch`).getTypeName()).toBe(`FooInput`)
     expect(ListITC.getFieldTC(`elemMatch`).getFieldNames()).toEqual([`foo`])

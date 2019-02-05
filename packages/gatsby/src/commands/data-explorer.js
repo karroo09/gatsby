@@ -4,7 +4,7 @@ const express = require(`express`)
 const graphqlHTTP = require(`express-graphql`)
 const { store } = require(`../redux`)
 const bootstrap = require(`../bootstrap`)
-const resolvers = require(`../schema/resolvers`)
+const { withContext } = require(`../schema/context`)
 
 module.exports = async (program: any) => {
   let { port, host } = program
@@ -22,7 +22,7 @@ module.exports = async (program: any) => {
       return {
         schema,
         // FIXME: Do we want the request on context (default)?
-        context: { ...req, resolvers },
+        context: withContext({ req }),
         graphiql: true,
       }
     })

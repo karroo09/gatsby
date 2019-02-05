@@ -10,14 +10,14 @@ const {
 
 const getFilterInput = require(`../filter`)
 const { addNodeInterface, getNodeInterfaceFields } = require(`../../interfaces`)
-const { getQueryOperators } = require(`../../query`)
+const { getQueryOperatorInput } = require(`../../query`)
 
 const nodeInterfaceFields = getNodeInterfaceFields()
 const operators = {
-  bool: getQueryOperators(GraphQLBoolean).getFieldNames(),
-  id: getQueryOperators(GraphQLID).getFieldNames(),
-  string: getQueryOperators(GraphQLString).getFieldNames(),
-  enum: getQueryOperators(
+  bool: getQueryOperatorInput(GraphQLBoolean).getFieldNames(),
+  id: getQueryOperatorInput(GraphQLID).getFieldNames(),
+  string: getQueryOperatorInput(GraphQLString).getFieldNames(),
+  enum: getQueryOperatorInput(
     new GraphQLEnumType({ name: `FooEnum` })
   ).getFieldNames(),
 }

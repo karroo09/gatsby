@@ -1,7 +1,10 @@
 const { default: sift, indexOf: siftFirst } = require(`sift`)
 
 const sort = require(`./sort`)
-const { getListQueryOperator, getQueryOperators } = require(`./query-operators`)
+const {
+  getQueryOperatorListInput,
+  getQueryOperatorInput,
+} = require(`./query-operators`)
 const { dropQueryOperators, prepareQueryArgs } = require(`./query-args`)
 
 const equals = value => ({ eq: value })
@@ -35,8 +38,8 @@ const query = (nodes = [], args, firstResultOnly) => {
 module.exports = {
   dropQueryOperators,
   equals,
-  getListQueryOperator,
-  getQueryOperators,
+  getQueryOperatorListInput,
+  getQueryOperatorInput,
   oneOf,
   query,
 }

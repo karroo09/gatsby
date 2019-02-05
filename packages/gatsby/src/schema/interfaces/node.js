@@ -39,8 +39,9 @@ const NodeInterfaceTC = InterfaceTypeComposer.create({
     },
     internal: `Internal`,
   },
-  resolveType: node => node.internal.type,
 })
+
+NodeInterfaceTC.setResolveType(node => node.internal.type)
 
 InternalTC.getITC()
 NodeInterfaceTC.getITC()
@@ -53,7 +54,7 @@ const addNodeInterface = tc => {
 const addNodeInterfaceFields = tc => {
   tc.addFields(NodeInterfaceTC.getFields())
   const typeName = tc.getTypeName()
-  tc.getType().isTypeOf = node => node.internal.type === typeName
+  tc.setIsTypeOf(node => node.internal.type === typeName)
   // FIXME: UPSTREAM: addSchemaMustHaveType adds to an array,
   // should be Set/Map to avoid duplicates?
   schemaComposer.addSchemaMustHaveType(tc)

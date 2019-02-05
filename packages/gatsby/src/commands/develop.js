@@ -28,7 +28,7 @@ const getSslCert = require(`../utils/get-ssl-cert`)
 const slash = require(`slash`)
 const { initTracer } = require(`../utils/tracer`)
 const apiRunnerNode = require(`../utils/api-runner-node`)
-const resolvers = require(`../schema/resolvers`)
+const { withContext } = require(`../schema/context`)
 
 // const isInteractive = process.stdout.isTTY
 
@@ -99,7 +99,7 @@ async function startServer(program) {
       return {
         schema: store.getState().schema,
         // FIXME: Do we want the request on context (default)?
-        context: { ...req, resolvers },
+        context: withContext({ req }),
         graphiql: true,
       }
     })

@@ -33,7 +33,6 @@ const getFieldConfigFromMapping = selector => {
 }
 
 const getFieldConfigFromFieldNameConvention = (value, key) => {
-  const { GraphQLUnionType } = require(`graphql`)
   const { getById, getNodes } = require(`../db`)
   const { getUniqueValues, getValueAtSelector } = require(`../utils`)
 
@@ -65,26 +64,18 @@ const getFieldConfigFromFieldNameConvention = (value, key) => {
   // scalar fields link to different types. Similarly, an array of objects
   // with foreign-key fields will produce union types if those foreign-key
   // fields are arrays, but not if they are scalars. See the tests for an example.
-  // NOTE: There is no dedicated `graphql-compose` class for union types yet,
-  // but maybe soon. see #162.
   // FIXME: The naming of union types is a breaking change. In current master,
   // the type name includes the key, which is (i) potentially not unique, and
   // (ii) hinders reusing types.
   if (linkedTypes.length > 1) {
     const typeName = linkedTypes.sort().join(``) + `Union`
-    if (schemaComposer.has(typeName)) {
-      type = schemaComposer.get(typeName)
-    } else {
-      type = new GraphQLUnionType({
-        name: typeName,
-        types: linkedTypes.map(typeName =>
-          schemaComposer.getOrCreateTC(typeName).getType()
-        ),
-        // NOTE: not strictly necessary because we have isTypeOf
-        resolveType: node => node.internal.type,
-      })
-      schemaComposer.add(type)
-    }
+    schemaComposer.getOrCreateUTC(typeName, utc => {
+      const types = linkedTypes.map(typeName =>
+        schemaComposer.getOrCreateTC(typeName)
+      )
+      utc.setTypes(types)
+      utc.setResolveType(node => node.internal.type)
+    })
   } else {
     type = linkedTypes[0]
   }
