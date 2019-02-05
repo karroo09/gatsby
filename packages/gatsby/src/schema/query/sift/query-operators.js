@@ -7,8 +7,8 @@ const GT = `gt`
 const GTE = `gte`
 const LT = `lt`
 const LTE = `lte`
-const IN = `in[]`
-const NIN = `nin[]`
+const IN = `in`
+const NIN = `nin`
 const REGEX = `regex`
 const GLOB = `glob`
 
