@@ -51,7 +51,8 @@ const buildSchema = async () => {
   })
   addThirdPartySchemas()
   await addCustomResolveFunctions()
-  const schema = schemaComposer.buildSchema({ directives })
+  directives.forEach(directive => schemaComposer.addDirective(directive))
+  const schema = schemaComposer.buildSchema()
   SchemaDirectiveVisitor.visitSchemaDirectives(schema, visitors)
   return schema
 }
@@ -62,7 +63,7 @@ const updateSchema = async () => {
   tc.removeInputTypeComposer()
   addResolvers(tc)
   addTypeToRootQuery(tc)
-  return schemaComposer.buildSchema({ directives })
+  return schemaComposer.buildSchema()
 }
 
 module.exports = {
