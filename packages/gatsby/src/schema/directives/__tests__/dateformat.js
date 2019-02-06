@@ -8,10 +8,10 @@ const addResolvers = require(`../../schema/add-resolvers`)
 const tc = TypeComposer.create(`
   type Foo {
     formattable: Date @dateformat
-    formatted: Date @dateformat(formatString: "dd. MMMM yyyy", locale: "de")
+    formatted: Date @dateformat(formatString: "DD. MMMM YYYY", locale: "de")
     fromNow: Date @dateformat(fromNow: true, locale: "de")
-    difference: Date @dateformat(difference: "2019-01-01")
-    many: [Date!]! @dateformat(formatString: "dd/MM/yyyy")
+    difference: Date @dateformat(difference: "days")
+    many: [Date!]! @dateformat(formatString: "DD/MM/YYYY")
   }
 `)
 
@@ -62,35 +62,30 @@ describe(`@dateformat directive`, () => {
       `formatString`,
       `fromNow`,
       `locale`,
-      `timeZone`,
     ])
     expect(fields.formatted.args.map(arg => arg.name)).toEqual([
       `difference`,
       `formatString`,
       `fromNow`,
       `locale`,
-      `timeZone`,
     ])
     expect(fields.fromNow.args.map(arg => arg.name)).toEqual([
       `difference`,
       `formatString`,
       `fromNow`,
       `locale`,
-      `timeZone`,
     ])
     expect(fields.difference.args.map(arg => arg.name)).toEqual([
       `difference`,
       `formatString`,
       `fromNow`,
       `locale`,
-      `timeZone`,
     ])
     expect(fields.many.args.map(arg => arg.name)).toEqual([
       `difference`,
       `formatString`,
       `fromNow`,
       `locale`,
-      `timeZone`,
     ])
   })
 
@@ -151,18 +146,16 @@ describe(`@dateformat directive`, () => {
       {},
       { fieldName: `date` }
     )
-    expect(fromNow).toBe(`letzten Dienstag um 10:00`)
+    expect(fromNow).toBe(`vor 2 Tagen`)
 
-    // default difference: "2019-01-01"
-    // NOTE: If not otherwise specified, the default base date for `difference`
-    // is interpreted as being in the local timeZone.
+    // default difference: "days"
     const difference = await fields.difference.resolve(
       { date },
       {},
       {},
       { fieldName: `date` }
     )
-    expect(difference).toBe(`in 10 hours`)
+    expect(difference).toBe(1)
   })
 
   it(`uses input args`, async () => {
@@ -171,7 +164,7 @@ describe(`@dateformat directive`, () => {
 
     const formattableDate = await fields.formattable.resolve(
       { date },
-      { formatString: `yyyy` },
+      { formatString: `YYYY` },
       {},
       { fieldName: `date` }
     )
@@ -189,18 +182,18 @@ describe(`@dateformat directive`, () => {
     // explicitly disable it for formatting args to take effect.
     const fromNow = await fields.fromNow.resolve(
       { date },
-      { formatString: `yyyy`, fromNow: false },
+      { formatString: `YYYY`, fromNow: false },
       {},
       { fieldName: `date` }
     )
     expect(fromNow).toBe(`2019`)
     const difference = await fields.difference.resolve(
       { date },
-      { difference: `2019-01-05T00:00:00.000Z` },
+      { difference: `minutes` },
       {},
       { fieldName: `date` }
     )
-    expect(difference).toBe(`4 days ago`)
+    expect(difference).toBe(2880)
   })
 
   it(`handles arrays of dates`, async () => {

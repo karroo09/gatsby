@@ -1,4 +1,4 @@
-const isDate = require(`../is-date`)
+const { isDate } = require(`../is-date`)
 
 describe(`isDate util`, () => {
   it(`recognizes dates in yyyy format`, () => {

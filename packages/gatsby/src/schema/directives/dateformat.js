@@ -8,59 +8,27 @@ const {
   GraphQLNonNull,
 } = require(`graphql`)
 const { SchemaDirectiveVisitor } = require(`graphql-tools`)
-const {
-  format,
-  formatDistanceStrict,
-  formatRelative,
-  isValid,
-  parseISO,
-} = require(`date-fns`)
+const moment = require(`moment`)
+const { ISO_8601_FORMAT } = require(`../utils/is-date`)
 
-// UPSTREAM: GraphQLDate.parseLiteral should accept date strings in other
-// formats (could use utils/isDate)
-// TODO: `difference` arg should be GraphQLDate?
-
-const convertFormatString = str =>
-  // `date-fns` uses a more standard compliant format than `momentjs`, e.g.
-  // `DD` refers to day of year, not day of month (this would be `dd`).
-  // This would be a breaking change, so we emulate the old behavior here.
-  // @see https://git.io/fxCyr
-  // TODO: Just use moment for now
-  str &&
-  str
-    // FIXME: We cannot enable this if we want to support both
-    // momentjs and date-fns formatting at the same time.
-    // .replace(/d/g, `i`)
-    .replace(/D/g, `d`)
-    .replace(/YY/g, `yy`)
-
-const toDate = date => (typeof date === `string` ? parseISO(date) : date)
-
-const formatDate = (
-  dateOrString,
-  momentFormatString,
-  lang,
-  timeZone,
-  fromNow,
-  difference
-) => {
-  const formatString = convertFormatString(momentFormatString)
-  const locale = lang && require(`date-fns/locale/${lang}`)
-  const date = toDate(dateOrString)
+const formatDate = (date, formatString, locale, fromNow, difference) => {
   if (fromNow) {
-    return formatRelative(date, Date.now(), { locale })
+    return moment
+      .utc(date, ISO_8601_FORMAT, true)
+      .locale(locale)
+      .fromNow()
+  } else if (difference) {
+    return moment().diff(
+      moment.utc(date, ISO_8601_FORMAT, true).locale(locale),
+      difference
+    )
+  } else if (formatString) {
+    return moment
+      .utc(date, ISO_8601_FORMAT, true)
+      .locale(locale)
+      .format(formatString)
   }
-  const baseDate = toDate(difference)
-  if (isValid(baseDate)) {
-    // TODO: Although `differenceIn*` methods match `moment.diff`,
-    // maybe use `formatDistance` or `formatDistanceStrict`?
-    // FIXME: Actually use differenceIn*, and accept optional arg
-    return formatDistanceStrict(date, baseDate, { locale, addSuffix: true })
-  }
-  return format(date, formatString, {
-    locale,
-    // timeZone, // IANA time zone, needs `date-fns-tz`
-  })
+  return date
 }
 
 const DateFormatDirective = new GraphQLDirective({
@@ -68,10 +36,9 @@ const DateFormatDirective = new GraphQLDirective({
   locations: [DirectiveLocation.FIELD_DEFINITION],
   args: {
     difference: { type: GraphQLString },
-    formatString: { type: GraphQLString, defaultValue: `yyyy-MM-dd` },
+    formatString: { type: GraphQLString, defaultValue: `YYYY-MM-DD` },
     fromNow: { type: GraphQLBoolean },
-    locale: { type: GraphQLString, defaultValue: `en-US` },
-    timeZone: { type: GraphQLString, defaultValue: `UTC` },
+    locale: { type: GraphQLString, defaultValue: `en` },
   },
 })
 
@@ -84,33 +51,23 @@ class DateFormatDirectiveVisitor extends SchemaDirectiveVisitor {
       formatString: defaultFormatString,
       fromNow: defaultFromNow,
       locale: defaultLocale,
-      timeZone: defaultTimeZone,
     } = this.args
 
     field.args.push(
       { name: `difference`, type: GraphQLString },
       { name: `formatString`, type: GraphQLString },
       { name: `fromNow`, type: GraphQLBoolean },
-      { name: `locale`, type: GraphQLString },
-      { name: `timeZone`, type: GraphQLString }
+      { name: `locale`, type: GraphQLString }
     )
 
     field.resolve = async (source, args, context, info) => {
-      const {
-        difference,
-        formatString,
-        fromNow,
-        locale,
-        timeZone,
-        ...rest
-      } = args
+      const { difference, formatString, fromNow, locale, ...rest } = args
       const date = await resolve(source, rest, context, info)
       const format = date =>
         formatDate(
           date,
           formatString || defaultFormatString,
           locale || defaultLocale,
-          timeZone || defaultTimeZone,
           fromNow !== undefined ? fromNow : defaultFromNow,
           difference !== undefined ? difference : defaultDifference
         )
