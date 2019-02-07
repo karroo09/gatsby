@@ -29,8 +29,11 @@ const addTypes = () => apiRunner(`addTypeDefs`, { addTypeDefs })
 
 const addTypeToRootQuery = tc => {
   const typeName = tc.getTypeName()
-  const queryName = typeName.charAt(0).toLowerCase() + typeName.slice(1)
-  const queryNamePlural = `all` + typeName
+  const _ = require(`lodash`)
+  const queryName = _.camelCase(typeName)
+  const queryNamePlural = _.camelCase(`all` + typeName)
+  // const queryName = typeName.charAt(0).toLowerCase() + typeName.slice(1)
+  // const queryNamePlural = `all` + typeName
   schemaComposer.Query.addFields({
     [queryName]: tc.getResolver(`findOne`),
     [queryNamePlural]: tc.getResolver(`findManyPaginated`),

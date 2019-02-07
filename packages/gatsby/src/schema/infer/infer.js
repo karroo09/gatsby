@@ -95,7 +95,8 @@ const getFieldConfig = (value, selector, depth) => {
       }
       // FIXME: The weird thing is that we are trying to infer a File,
       // but cannot assume that a source plugin for File nodes is actually present.
-      if (schemaComposer.has(`File`) && isFile(selector, value)) {
+      // TODO: `gatsby-source-filesystem` should export typeDefs
+      if (/* schemaComposer.has(`File`) && */ isFile(selector, value)) {
         // NOTE: For arrays of files, where not every path references
         // a File node in the db, it is semi-random if the field is
         // inferred as File or String, since the exampleValue only has
