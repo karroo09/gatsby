@@ -569,16 +569,6 @@ describe(`Type inference`, () => {
       expect(fn).toThrow()
     })
 
-    it(`throws when converted field name results in leading double underscore`, () => {
-      const exampleValue = { [`0ünvälid`]: true }
-
-      const typeName = `Foo`
-      const tc = TypeComposer.createTemp(typeName)
-      const fn = () => addInferredFields(tc, exampleValue, typeName)
-
-      expect(fn).toThrow()
-    })
-
     it(`converts invalid characters in ___NODE fields to underscores`, () => {
       const exampleValue = { ünvälid___NODE: `linkNodeName2` }
 

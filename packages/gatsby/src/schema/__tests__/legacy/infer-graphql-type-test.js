@@ -256,8 +256,8 @@ describe(`[legacy] GraphQL type inferance`, () => {
         with_space
         with_hyphen
         with_resolver(formatString:"DD.MM.YYYY")
-        _23
-        _56 {
+        _123
+        _456 {
           testingTypeNameCreation
         }
       `
@@ -270,9 +270,9 @@ describe(`[legacy] GraphQL type inferance`, () => {
     expect(result.data.listNode[1].with_space).toEqual(3)
     expect(result.data.listNode[1].with_hyphen).toEqual(4)
     expect(result.data.listNode[0].with_resolver).toEqual(`01.11.1012`)
-    expect(result.data.listNode[0]._23).toEqual(42)
-    expect(result.data.listNode[1]._23).toEqual(24)
-    expect(result.data.listNode[0]._56).toEqual(nodes[0][`456`])
+    expect(result.data.listNode[0]._123).toEqual(42)
+    expect(result.data.listNode[1]._123).toEqual(24)
+    expect(result.data.listNode[0]._456).toEqual(nodes[0][`456`])
   })
 
   describe(`Handles dates`, () => {

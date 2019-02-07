@@ -164,7 +164,7 @@ describe(`Schema query`, () => {
             node {
               frontmatter {
                 title
-                date(formatString: "MM-dd-yyyy")
+                date(formatString: "MM-DD-YYYY")
                 published
                 authors {
                   name
@@ -561,7 +561,7 @@ describe(`Schema query`, () => {
               node {
                 frontmatter {
                   title
-                  date(formatString: "yyyy/MM/dd")
+                  date(formatString: "YYYY/MM/DD")
                 }
               }
             }

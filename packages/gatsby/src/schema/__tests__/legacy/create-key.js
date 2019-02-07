@@ -11,14 +11,12 @@ describe(`[legacy] createKey`, () => {
     ;[
       [`/hello`, `_hello`],
       [`/path/to/some/module`, `_path_to_some_module`],
-      [`01234`, `_1234`],
+      [`01234`, `_01234`],
+      [`/*`, `_x`],
+      [`*.js`, `_xjs`],
     ].forEach(([input, output]) => {
       expect(createKey(input)).toBe(output)
     })
-  })
-
-  it(`throws on leading double underscore`, () => {
-    ;[`/*`, `/*.js`].forEach(input => expect(() => createKey(input)).toThrow())
   })
 
   it(`does not generate same key for different input`, () => {

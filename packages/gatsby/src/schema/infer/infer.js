@@ -69,7 +69,7 @@ const getFieldConfigFromFieldNameConvention = (value, key) => {
   // (ii) hinders reusing types.
   if (linkedTypes.length > 1) {
     const typeName = linkedTypes.sort().join(``) + `Union`
-    schemaComposer.getOrCreateUTC(typeName, utc => {
+    type = schemaComposer.getOrCreateUTC(typeName, utc => {
       const types = linkedTypes.map(typeName =>
         schemaComposer.getOrCreateTC(typeName)
       )
