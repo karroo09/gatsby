@@ -155,9 +155,9 @@ describe(`Schema builder`, () => {
 
   it(`builds schema with directives`, () => {
     expect(schema.getDirectives().map(directive => directive.name)).toEqual([
-      `deprecated`,
-      `include`,
       `skip`,
+      `include`,
+      `deprecated`,
       `dateformat`,
       `link`,
     ])

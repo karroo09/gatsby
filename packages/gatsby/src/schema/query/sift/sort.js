@@ -9,6 +9,7 @@ const { getValueAtSelector } = require(`../../utils`)
 const compareValues = (a, b) => {
   if (a === undefined) return 1
   if (a === null) return b === undefined ? -1 : 1
+  if (b == null) return -1
 
   switch (typeof a) {
     case `string`:

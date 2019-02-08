@@ -1,12 +1,11 @@
 const { schemaComposer, TypeComposer } = require(`graphql-compose`)
 
 const apiRunner = require(`../../utils/api-runner-node`)
-const { hasNodeInterface } = require(`../interfaces`)
 
 const addFieldsFromNodeAPI = () =>
   Promise.all(
     Array.from(schemaComposer.types).map(async ([typeName, tc]) => {
-      if (tc instanceof TypeComposer && hasNodeInterface(tc)) {
+      if (tc instanceof TypeComposer && tc.hasInterface(`Node`)) {
         const [fields] = await apiRunner(`setFieldsOnGraphQLNodeType`, {
           // FIXME: Currently, nodes are passed as well, but that seems
           // unnecessary since we pass down `getNodesByType()` anyway:

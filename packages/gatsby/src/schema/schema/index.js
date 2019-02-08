@@ -3,7 +3,7 @@ const { SchemaDirectiveVisitor } = require(`graphql-tools`)
 const { GraphQLObjectType } = require(`graphql`)
 
 const { directives, visitors } = require(`../directives`)
-const { addNodeInterfaceFields, hasNodeInterface } = require(`../interfaces`)
+const { addNodeInterfaceFields } = require(`../interfaces`)
 const { addInferredType, addInferredTypes } = require(`../infer`)
 const apiRunner = require(`../../utils/api-runner-node`)
 
@@ -45,7 +45,7 @@ const buildSchema = async () => {
   addInferredTypes()
   await addFieldsFromNodeAPI()
   schemaComposer.forEach(tc => {
-    if (tc instanceof TypeComposer && hasNodeInterface(tc)) {
+    if (tc instanceof TypeComposer && tc.hasInterface(`Node`)) {
       addNodeInterfaceFields(tc)
       addResolvers(tc)
       addConvenienceChildrenFields(tc)
@@ -63,7 +63,6 @@ const buildSchema = async () => {
 // FIXME: @see #11131 and https://github.com/gatsbyjs/rfcs/pull/26
 const updateSchema = async () => {
   const tc = addInferredType(`SitePage`)
-  tc.removeInputTypeComposer()
   addResolvers(tc)
   addTypeToRootQuery(tc)
   return schemaComposer.buildSchema()

@@ -341,7 +341,7 @@ describe(`Type inference`, () => {
       expect(filePathsField.resolve).toBeInstanceOf(Function)
     })
 
-    it(`does not infer File types when File is not registered`, () => {
+    it.skip(`does not infer File types when File is not registered`, () => {
       schemaComposer.delete(`File`)
 
       const exampleValue = getById(`foo1`)

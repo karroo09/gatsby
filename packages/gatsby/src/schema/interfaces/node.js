@@ -62,11 +62,8 @@ const addNodeInterfaceFields = tc => {
 
 const getNodeInterfaceFields = () => NodeInterfaceTC.getFieldNames()
 
-const hasNodeInterface = tc => tc.hasInterface(NodeInterfaceTC.getType())
-
 module.exports = {
   addNodeInterface,
   addNodeInterfaceFields,
   getNodeInterfaceFields,
-  hasNodeInterface,
 }
