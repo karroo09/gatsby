@@ -257,7 +257,14 @@ function handleMany(siftArgs, nodes, sort) {
     // uses _.get so nested fields can be retrieved
     const convertedFields = sort.fields
       .map(field => field.replace(/___/g, `.`))
-      .map(field => v => _.get(v, field))
+      .map(field => v => {
+        const fieldValue = _.get(v, field)
+        // Stringify Dates for sorting, because we can have a mix
+        // of Date objects and date strings.
+        return fieldValue instanceof Date
+          ? fieldValue.toISOString()
+          : fieldValue
+      })
 
     result = _.orderBy(result, convertedFields, sort.order)
   }
