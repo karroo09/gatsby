@@ -1,11 +1,3 @@
-const {
-  GraphQLObjectType,
-  GraphQLNonNull,
-  GraphQLID,
-  GraphQLString,
-  GraphQLList,
-} = require(`graphql`)
-
 jest.mock(`../../utils/node-tracking`)
 
 const { findMany, findOne } = require(`../../resolvers/resolvers`)
@@ -60,7 +52,7 @@ const makeNodes = () => [
 ]
 
 let buildSchema
-const runQuery = async (args, nodes = makeNodes(), firstResultOnly) => {
+const runQuery = async (args, nodes = [], firstResultOnly) => {
   for (const node of nodes) {
     store.dispatch({ type: `CREATE_NODE`, payload: node })
   }
@@ -117,14 +109,14 @@ beforeEach(() => {
   })
 })
 
-describe(`run-sift`, () => {
+describe(`[legacy] run-sift`, () => {
   describe(`filters by just id correctly`, () => {
     it(`eq operator`, async () => {
       const queryArgs = { id: { eq: `id_2` } }
       const nodes = makeNodes()
 
       const resultSingular = await runQuery(queryArgs, nodes, true)
-      const resultMany = await runQuery({ filter: queryArgs }, nodes)
+      const resultMany = await runQuery({ filter: queryArgs })
 
       expect(resultSingular).toEqual(nodes[1])
       expect(resultMany).toEqual([nodes[1]])
@@ -135,10 +127,10 @@ describe(`run-sift`, () => {
       const nodes = makeNodes()
 
       const resultSingular = await runQuery(queryArgs, nodes, true)
-      const resultMany = await runQuery({ filter: queryArgs }, nodes)
+      const resultMany = await runQuery({ filter: queryArgs })
 
-      // `id-1` node is not of queried type, so results should be empty
-      expect(resultSingular).toEqual(null)
+      // `id_1` node is not of queried type, so results should be empty
+      expect(resultSingular).toBeFalsy() // null w/ sift, undefined w/ Loki
       expect(resultMany).toEqual([])
     })
 
@@ -147,7 +139,7 @@ describe(`run-sift`, () => {
       const nodes = makeNodes()
 
       const resultSingular = await runQuery(queryArgs, nodes, true)
-      const resultMany = await runQuery({ filter: queryArgs }, nodes)
+      const resultMany = await runQuery({ filter: queryArgs })
 
       expect(resultSingular).toEqual(nodes[2])
       expect(resultMany).toEqual([nodes[2], nodes[3]])
