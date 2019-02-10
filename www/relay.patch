@@ -1,0 +1,7 @@
+255,256c255,257
+<     !(typeof value === 'string') ? process.env.NODE_ENV !== "production" ? require("fbjs/lib/invariant")(false, 'GraphQLIRPrinter: Expected value of type %s to be a string, got `%s`.', type.name, value) : require("fbjs/lib/invariant")(false) : void 0;
+<     return value;
+---
+>     var result = type.serialize(value);
+>     !(typeof result === 'string') ? process.env.NODE_ENV !== "production" ? require("fbjs/lib/invariant")(false, 'GraphQLIRPrinter: Expected value of type %s to be a string, got `%s`.', type.name, value) : require("fbjs/lib/invariant")(false) : void 0;
+>     return result;
