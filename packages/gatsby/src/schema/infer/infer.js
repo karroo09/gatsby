@@ -209,11 +209,14 @@ const addInferredFields = (tc, obj, prefix, depth = 0) => {
         )
 
         const resolver = fieldConfig.resolve || defaultFieldResolver
-        fieldConfig.resolve = (source, args, context, info) =>
-          resolver(source, args, context, {
-            ...info,
-            fieldName: unsanitizedKey,
-          })
+        fieldConfig = {
+          ...fieldConfig,
+          resolve: (source, args, context, info) =>
+            resolver(source, args, context, {
+              ...info,
+              fieldName: unsanitizedKey,
+            }),
+        }
       }
 
       acc[key] = fieldConfig
