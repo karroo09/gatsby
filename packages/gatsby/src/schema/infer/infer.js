@@ -6,6 +6,7 @@ const {
 } = require(`graphql`)
 const invariant = require(`invariant`)
 
+const { addNodeInterface } = require(`../interfaces`)
 const { isFile } = require(`./is-file`)
 const { link } = require(`../resolvers`)
 const {
@@ -71,7 +72,7 @@ const getFieldConfigFromFieldNameConvention = (value, key) => {
     const typeName = linkedTypes.sort().join(``) + `Union`
     type = schemaComposer.getOrCreateUTC(typeName, utc => {
       const types = linkedTypes.map(typeName =>
-        schemaComposer.getOrCreateTC(typeName)
+        schemaComposer.getOrCreateTC(typeName, tc => addNodeInterface(tc))
       )
       utc.setTypes(types)
       utc.setResolveType(node => node.internal.type)
