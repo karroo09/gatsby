@@ -28,7 +28,7 @@ const addInferredFields = ({
       nodeStore,
       exampleObject: exampleValue,
       prefix: typeComposer.getTypeName(),
-      typeMapping: typeMapping,
+      typeMapping,
       addDefaultResolvers: inferConfig ? inferConfig.addDefaultResolvers : true,
       depth: 0,
     })
@@ -82,7 +82,8 @@ const addInferredFieldsImpl = ({
         value,
         selector,
         depth,
-        typeMapping
+        typeMapping,
+        addDefaultResolvers
       )
     }
 
@@ -125,7 +126,7 @@ const addInferredFieldsImpl = ({
             nodeStore,
             prefix: selector,
             depth: depth + 1,
-            addDefaultResolvers: true,
+            addDefaultResolvers,
           })
         }
       }
@@ -149,7 +150,7 @@ const addInferredFieldsImpl = ({
       }
     } else {
       while (arrays--) {
-        fieldConfig.type = [fieldConfig.type]
+        fieldConfig = { ...fieldConfig, type: [fieldConfig.type] }
       }
       fields[key] = fieldConfig
     }
@@ -233,7 +234,8 @@ const getFieldConfig = (
   value,
   selector,
   depth,
-  typeMapping
+  typeMapping,
+  addDefaultResolvers
 ) => {
   switch (typeof value) {
     case `boolean`:
@@ -273,7 +275,7 @@ const getFieldConfig = (
             typeMapping,
             prefix: selector,
             depth: depth + 1,
-            addDefaultResolvers: true,
+            addDefaultResolvers,
           }),
         }
       }
