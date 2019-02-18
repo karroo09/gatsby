@@ -1,4 +1,5 @@
 const _ = require(`lodash`)
+const { GraphQLInterfaceType, GraphQLUnionType } = require(`graphql`)
 const apiRunner = require(`../utils/api-runner-node`)
 const report = require(`gatsby-cli/lib/reporter`)
 const { addNodeInterfaceFields } = require(`./types/node-interface`)
@@ -116,7 +117,16 @@ const processTypeComposer = async ({
 
 const addTypeDefs = ({ schemaComposer, typeDefs, parentSpan }) => {
   typeDefs.forEach(typeDef => {
-    schemaComposer.addTypeDefs(typeDef)
+    const types = schemaComposer.addTypeDefs(typeDef)
+    types.forEach(type => {
+      if (type instanceof GraphQLUnionType) {
+        const utc = schemaComposer.getOrCreateUTC(type.name)
+        utc.setResolveType(node => node.internal.type)
+      } else if (type instanceof GraphQLInterfaceType) {
+        const iftc = schemaComposer.getOrCreateIFTC(type.name)
+        iftc.setResolveType(node => node.internal.type)
+      }
+    })
   })
 }
 
