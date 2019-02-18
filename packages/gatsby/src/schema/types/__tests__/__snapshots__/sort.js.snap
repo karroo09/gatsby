@@ -1,0 +1,370 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Sort input built sort input fields match snapshot 1`] = `
+Array [
+  Object {
+    "name": "bool",
+    "value": "bool",
+  },
+  Object {
+    "name": "array",
+    "value": "array",
+  },
+  Object {
+    "name": "nested",
+    "value": "nested",
+  },
+  Object {
+    "name": "nested___bool",
+    "value": "nested.bool",
+  },
+  Object {
+    "name": "enum",
+    "value": "enum",
+  },
+  Object {
+    "name": "id",
+    "value": "id",
+  },
+  Object {
+    "name": "parent___id",
+    "value": "parent.id",
+  },
+  Object {
+    "name": "parent___parent___id",
+    "value": "parent.parent.id",
+  },
+  Object {
+    "name": "parent___parent___parent___id",
+    "value": "parent.parent.parent.id",
+  },
+  Object {
+    "name": "parent___parent___parent___children",
+    "value": "parent.parent.parent.children",
+  },
+  Object {
+    "name": "parent___parent___children",
+    "value": "parent.parent.children",
+  },
+  Object {
+    "name": "parent___parent___children___id",
+    "value": "parent.parent.children.id",
+  },
+  Object {
+    "name": "parent___parent___children___children",
+    "value": "parent.parent.children.children",
+  },
+  Object {
+    "name": "parent___parent___internal___content",
+    "value": "parent.parent.internal.content",
+  },
+  Object {
+    "name": "parent___parent___internal___contentDigest",
+    "value": "parent.parent.internal.contentDigest",
+  },
+  Object {
+    "name": "parent___parent___internal___description",
+    "value": "parent.parent.internal.description",
+  },
+  Object {
+    "name": "parent___parent___internal___fieldOwners",
+    "value": "parent.parent.internal.fieldOwners",
+  },
+  Object {
+    "name": "parent___parent___internal___ignoreType",
+    "value": "parent.parent.internal.ignoreType",
+  },
+  Object {
+    "name": "parent___parent___internal___mediaType",
+    "value": "parent.parent.internal.mediaType",
+  },
+  Object {
+    "name": "parent___parent___internal___owner",
+    "value": "parent.parent.internal.owner",
+  },
+  Object {
+    "name": "parent___parent___internal___type",
+    "value": "parent.parent.internal.type",
+  },
+  Object {
+    "name": "parent___children",
+    "value": "parent.children",
+  },
+  Object {
+    "name": "parent___children___id",
+    "value": "parent.children.id",
+  },
+  Object {
+    "name": "parent___children___parent___id",
+    "value": "parent.children.parent.id",
+  },
+  Object {
+    "name": "parent___children___parent___children",
+    "value": "parent.children.parent.children",
+  },
+  Object {
+    "name": "parent___children___children",
+    "value": "parent.children.children",
+  },
+  Object {
+    "name": "parent___children___children___id",
+    "value": "parent.children.children.id",
+  },
+  Object {
+    "name": "parent___children___children___children",
+    "value": "parent.children.children.children",
+  },
+  Object {
+    "name": "parent___children___internal___content",
+    "value": "parent.children.internal.content",
+  },
+  Object {
+    "name": "parent___children___internal___contentDigest",
+    "value": "parent.children.internal.contentDigest",
+  },
+  Object {
+    "name": "parent___children___internal___description",
+    "value": "parent.children.internal.description",
+  },
+  Object {
+    "name": "parent___children___internal___fieldOwners",
+    "value": "parent.children.internal.fieldOwners",
+  },
+  Object {
+    "name": "parent___children___internal___ignoreType",
+    "value": "parent.children.internal.ignoreType",
+  },
+  Object {
+    "name": "parent___children___internal___mediaType",
+    "value": "parent.children.internal.mediaType",
+  },
+  Object {
+    "name": "parent___children___internal___owner",
+    "value": "parent.children.internal.owner",
+  },
+  Object {
+    "name": "parent___children___internal___type",
+    "value": "parent.children.internal.type",
+  },
+  Object {
+    "name": "parent___internal___content",
+    "value": "parent.internal.content",
+  },
+  Object {
+    "name": "parent___internal___contentDigest",
+    "value": "parent.internal.contentDigest",
+  },
+  Object {
+    "name": "parent___internal___description",
+    "value": "parent.internal.description",
+  },
+  Object {
+    "name": "parent___internal___fieldOwners",
+    "value": "parent.internal.fieldOwners",
+  },
+  Object {
+    "name": "parent___internal___ignoreType",
+    "value": "parent.internal.ignoreType",
+  },
+  Object {
+    "name": "parent___internal___mediaType",
+    "value": "parent.internal.mediaType",
+  },
+  Object {
+    "name": "parent___internal___owner",
+    "value": "parent.internal.owner",
+  },
+  Object {
+    "name": "parent___internal___type",
+    "value": "parent.internal.type",
+  },
+  Object {
+    "name": "children",
+    "value": "children",
+  },
+  Object {
+    "name": "children___id",
+    "value": "children.id",
+  },
+  Object {
+    "name": "children___parent___id",
+    "value": "children.parent.id",
+  },
+  Object {
+    "name": "children___parent___parent___id",
+    "value": "children.parent.parent.id",
+  },
+  Object {
+    "name": "children___parent___parent___children",
+    "value": "children.parent.parent.children",
+  },
+  Object {
+    "name": "children___parent___children",
+    "value": "children.parent.children",
+  },
+  Object {
+    "name": "children___parent___children___id",
+    "value": "children.parent.children.id",
+  },
+  Object {
+    "name": "children___parent___children___children",
+    "value": "children.parent.children.children",
+  },
+  Object {
+    "name": "children___parent___internal___content",
+    "value": "children.parent.internal.content",
+  },
+  Object {
+    "name": "children___parent___internal___contentDigest",
+    "value": "children.parent.internal.contentDigest",
+  },
+  Object {
+    "name": "children___parent___internal___description",
+    "value": "children.parent.internal.description",
+  },
+  Object {
+    "name": "children___parent___internal___fieldOwners",
+    "value": "children.parent.internal.fieldOwners",
+  },
+  Object {
+    "name": "children___parent___internal___ignoreType",
+    "value": "children.parent.internal.ignoreType",
+  },
+  Object {
+    "name": "children___parent___internal___mediaType",
+    "value": "children.parent.internal.mediaType",
+  },
+  Object {
+    "name": "children___parent___internal___owner",
+    "value": "children.parent.internal.owner",
+  },
+  Object {
+    "name": "children___parent___internal___type",
+    "value": "children.parent.internal.type",
+  },
+  Object {
+    "name": "children___children",
+    "value": "children.children",
+  },
+  Object {
+    "name": "children___children___id",
+    "value": "children.children.id",
+  },
+  Object {
+    "name": "children___children___parent___id",
+    "value": "children.children.parent.id",
+  },
+  Object {
+    "name": "children___children___parent___children",
+    "value": "children.children.parent.children",
+  },
+  Object {
+    "name": "children___children___children",
+    "value": "children.children.children",
+  },
+  Object {
+    "name": "children___children___children___id",
+    "value": "children.children.children.id",
+  },
+  Object {
+    "name": "children___children___children___children",
+    "value": "children.children.children.children",
+  },
+  Object {
+    "name": "children___children___internal___content",
+    "value": "children.children.internal.content",
+  },
+  Object {
+    "name": "children___children___internal___contentDigest",
+    "value": "children.children.internal.contentDigest",
+  },
+  Object {
+    "name": "children___children___internal___description",
+    "value": "children.children.internal.description",
+  },
+  Object {
+    "name": "children___children___internal___fieldOwners",
+    "value": "children.children.internal.fieldOwners",
+  },
+  Object {
+    "name": "children___children___internal___ignoreType",
+    "value": "children.children.internal.ignoreType",
+  },
+  Object {
+    "name": "children___children___internal___mediaType",
+    "value": "children.children.internal.mediaType",
+  },
+  Object {
+    "name": "children___children___internal___owner",
+    "value": "children.children.internal.owner",
+  },
+  Object {
+    "name": "children___children___internal___type",
+    "value": "children.children.internal.type",
+  },
+  Object {
+    "name": "children___internal___content",
+    "value": "children.internal.content",
+  },
+  Object {
+    "name": "children___internal___contentDigest",
+    "value": "children.internal.contentDigest",
+  },
+  Object {
+    "name": "children___internal___description",
+    "value": "children.internal.description",
+  },
+  Object {
+    "name": "children___internal___fieldOwners",
+    "value": "children.internal.fieldOwners",
+  },
+  Object {
+    "name": "children___internal___ignoreType",
+    "value": "children.internal.ignoreType",
+  },
+  Object {
+    "name": "children___internal___mediaType",
+    "value": "children.internal.mediaType",
+  },
+  Object {
+    "name": "children___internal___owner",
+    "value": "children.internal.owner",
+  },
+  Object {
+    "name": "children___internal___type",
+    "value": "children.internal.type",
+  },
+  Object {
+    "name": "internal___content",
+    "value": "internal.content",
+  },
+  Object {
+    "name": "internal___contentDigest",
+    "value": "internal.contentDigest",
+  },
+  Object {
+    "name": "internal___description",
+    "value": "internal.description",
+  },
+  Object {
+    "name": "internal___fieldOwners",
+    "value": "internal.fieldOwners",
+  },
+  Object {
+    "name": "internal___ignoreType",
+    "value": "internal.ignoreType",
+  },
+  Object {
+    "name": "internal___mediaType",
+    "value": "internal.mediaType",
+  },
+  Object {
+    "name": "internal___owner",
+    "value": "internal.owner",
+  },
+  Object {
+    "name": "internal___type",
+    "value": "internal.type",
+  },
+]
+`;
