@@ -86,10 +86,6 @@ const addInferredFieldsImpl = ({
       )
     }
 
-    while (arrays--) {
-      fieldConfig = { ...fieldConfig, type: [fieldConfig.type] }
-    }
-
     // Proxy resolver to unsanitized fieldName in case it contained invalid characters
     if (key !== unsanitizedKey) {
       // Don't create a field with the sanitized key if a field with that name already exists.
@@ -114,7 +110,6 @@ const addInferredFieldsImpl = ({
     if (typeComposer.hasField(key)) {
       let fieldType = typeComposer.getFieldType(key)
       if (_.isPlainObject(value) /* && depth < MAX_DEPTH */) {
-        // TODO: Use helper (similar to dropTypeModifiers)
         let lists = 0
         while (fieldType.ofType) {
           if (fieldType instanceof GraphQLList) lists++
@@ -153,6 +148,9 @@ const addInferredFieldsImpl = ({
         typeComposer.setField(key, field)
       }
     } else {
+      while (arrays--) {
+        fieldConfig.type = [fieldConfig.type]
+      }
       fields[key] = fieldConfig
     }
   })
@@ -275,6 +273,7 @@ const getFieldConfig = (
             typeMapping,
             prefix: selector,
             depth: depth + 1,
+            addDefaultResolvers: true,
           }),
         }
       }
