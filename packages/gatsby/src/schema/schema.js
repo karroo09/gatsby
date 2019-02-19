@@ -167,10 +167,10 @@ const addThirdPartySchemas = ({
       schema.getQueryType()
     )
     const fields = QueryTC.getFields()
-    schemaComposer.Query.addFields(fields)
+    schemaComposer.Query.addFields(withProjection(fields))
 
     // Explicitly add the third-party schema's types, so they can be targeted
-    // in `addResolvers` API.
+    // in `createResolvers` API.
     const types = schema.getTypeMap()
     Object.keys(types).forEach(typeName => {
       const type = types[typeName]
@@ -212,7 +212,7 @@ const addCustomResolveFunctions = async ({ schemaComposer, parentSpan }) => {
               tc.extendField(fieldName, newConfig)
             } else if (fieldTypeName) {
               report.warn(
-                `\`addResolvers\` passed resolvers for field \`${typeName}.${fieldName}\` with type ${fieldTypeName}. Such field with type ${originalTypeName} already exists on the type. Use \`addTypeDefs\` to override type fields.`
+                `\`createResolvers\` passed resolvers for field \`${typeName}.${fieldName}\` with type ${fieldTypeName}. Such field with type ${originalTypeName} already exists on the type. Use \`addTypeDefs\` to override type fields.`
               )
             }
           } else {
@@ -221,7 +221,7 @@ const addCustomResolveFunctions = async ({ schemaComposer, parentSpan }) => {
         })
       } else {
         report.warn(
-          `\`addResolvers\` passed resolvers for type \`${typeName}\` that doesn't exist in the schema. Use \`addTypeDefs\` to add the type before adding resolvers.`
+          `\`createResolvers\` passed resolvers for type \`${typeName}\` that doesn't exist in the schema. Use \`addTypeDefs\` to add the type before adding resolvers.`
         )
       }
     })
@@ -347,4 +347,61 @@ const addTypeToRootQuery = ({ schemaComposer, typeComposer }) => {
     [queryName]: typeComposer.getResolver(`findOne`),
     [queryNamePlural]: typeComposer.getResolver(`findManyPaginated`),
   })
+}
+
+const withProjection = fields => {
+  const { getProjectionFromAST } = require(`graphql-compose`)
+
+  const fieldsWithProjection = {}
+  Object.keys(fields).forEach(fieldName => {
+    const fieldConfig = fields[fieldName]
+    const { resolve } = fieldConfig
+    fieldsWithProjection[fieldName] = {
+      ...fieldConfig,
+      resolve(source, args, context, info) {
+        const projection = getProjectionFromAST(info)
+        const { selectionSet } = info.fieldNodes[0]
+        extendSelectionSet(selectionSet, projection)
+        return resolve(source, args, context, info)
+      },
+    }
+  })
+  return fieldsWithProjection
+}
+
+const createSelection = key => {
+  return {
+    kind: `Field`,
+    name: { kind: `Name`, value: key },
+    selectionSet: undefined,
+  }
+}
+
+const extendSelectionSet = (selectionSet, projectedFields) => {
+  const selections = selectionSet.selections
+  const fieldNames = _.uniq(
+    Object.keys(projectedFields).concat(
+      selections.map(selection => selection.name.value)
+    )
+  )
+  fieldNames.forEach(fieldName => {
+    let selection
+    selection = selections.find(s => s.name.value === fieldName)
+    if (!selection) {
+      selection = createSelection(fieldName)
+      selections.push(selection)
+    }
+
+    const fields = projectedFields[fieldName]
+    if (typeof fields === `object` && fields && Object.keys(fields).length) {
+      if (!selection.selectionSet) {
+        selection.selectionSet = { kind: `SelectionSet`, selections: [] }
+      }
+      extendSelectionSet(selection.selectionSet, fields)
+    }
+  })
+
+  if (!selections.length) {
+    selectionSet = undefined
+  }
 }
