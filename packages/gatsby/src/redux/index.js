@@ -75,13 +75,15 @@ const store = Redux.createStore(
 function saveState() {
   const state = store.getState()
   const pickedState = _.pick(state, [
-    `nodes`,
     `status`,
     `componentDataDependencies`,
     `jsonDataPaths`,
     `components`,
     `staticQueryComponents`,
   ])
+  if (process.env.GATSBY_DB_NODES !== `loki`) {
+    pickedState.push(`nodes`)
+  }
 
   pickedState.staticQueryComponents = mapToObject(
     pickedState.staticQueryComponents
