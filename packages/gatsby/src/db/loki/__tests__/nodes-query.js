@@ -5,16 +5,14 @@ if (process.env.GATSBY_DB_NODES === `loki`) {
   const nodeTypes = require(`../../../schema/build-node-types`)
   const runQuery = require(`../nodes-query`)
 
-  const createNodes = () => {
-    return [
-      {
-        id: `1`,
-        internal: { type: `Test` },
-        children: [],
-        foo: `bar`,
-      },
-    ]
-  }
+  const createNodes = () => [
+    {
+      id: `1`,
+      internal: { type: `Test` },
+      children: [],
+      foo: `bar`,
+    },
+  ]
 
   const runQueries = (nodes, n) => {
     store.dispatch({ type: `DELETE_CACHE` })
