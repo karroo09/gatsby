@@ -7,6 +7,7 @@ describe(`nodes db tests`, () => {
   beforeEach(() => {
     store.dispatch({ type: `DELETE_CACHE` })
   })
+
   it(`deletes previously transformed children nodes when the parent node is updated`, () => {
     store.dispatch(
       actions.createNode(
@@ -196,6 +197,7 @@ describe(`nodes db tests`, () => {
     )
     expect(getNodes()).toHaveLength(1)
   })
+
   it(`deletes previously transformed children nodes when parent nodes are deleted`, () => {
     store.dispatch(
       actions.createNode(
@@ -277,6 +279,7 @@ describe(`nodes db tests`, () => {
     )
     expect(getNodes()).toHaveLength(0)
   })
+
   it(`allows deleting nodes`, () => {
     actions.createNode(
       {

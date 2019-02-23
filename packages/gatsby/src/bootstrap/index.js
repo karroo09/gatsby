@@ -217,9 +217,7 @@ module.exports = async (args: BootstrapArgs) => {
     activity.start()
     const dbSaveFile = `${cacheDirectory}/loki/loki.db`
     try {
-      await loki.start({
-        saveFile: dbSaveFile,
-      })
+      await loki.createNodesDb(dbSaveFile)
     } catch (e) {
       report.error(
         `Error starting DB. Perhaps try deleting ${path.dirname(dbSaveFile)}`

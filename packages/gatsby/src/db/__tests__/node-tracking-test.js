@@ -52,6 +52,7 @@ describe(`track root nodes`, () => {
       }
     )
   })
+
   describe(`Tracks nodes read from redux state cache`, () => {
     it(`Tracks inline objects`, () => {
       const node = getNode(`id1`)
@@ -60,6 +61,7 @@ describe(`track root nodes`, () => {
 
       expect(trackedRootNode).toEqual(node)
     })
+
     it(`Tracks inline arrays`, () => {
       const node = getNode(`id1`)
       const inlineObject = node.inlineArray
@@ -67,6 +69,7 @@ describe(`track root nodes`, () => {
 
       expect(trackedRootNode).toEqual(node)
     })
+
     it(`Doesn't track copied objects`, () => {
       const node = getNode(`id1`)
       const copiedInlineObject = { ...node.inlineObject }
@@ -75,6 +78,7 @@ describe(`track root nodes`, () => {
       expect(trackedRootNode).not.toEqual(node)
     })
   })
+
   describe(`Tracks nodes created using createNode action`, () => {
     it(`Tracks inline objects`, () => {
       const node = getNode(`id2`)

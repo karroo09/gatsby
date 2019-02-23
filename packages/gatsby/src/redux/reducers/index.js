@@ -1,5 +1,5 @@
 const reduxNodes = require(`./nodes`)
-const lokiNodes = require(`../../db/loki/nodes`).reducer
+const lokiNodes = require(`../../db/loki/nodes-reducer`)
 
 const backend = process.env.GATSBY_DB_NODES || `redux`
 

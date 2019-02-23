@@ -1,23 +1,18 @@
 const _ = require(`lodash`)
 const prepareRegex = require(`../../utils/prepare-regex`)
-const { getNodeTypeCollection } = require(`./nodes`)
 const sift = require(`sift`)
 const { emitter } = require(`../../redux`)
 
-// Cleared on DELETE_CACHE
 const fieldUsages = {}
 const FIELD_INDEX_THRESHOLD = 5
-
+// TODO: Move this to redux!
 emitter.on(`DELETE_CACHE`, () => {
   for (var field in fieldUsages) {
     delete fieldUsages[field]
   }
 })
 
-// Takes a raw graphql filter and converts it into a mongo-like args
-// object that can be understood by the `sift` library. E.g `eq`
-// becomes `$eq`
-function siftifyArgs(object) {
+const siftifyArgs = object => {
   const newObject = {}
   _.each(object, (v, k) => {
     if (_.isPlainObject(v)) {
@@ -41,12 +36,7 @@ function siftifyArgs(object) {
   return newObject
 }
 
-// filter nodes using the `sift` library. But isn't this a loki query
-// file? Yes, but we need to support all functionality provided by
-// `run-sift`, and there are some operators that loki can't
-// support. Like `elemMatch`, so for those fields, we fall back to
-// sift
-function runSift(nodes, query) {
+const runSift = (nodes, query) => {
   if (nodes) {
     const siftQuery = {
       $elemMatch: siftifyArgs(query),
@@ -57,47 +47,11 @@ function runSift(nodes, query) {
   }
 }
 
-// Takes a raw graphql filter and converts it into a mongo-like args
-// object that can be understood by loki. E.g `eq` becomes
-// `$eq`. gqlFilter should be the raw graphql filter returned from
-// graphql-js. e.g gqlFilter:
-//
-// {
-//   internal: {
-//     type: {
-//       eq: "TestNode"
-//     },
-//     content: {
-//       glob: "et"
-//     }
-//   },
-//   id: {
-//     glob: "12*"
-//   }
-// }
-//
-// would return
-//
-// {
-//   internal: {
-//     type: {
-//       $eq: "TestNode"  // append $ to eq
-//     },
-//     content: {
-//       $regex: new MiniMatch(v) // convert glob to regex
-//     }
-//   },
-//   id: {
-//     $regex: // as above
-//   }
-// }
-function toMongoArgs(gqlFilter, lastFieldType) {
+const toMongoArgs = (gqlFilter, lastFieldType) => {
   const mongoArgs = {}
   _.each(gqlFilter, (v, k) => {
     if (_.isPlainObject(v)) {
       if (k === `elemMatch`) {
-        // loki doesn't support elemMatch, so use sift (see runSift
-        // comment above)
         mongoArgs[`$where`] = obj => {
           const result = runSift(obj, v)
           return result && result.length > 0
@@ -109,8 +63,6 @@ function toMongoArgs(gqlFilter, lastFieldType) {
     } else {
       if (k === `regex`) {
         const re = prepareRegex(v)
-        // To ensure that false is returned if a field doesn't
-        // exist. E.g `{nested.field: {$regex: /.*/}}`
         mongoArgs[`$where`] = obj => !_.isUndefined(obj) && re.test(obj)
       } else if (k === `glob`) {
         const Minimatch = require(`minimatch`).Minimatch
@@ -155,37 +107,6 @@ function toMongoArgs(gqlFilter, lastFieldType) {
   return mongoArgs
 }
 
-// Converts a nested mongo args object into a dotted notation. acc
-// (accumulator) must be a reference to an empty object. The converted
-// fields will be added to it. E.g
-//
-// {
-//   internal: {
-//     type: {
-//       $eq: "TestNode"
-//     },
-//     content: {
-//       $regex: new MiniMatch(v)
-//     }
-//   },
-//   id: {
-//     $regex: newMiniMatch(v)
-//   }
-// }
-//
-// After execution, acc would be:
-//
-// {
-//   "internal.type": {
-//     $eq: "TestNode"
-//   },
-//   "internal.content": {
-//     $regex: new MiniMatch(v)
-//   },
-//   "id": {
-//     $regex: // as above
-//   }
-// }
 const toDottedFields = (filter, acc = {}, path = []) => {
   Object.keys(filter).forEach(key => {
     const value = filter[key]
@@ -199,13 +120,6 @@ const toDottedFields = (filter, acc = {}, path = []) => {
   return acc
 }
 
-// The query language that Gatsby has used since day 1 is `sift`. Both
-// sift and loki are mongo-like query languages, but they have some
-// subtle differences. One is that in sift, a nested filter such as
-// `{foo: {bar: {ne: true} } }` will return true if the foo field
-// doesn't exist, is null, or bar is null. Whereas loki will return
-// false if the foo field doesn't exist or is null. This ensures that
-// loki queries behave like sift
 const isNeTrue = (obj, path) => {
   if (path.length) {
     const [first, ...rest] = path
@@ -227,25 +141,10 @@ const fixNeTrue = filter =>
     return acc
   }, {})
 
-// Converts graphQL args to a loki filter
 const convertArgs = (gqlArgs, gqlType) =>
   fixNeTrue(toDottedFields(toMongoArgs(gqlArgs.filter, gqlType)))
 
-// Converts graphql Sort args into the form expected by loki, which is
-// a vector where the first value is a field name, and the second is a
-// boolean `isDesc`. Nested fields delimited by `___` are replaced by
-// periods. E.g
-//
-// {
-//   fields: [ `frontmatter___date`, `id` ],
-//   order: [`desc`]
-// }
-//
-// would return
-//
-// [ [ `frontmatter.date`, true ], [ `id`, false ] ]
-//
-function toSortFields(sortArgs) {
+const toSortFields = sortArgs => {
   const { fields, order } = sortArgs
   const lokiSortFields = []
   for (let i = 0; i < fields.length; i++) {
@@ -256,61 +155,41 @@ function toSortFields(sortArgs) {
   return lokiSortFields
 }
 
-// Every time we run a query, we increment a counter for each of its
-// fields, so that we can determine which fields are used the
-// most. Any time a field is seen more than `FIELD_INDEX_THRESHOLD`
-// times, we create a loki index so that future queries with that
-// field will execute faster.
-function ensureFieldIndexes(coll, lokiArgs) {
-  _.forEach(lokiArgs, (v, fieldName) => {
-    // Increment the usages of the field
-    _.update(fieldUsages, fieldName, n => (n ? n + 1 : 1))
-    // If we have crossed the threshold, then create the index
-    if (_.get(fieldUsages, fieldName) === FIELD_INDEX_THRESHOLD) {
-      // Loki ensures that this is a noop if index already exists. E.g
-      // if it was previously added via a sort field
-      coll.ensureIndex(fieldName)
+const ensureFieldIndices = (collection, fieldNames) => {
+  fieldNames.forEach(fieldName => {
+    fieldUsages[fieldName] = fieldUsages[fieldName] + 1 || 1
+    if (fieldUsages[fieldName] === FIELD_INDEX_THRESHOLD) {
+      collection.ensureIndex(fieldName)
     }
   })
 }
 
-/**
- * Runs the graphql query over the loki nodes db.
- *
- * @param {Object} args. Object with:
- *
- * {Object} gqlType: built during `./build-node-types.js`
- *
- * {Object} queryArgs: The raw graphql query as a js object. E.g `{
- * filter: { fields { slug: { eq: "/somepath" } } } }`
- *
- * {Object} context: The context from the QueryJob
- *
- * {boolean} firstOnly: Whether to return the first found match, or
- * all matching results
- *
- * @returns {promise} A promise that will eventually be resolved with
- * a collection of matching objects (even if `firstOnly` is true)
- */
-async function runQuery({ gqlType, queryArgs, context = {}, firstOnly }) {
-  const lokiArgs = convertArgs(queryArgs, gqlType)
-  const coll = getNodeTypeCollection(gqlType.name)
-  ensureFieldIndexes(coll, lokiArgs)
-  let chain = coll.chain().find(lokiArgs, firstOnly)
+const runQuery = async ({ gqlType, queryArgs, firstOnly }) => {
+  const convertedArgs = convertArgs(queryArgs, gqlType)
+
+  const { store } = require(`../../redux`)
+  const { nodes } = store.getState()
+  const collection = nodes.getCollection(`nodes`)
+  // TODO: We should not get gqlType, but an array of node type names
+  // so we can create a new DynamicView here for abstract types
+  const type = gqlType.name
+  const view = collection.getDynamicView(type)
+
+  // ensureFieldIndices(view.collection, Object.keys(convertedArgs))
+  // TODO: We don't want field indices, because only the firs find()
+  // query can use those, and we use that for internal.type.
+  // But we could create a DynamicView for queries that are executed
+  // more often. The difference is of course that when the query params
+  // change, we need a new DynamicView
+  const resultSet = view.branchResultset().find(convertedArgs, firstOnly)
 
   if (queryArgs.sort) {
     const sortFields = toSortFields(queryArgs.sort)
-
-    // Create an index for each sort field. Indexing requires sorting
-    // so we lose nothing by ensuring an index is added for each sort
-    // field. Loki ensures this is a noop if the index already exists
-    for (const sortField of sortFields) {
-      coll.ensureIndex(sortField[0])
-    }
-    chain = chain.compoundsort(sortFields)
+    // sortFields.forEach(field => collection.ensureIndex(field[0]))
+    return resultSet.compoundsort(sortFields).data()
   }
 
-  return chain.data()
+  return resultSet.data()
 }
 
 module.exports = runQuery

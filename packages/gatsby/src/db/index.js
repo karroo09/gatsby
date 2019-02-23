@@ -1,4 +1,5 @@
 const _ = require(`lodash`)
+const report = require(`gatsby-cli/lib/reporter`)
 const redux = require(`../redux`)
 const { emitter } = redux
 
@@ -10,9 +11,11 @@ if (process.env.GATSBY_DB_NODES === `loki`) {
 }
 
 // calls `saveState()` on all DBs
-function saveState() {
-  for (const db of dbs) {
-    db.saveState()
+const saveState = async () => {
+  try {
+    await Promise.all(dbs.map(db => db.saveState()))
+  } catch (err) {
+    report.warn(`Error persisting state: ${(err && err.message) || err}`)
   }
 }
 const saveStateDebounced = _.debounce(saveState, 1000)
@@ -22,7 +25,7 @@ const saveStateDebounced = _.debounce(saveState, 1000)
  * databases save their state to disk. If we're in `develop` mode,
  * then any new event triggers a debounced save as well.
  */
-function startAutosave() {
+const startAutosave = () => {
   // During development, once bootstrap is finished, persist state on changes.
   let bootstrapFinished = false
   if (process.env.gatsby_executing_command === `develop`) {
