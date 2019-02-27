@@ -1,24 +1,45 @@
-module.exports = (state = new Map(), action) => {
+module.exports = (state = { db: null, path: `` }, action) => {
   switch (action.type) {
-    case `DELETE_CACHE`:
-      return new Map()
+    case `SET_NODES_DB`:
+      return action.payload
+
+    case `DELETE_CACHE`: {
+      if (state.db) {
+        state.db.clear()
+      }
+      return state
+    }
+
     case `CREATE_NODE`: {
-      state.set(action.payload.id, action.payload)
+      const node = action.payload
+      if (state.db && node) {
+        state.db.create(action.payload)
+      }
       return state
     }
 
     case `ADD_FIELD_TO_NODE`:
-    case `ADD_CHILD_NODE_TO_PARENT_NODE`:
-      state.set(action.payload.id, action.payload)
+    case `ADD_CHILD_NODE_TO_PARENT_NODE`: {
+      const node = action.payload
+      if (state.db && node) {
+        state.db.update(action.payload)
+      }
       return state
+    }
 
     case `DELETE_NODE`: {
-      state.delete(action.payload.id)
+      const node = action.payload
+      if (state.db && node) {
+        state.db.delete(action.payload.id)
+      }
       return state
     }
 
     case `DELETE_NODES`: {
-      action.payload.forEach(id => state.delete(id))
+      const ids = action.payload
+      if (state.db && ids) {
+        state.db.deleteMany(ids)
+      }
       return state
     }
 

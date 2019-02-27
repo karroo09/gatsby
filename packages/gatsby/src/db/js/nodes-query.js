@@ -1,11 +1,11 @@
 // @flow
 const sift = require(`sift`)
 const _ = require(`lodash`)
-const prepareRegex = require(`../utils/prepare-regex`)
+const prepareRegex = require(`../../utils/prepare-regex`)
 const Promise = require(`bluebird`)
-const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
-const { getNode, getNodesByType } = require(`../db/nodes`)
-const { store } = require(`.`)
+const { trackInlineObjectsInRootNode } = require(`../node-tracking`)
+const { getNode, getNodesByType } = require(`../nodes`)
+const { store } = require(`../../redux`)
 
 const enhancedNodeCache = new Map()
 const enhancedNodePromiseCache = new Map()

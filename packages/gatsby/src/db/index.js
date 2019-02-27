@@ -1,50 +1,37 @@
-const _ = require(`lodash`)
-const redux = require(`../redux`)
-const { emitter } = redux
+const { store } = require(`../redux`)
 
-// Even if we are using loki, we still include redux in the list of
-// dbs since it still has pages, config, etc.
-const dbs = [redux]
-if (process.env.GATSBY_DB_NODES === `loki`) {
-  dbs.push(require(`./loki`))
-}
+const backend = process.env.GATSBY_DB_NODES || `js`
 
-// calls `saveState()` on all DBs
-function saveState() {
-  for (const db of dbs) {
-    db.saveState()
-  }
-}
-const saveStateDebounced = _.debounce(saveState, 1000)
-
-/**
- * Sets up listeners so that once bootstrap has finished, all
- * databases save their state to disk. If we're in `develop` mode,
- * then any new event triggers a debounced save as well.
- */
-function startAutosave() {
-  // During development, once bootstrap is finished, persist state on changes.
-  let bootstrapFinished = false
-  if (process.env.gatsby_executing_command === `develop`) {
-    emitter.on(`BOOTSTRAP_FINISHED`, () => {
-      bootstrapFinished = true
-      saveState()
-    })
-    emitter.on(`*`, () => {
-      if (bootstrapFinished) {
-        saveStateDebounced()
-      }
-    })
+const createNodesDb = saveFile => {
+  let db
+  switch (backend) {
+    case `js`: {
+      const JsStore = require(`./js/node-store`)
+      db = new JsStore(saveFile)
+      break
+    }
+    case `loki`: {
+      const LokiDb = require(`./loki/nodes`)
+      db = new LokiDb(saveFile)
+      break
+    }
+    default:
+      throw new Error(
+        `Unsupported DB nodes backend (value of env var GATSBY_DB_NODES)`
+      )
   }
 
-  // During builds, persist state once bootstrap has finished.
-  if (process.env.gatsby_executing_command === `build`) {
-    emitter.on(`BOOTSTRAP_FINISHED`, () => {
-      saveState()
-    })
-  }
+  store.dispatch({
+    type: `SET_NODES_DB`,
+    payload: {
+      db,
+      path: saveFile,
+    },
+  })
+
+  return db
 }
 
 module.exports = {
-  startAutosave,
+  createNodesDb,
 }

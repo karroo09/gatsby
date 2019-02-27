@@ -72,12 +72,16 @@ const runAPI = (plugin, api, args) => {
     const { store, emitter } = require(`../redux`)
     const {
       loadNodeContent,
-      getNodes,
-      getNode,
-      getNodesByType,
       hasNodeChanged,
       getNodeAndSavePathDependency,
-    } = require(`../db/nodes`)
+    } = require(`../db/common`)
+    const { db } = store.getState().nodes
+    // TODO: db will not be available in early bootstrap APIs like `onPreInit`
+    // We could of course move the db initialization out of bootstrap,
+    // and into `redux/index.js`
+    const getNodes = db && db.getNodes.bind(db)
+    const getNode = db && db.getNode.bind(db)
+    const getNodesByType = db && db.getNodesByType.bind(db)
     const { boundActionCreators } = require(`../redux/actions`)
 
     const doubleBoundActionCreators = doubleBind(

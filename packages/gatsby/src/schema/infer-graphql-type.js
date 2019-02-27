@@ -13,7 +13,6 @@ const invariant = require(`invariant`)
 const { oneLine } = require(`common-tags`)
 
 const { store } = require(`../redux`)
-const { getNode, getNodes, getNodesByType } = require(`../db/nodes`)
 const pageDependencyResolver = require(`./page-dependency-resolver`)
 const createTypeName = require(`./create-type-name`)
 const createKey = require(`./create-key`)
@@ -157,8 +156,11 @@ function inferFromMapping(
     return null
   }
 
+  const { db } = store.getState().nodes
   const findNode = fieldValue =>
-    getNodesByType(linkedType).find(n => _.get(n, linkedField) === fieldValue)
+    db
+      .getNodesByType(linkedType)
+      .find(n => _.get(n, linkedField) === fieldValue)
 
   if (_.isArray(value)) {
     return {
@@ -189,17 +191,19 @@ function inferFromMapping(
 }
 
 function findLinkedNodeByField(linkedField, value) {
-  return getNodes().find(n => n[linkedField] === value)
+  const { db } = store.getState().nodes
+  return db.getNodes().find(n => n[linkedField] === value)
 }
 
 export function findLinkedNode(value, linkedField) {
+  const { db } = store.getState().nodes
   let linkedNode
   // If the field doesn't link to the id, use that for searching.
   if (linkedField) {
     linkedNode = findLinkedNodeByField(linkedField, value)
     // Else the field is linking to the node's id, the default.
   } else {
-    linkedNode = getNode(value)
+    linkedNode = db.getNode(value)
   }
   return linkedNode
 }

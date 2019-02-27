@@ -3,7 +3,6 @@ const report = require(`gatsby-cli/lib/reporter`)
 
 const apiRunner = require(`./api-runner-node`)
 const { store } = require(`../redux`)
-const { getNode, getNodes } = require(`../db/nodes`)
 const { boundActionCreators } = require(`../redux/actions`)
 const { deleteNode } = boundActionCreators
 
@@ -18,8 +17,9 @@ function discoverPluginsWithoutNodes(storeState) {
     `default-site-plugin`
   )
   // Find out which plugins own already created nodes
+  const { db } = store.getState().nodes
   const nodeOwners = _.uniq(
-    Array.from(getNodes()).reduce((acc, node) => {
+    Array.from(db.getNodes()).reduce((acc, node) => {
       acc.push(node.internal.owner)
       return acc
     }, [])
@@ -35,6 +35,7 @@ module.exports = async ({ parentSpan } = {}) => {
   })
 
   const state = store.getState()
+  const { db } = state.nodes
 
   // Warn about plugins that should have created nodes but didn't.
   const pluginsWithNoNodes = discoverPluginsWithoutNodes(state)
@@ -46,16 +47,16 @@ module.exports = async ({ parentSpan } = {}) => {
 
   // Garbage collect stale data nodes
   const touchedNodes = Object.keys(state.nodesTouched)
-  const staleNodes = Array.from(getNodes()).filter(node => {
+  const staleNodes = Array.from(db.getNodes()).filter(node => {
     // Find the root node.
     let rootNode = node
     let whileCount = 0
     while (
       rootNode.parent &&
-      getNode(rootNode.parent) !== undefined &&
+      db.getNode(rootNode.parent) !== undefined &&
       whileCount < 101
     ) {
-      rootNode = getNode(rootNode.parent)
+      rootNode = db.getNode(rootNode.parent)
       whileCount += 1
       if (whileCount > 100) {
         console.log(

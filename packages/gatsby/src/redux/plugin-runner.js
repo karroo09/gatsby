@@ -1,11 +1,11 @@
 // Invoke plugins for certain actions.
 
-const { emitter } = require(`./index`)
-const { getNode } = require(`../db/nodes`)
+const { store, emitter } = require(`./index`)
 const apiRunnerNode = require(`../utils/api-runner-node`)
 
 emitter.on(`CREATE_NODE`, action => {
-  const node = getNode(action.payload.id)
+  const { db } = store.getState().nodes
+  const node = db.getNode(action.payload.id)
   const traceTags = { nodeId: node.id, nodeType: node.internal.type }
   apiRunnerNode(`onCreateNode`, {
     node,

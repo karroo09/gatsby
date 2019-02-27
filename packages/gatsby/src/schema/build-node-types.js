@@ -17,7 +17,6 @@ const {
   inferInputObjectStructureFromNodes,
 } = require(`./infer-graphql-input-fields`)
 const { nodeInterface } = require(`./node-interface`)
-const { getNodesByType, getTypes, getNode } = require(`../db/nodes`)
 const pageDependencyResolver = require(`./page-dependency-resolver`)
 const { setFileNodeRootType } = require(`./types/type-file`)
 const {
@@ -26,6 +25,7 @@ const {
 } = require(`./data-tree-utils`)
 const { run: runQuery } = require(`../db/nodes-query`)
 const lazyFields = require(`./lazy-fields`)
+const { store } = require(`../redux`)
 
 import type { ProcessedNodeType } from "./infer-graphql-type"
 
@@ -33,26 +33,32 @@ type TypeMap = {
   [typeName: string]: ProcessedNodeType,
 }
 
-const defaultNodeFields = {
-  id: {
-    type: new GraphQLNonNull(GraphQLID),
-    description: `The id of this node.`,
-  },
-  parent: {
-    type: nodeInterface,
-    description: `The parent of this node.`,
-    resolve: pageDependencyResolver(node => getNode(node.parent)),
-  },
-  children: {
-    type: new GraphQLList(nodeInterface),
-    description: `The children of this node.`,
-    resolve: pageDependencyResolver(node => node.children.map(getNode)),
-  },
+const getDefaultNodeFields = () => {
+  const { db } = store.getState().nodes
+  return {
+    id: {
+      type: new GraphQLNonNull(GraphQLID),
+      description: `The id of this node.`,
+    },
+    parent: {
+      type: nodeInterface,
+      description: `The parent of this node.`,
+      resolve: pageDependencyResolver(node => db.getNode(node.parent)),
+    },
+    children: {
+      type: new GraphQLList(nodeInterface),
+      description: `The children of this node.`,
+      resolve: pageDependencyResolver(node =>
+        node.children.map(child => db.getNode(child))
+      ),
+    },
+  }
 }
 
 function groupChildNodesByType(nodes) {
+  const { db } = store.getState().nodes
   return _(nodes)
-    .flatMap(node => node.children.map(getNode))
+    .flatMap(node => node.children.map(child => db.getNode(child)))
     .groupBy(node =>
       node.internal ? _.camelCase(node.internal.type) : undefined
     )
@@ -64,7 +70,9 @@ function nodeIsOfType(typeName) {
 }
 
 function makeChildrenResolver(typeName) {
-  return node => node.children.map(getNode).filter(nodeIsOfType(typeName))
+  const { db } = store.getState().nodes
+  return node =>
+    node.children.map(child => db.getNode(child)).filter(nodeIsOfType(typeName))
 }
 
 function buildChildrenFieldConfigMap(typeName, nodeObjectType) {
@@ -78,7 +86,9 @@ function buildChildrenFieldConfigMap(typeName, nodeObjectType) {
 }
 
 function makeChildResolver(typeName) {
-  return node => node.children.map(getNode).find(nodeIsOfType(typeName))
+  const { db } = store.getState().nodes
+  return node =>
+    node.children.map(child => db.getNode(child)).find(nodeIsOfType(typeName))
 }
 
 function buildChildFieldConfigMap(typeName, nodeObjectType) {
@@ -129,7 +139,7 @@ function inferFields({ nodes, pluginFields, processedTypes }) {
   })
 
   return {
-    ...defaultNodeFields,
+    ...getDefaultNodeFields(),
     ...childFields,
     ...inferredFields,
     ...pluginFields,
@@ -238,7 +248,8 @@ async function buildAll({ parentSpan }) {
   const spanArgs = parentSpan ? { childOf: parentSpan } : {}
   const span = tracer.startSpan(`build schema`, spanArgs)
 
-  const types = getTypes()
+  const { db } = store.getState().nodes
+  const types = db.getTypes()
   const processedTypes: TypeMap = {}
 
   clearTypeExampleValues()
@@ -249,9 +260,9 @@ async function buildAll({ parentSpan }) {
   // Create node types and node fields for nodes that have a resolve function.
   await Promise.all(
     _.map(types, async typeName => {
-      const nodes = getNodesByType(typeName).filter(
-        node => node.internal && !node.internal.ignoreType
-      )
+      const nodes = db
+        .getNodesByType(typeName)
+        .filter(node => node.internal && !node.internal.ignoreType)
       if (!nodes.length) return
 
       const fieldName = _.camelCase(typeName)

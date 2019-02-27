@@ -9,8 +9,8 @@ const path = require(`path`)
 const fs = require(`fs`)
 const url = require(`url`)
 const kebabHash = require(`kebab-hash`)
-const { hasNodeChanged, getNode } = require(`../db/nodes`)
-const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
+const { hasNodeChanged } = require(`../db/common`)
+// const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
 const { store } = require(`./index`)
 const fileExistsSync = require(`fs-exists-cached`).sync
 const joiSchemas = require(`../joi-schemas/joi`)
@@ -19,9 +19,10 @@ const { generateComponentChunkName } = require(`../utils/js-chunk-names`)
 const actions = {}
 
 const findChildrenRecursively = (children = []) => {
+  const { db } = store.getState().nodes
   children = children.concat(
     ...children.map(child => {
-      const newChildren = getNode(child).children
+      const newChildren = db.getNode(child).children
       if (_.isArray(newChildren) && newChildren.length > 0) {
         return findChildrenRecursively(newChildren)
       } else {
@@ -317,6 +318,8 @@ ${reservedFields.map(f => `  * "${f}"`).join(`\n`)}
 actions.deleteNode = (options: any, plugin: Plugin, ...args) => {
   let node = _.get(options, `node`)
 
+  const { db } = store.getState().nodes
+
   // Check if using old method signature. Warn about incorrect usage but get
   // node from nodeID anyway.
   if (typeof options === `string`) {
@@ -329,7 +332,7 @@ actions.deleteNode = (options: any, plugin: Plugin, ...args) => {
       console.log(`"deleteNode" was called by ${args[0].name}`)
     }
 
-    node = getNode(options)
+    node = db.getNode(options)
   }
 
   let deleteDescendantsActions
@@ -340,7 +343,7 @@ actions.deleteNode = (options: any, plugin: Plugin, ...args) => {
     const descendantNodes = findChildrenRecursively(node.children)
     if (descendantNodes.length > 0) {
       deleteDescendantsActions = descendantNodes.map(n =>
-        actions.deleteNode({ node: getNode(n) }, plugin)
+        actions.deleteNode({ node: db.getNode(n) }, plugin)
       )
     }
   }
@@ -372,14 +375,16 @@ actions.deleteNodes = (nodes: any[], plugin: Plugin) => {
     console.log(`"deleteNodes" was called by ${plugin.name}`)
   }
 
+  const { db } = store.getState().nodes
+
   // Also delete any nodes transformed from these.
   const descendantNodes = _.flatten(
-    nodes.map(n => findChildrenRecursively(getNode(n).children))
+    nodes.map(n => findChildrenRecursively(db.getNode(n).children))
   )
   let deleteDescendantsActions
   if (descendantNodes.length > 0) {
     deleteDescendantsActions = descendantNodes.map(n =>
-      actions.deleteNode({ node: getNode(n) }, plugin)
+      actions.deleteNode({ node: db.getNode(n) }, plugin)
     )
   }
 
@@ -531,9 +536,10 @@ actions.createNode = (
     )
   }
 
-  trackInlineObjectsInRootNode(node)
+  // trackInlineObjectsInRootNode(node)
 
-  const oldNode = getNode(node.id)
+  const { db } = store.getState().nodes
+  const oldNode = db.getNode(node.id)
 
   // Ensure the plugin isn't creating a node type owned by another
   // plugin. Type "ownership" is first come first served.
@@ -598,7 +604,7 @@ actions.createNode = (
       const descendantNodes = findChildrenRecursively(oldNode.children)
       if (descendantNodes.length > 0) {
         deleteAction = descendantNodes.map(n =>
-          actions.deleteNode({ node: getNode(n) })
+          actions.deleteNode({ node: db.getNode(n) })
         )
       }
     }

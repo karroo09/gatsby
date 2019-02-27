@@ -20,8 +20,6 @@ const report = require(`gatsby-cli/lib/reporter`)
 const getConfigFile = require(`./get-config-file`)
 const tracer = require(`opentracing`).globalTracer()
 const preferDefault = require(`./prefer-default`)
-const nodeTracking = require(`../db/node-tracking`)
-require(`../db`).startAutosave()
 
 // Show stack trace on unhandled promises.
 process.on(`unhandledRejection`, (reason, p) => {
@@ -206,31 +204,31 @@ module.exports = async (args: BootstrapArgs) => {
 
   activity.end()
 
-  if (process.env.GATSBY_DB_NODES === `loki`) {
-    const loki = require(`../db/loki`)
-    // Start the nodes database (in memory loki js with interval disk
-    // saves). If data was saved from a previous build, it will be
-    // loaded here
-    activity = report.activityTimer(`start nodes db`, {
-      parentSpan: bootstrapSpan,
-    })
-    activity.start()
-    const dbSaveFile = `${cacheDirectory}/loki/loki.db`
-    try {
-      await loki.start({
-        saveFile: dbSaveFile,
-      })
-    } catch (e) {
-      report.error(
-        `Error starting DB. Perhaps try deleting ${path.dirname(dbSaveFile)}`
-      )
-    }
-    activity.end()
+  // TODO: Maybe move into redux/index
+  // Start the nodes database.
+  // If data was saved from a previous build, it will be loaded here.
+  activity = report.activityTimer(`start nodes db`, {
+    parentSpan: bootstrapSpan,
+  })
+  activity.start()
+  const { createNodesDb } = require(`../db`)
+  const dbSaveFile = `${cacheDirectory}/db/nodes.db`
+  try {
+    // TODO: No need to await
+    await createNodesDb(dbSaveFile)
+    // TODO: autosave
+  } catch (e) {
+    report.error(
+      `Error starting DB. Perhaps try deleting ${path.dirname(dbSaveFile)}`
+    )
   }
+  activity.end()
 
   // By now, our nodes database has been loaded, so ensure that we
   // have tracked all inline objects
-  nodeTracking.trackDbNodes()
+  // TODO:
+  // const nodeTracking = require(`../db/node-tracking`)
+  // nodeTracking.trackDbNodes()
 
   // Copy our site files to the root of the site.
   activity = report.activityTimer(`copy gatsby files`, {
