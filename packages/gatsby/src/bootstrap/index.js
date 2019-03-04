@@ -212,23 +212,22 @@ module.exports = async (args: BootstrapArgs) => {
   })
   activity.start()
   const { createNodesDb } = require(`../db`)
+  // TODO: Node tracking should not be in `db` folder.
+  // It is only used in default `File` resolver, and in `TypeConflictReporter`.
+  const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
   const dbSaveFile = `${cacheDirectory}/db/nodes.db`
   try {
     // TODO: No need to await
-    await createNodesDb(dbSaveFile)
-    // TODO: autosave
+    const db = createNodesDb(dbSaveFile)
+    // By now, our nodes database has been loaded, so ensure that we
+    // have tracked all inline objects
+    db.getNodes().forEach(trackInlineObjectsInRootNode)
   } catch (e) {
     report.error(
       `Error starting DB. Perhaps try deleting ${path.dirname(dbSaveFile)}`
     )
   }
   activity.end()
-
-  // By now, our nodes database has been loaded, so ensure that we
-  // have tracked all inline objects
-  // TODO:
-  // const nodeTracking = require(`../db/node-tracking`)
-  // nodeTracking.trackDbNodes()
 
   // Copy our site files to the root of the site.
   activity = report.activityTimer(`copy gatsby files`, {
