@@ -44,29 +44,53 @@ try {
   if (initialState.components) {
     initialState.components = objectToMap(initialState.components)
   }
-  debugger
-  if (initialState.nodes) {
-    // FIXME: No good
-    // initialState.nodes = createNodesDb(saveFile, initialState.nodes)
-  }
 } catch (e) {
   // ignore errors.
+}
+
+const multiMiddleware = store => next => action =>
+  Array.isArray(action)
+    ? action.filter(Boolean).map(store.dispatch)
+    : next(action)
+
+// This should be in redux
+let isBootstrapFinished = false
+emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
+const autoSaveMiddleware = store => next => action => {
+  // const isBootstrapFinished = store.getState().???
+  const result = next(action)
+  if (isBootstrapFinished) {
+    const state = store.getState()
+    saveStateDebounced(state)
+  }
+  return result
 }
 
 const store = Redux.createStore(
   Redux.combineReducers({ ...reducers }),
   initialState,
-  Redux.applyMiddleware(function multi({ dispatch }) {
-    return next => action =>
-      Array.isArray(action)
-        ? action.filter(Boolean).map(dispatch)
-        : next(action)
-  })
+  Redux.applyMiddleware(multiMiddleware, autoSaveMiddleware)
 )
 
+const saveStateDebounced = _.debounce(saveState, 1000)
+
 // Persist state.
-function saveState() {
-  const state = store.getState()
+let saveInProgress = false
+const saveState = async state => {
+  if (saveInProgress) return
+  saveInProgress = true
+
+  try {
+    await Promise.all([saveReduxState(state), state.nodes.db.saveState()])
+  } catch (err) {
+    const report = require(`gatsby-cli/lib/reporter`)
+    report.warn(`Error persisting state: ${(err && err.message) || err}`)
+  }
+
+  saveInProgress = false
+}
+
+const saveReduxState = state => {
   const pickedState = _.pick(state, [
     `status`,
     `componentDataDependencies`,
@@ -80,6 +104,7 @@ function saveState() {
   )
   pickedState.components = mapToObject(pickedState.components)
   const stringified = stringify(pickedState, null, 2)
+
   return fs.writeFile(`${process.cwd()}/.cache/redux-state.json`, stringified)
 }
 

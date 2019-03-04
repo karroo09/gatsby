@@ -1,22 +1,24 @@
+const fs = require(`fs`)
+
 class NodeStore {
-  constructor(saveFile, nodes) {
+  constructor(saveFile) {
     this.nodes = new Map()
     this.nodesByType = new Map()
     this.saveFile = saveFile
 
-    // initialState.nodes = objectToMap(initialState.nodes)
+    if (fs.existsSync(this.saveFile)) {
+      const nodes = fs.readFileSync(this.saveFile)
+      this.nodes = new Map(nodes)
+      this.nodes.forEach(node => {
+        const { type } = node.internal
+        if (!this.nodesByType.has(type)) {
+          this.nodesByType.set(type, new Map())
+        }
+        this.nodesByType.get(type).set(node.id, node)
+      })
+    }
 
-    // initialState.nodesByType = new Map()
-    // initialState.nodes.forEach(node => {
-    //   const { type } = node.internal
-    //   if (!initialState.nodesByType.has(type)) {
-    //     initialState.nodesByType.set(type, new Map())
-    //   }
-    //   initialState.nodesByType.get(type).set(node.id, node)
-    // })
-
-    // TODO: In the CRUD methods, maybe move the if(this.nodes) check
-    // from the reducer there
+    // TODO: In the CRUD methods, maybe move the if(this.nodes) check from the reducer there
   }
 
   clear() {
@@ -65,13 +67,9 @@ class NodeStore {
   }
 
   saveState() {
-    // TODO:
-    // Separate redux node store from the rest of
-    // the app state when saving
-    // save mapToObject(this.nodes)
     if (!this.saveFile) return Promise.resolve()
-    const serializedStore = mapToObject(this.nodes)
-    return fs.write(this.saveFile.serializedStore)
+    const serializedStore = Array.from(this.nodes.entries())
+    return fs.write(this.saveFile, serializedStore)
   }
 }
 
