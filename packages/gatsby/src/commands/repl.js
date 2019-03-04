@@ -1,12 +1,8 @@
 const repl = require(`repl`)
 const { graphql } = require(`graphql`)
 const bootstrap = require(`../bootstrap`)
-const {
-  loadNodeContent,
-  getNodes,
-  getNode,
-  getNodesByType,
-} = require(`../db/nodes`)
+const { loadNodeContent } = require(`../db/common`)
+
 const { store } = require(`../redux`)
 
 module.exports = async program => {
@@ -24,7 +20,8 @@ module.exports = async program => {
     staticQueryComponents,
   } = store.getState()
 
-  const nodes = getNodes()
+  const { db } = store.getState().nodes
+  const nodes = db.getNodes()
 
   const query = async query => {
     const result = await graphql(schema, query, {}, {}, {})
@@ -40,9 +37,9 @@ module.exports = async program => {
   _.context.babelrc = babelrc
   _.context.components = components
   _.context.dataPaths = jsonDataPaths
-  _.context.getNode = getNode
-  _.context.getNodes = getNodes
-  _.context.getNodesByType = getNodesByType
+  _.context.getNode = db.getNode
+  _.context.getNodes = db.getNodes
+  _.context.getNodesByType = db.getNodesByType
   _.context.loadNodeContent = loadNodeContent
   _.context.nodes = [...nodes.entries()]
   _.context.pages = [...pages.entries()]

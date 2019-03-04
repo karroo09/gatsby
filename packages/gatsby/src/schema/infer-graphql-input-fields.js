@@ -21,7 +21,7 @@ const {
 } = require(`./data-tree-utils`)
 
 const { findLinkedNode } = require(`./infer-graphql-type`)
-const { getNodesByType } = require(`../db/nodes`)
+const { store } = require(`../redux`)
 const is32BitInteger = require(`../utils/is-32-bit-integer`)
 
 import type {
@@ -285,7 +285,8 @@ export function inferInputObjectStructureFromNodes({
       if (linkedNodeCache[linkedNode.internal.type]) {
         value = linkedNodeCache[linkedNode.internal.type]
       } else {
-        const relatedNodes = getNodesByType(linkedNode.internal.type)
+        const { db } = store.getState().nodes
+        const relatedNodes = db.getNodesByType(linkedNode.internal.type)
         value = getExampleValues({
           nodes: relatedNodes,
           typeName: linkedNode.internal.type,

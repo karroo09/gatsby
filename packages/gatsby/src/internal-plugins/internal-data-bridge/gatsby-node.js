@@ -3,9 +3,8 @@ const chokidar = require(`chokidar`)
 const systemPath = require(`path`)
 const _ = require(`lodash`)
 
-const { emitter } = require(`../../redux`)
+const { store, emitter } = require(`../../redux`)
 const { boundActionCreators } = require(`../../redux/actions`)
-const { getNode } = require(`../../db/nodes`)
 
 function transformPackageJson(json) {
   const transformDeps = deps =>
@@ -153,7 +152,8 @@ exports.onCreatePage = ({ createContentDigest, page, actions }) => {
 
 // Listen for DELETE_PAGE and delete page nodes.
 emitter.on(`DELETE_PAGE`, action => {
+  const { db } = store.getState().nodes
   const nodeId = createPageId(action.payload.path)
-  const node = getNode(nodeId)
+  const node = db.getNode(nodeId)
   boundActionCreators.deleteNode({ node })
 })

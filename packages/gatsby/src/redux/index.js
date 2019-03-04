@@ -48,48 +48,6 @@ try {
   // ignore errors.
 }
 
-const multiMiddleware = store => next => action =>
-  Array.isArray(action)
-    ? action.filter(Boolean).map(store.dispatch)
-    : next(action)
-
-// This should be in redux
-let isBootstrapFinished = false
-emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
-const autoSaveMiddleware = store => next => action => {
-  // const isBootstrapFinished = store.getState().???
-  const result = next(action)
-  if (isBootstrapFinished) {
-    const state = store.getState()
-    saveStateDebounced(state)
-  }
-  return result
-}
-
-const store = Redux.createStore(
-  Redux.combineReducers({ ...reducers }),
-  initialState,
-  Redux.applyMiddleware(multiMiddleware, autoSaveMiddleware)
-)
-
-const saveStateDebounced = _.debounce(saveState, 1000)
-
-// Persist state.
-let saveInProgress = false
-const saveState = async state => {
-  if (saveInProgress) return
-  saveInProgress = true
-
-  try {
-    await Promise.all([saveReduxState(state), state.nodes.db.saveState()])
-  } catch (err) {
-    const report = require(`gatsby-cli/lib/reporter`)
-    report.warn(`Error persisting state: ${(err && err.message) || err}`)
-  }
-
-  saveInProgress = false
-}
-
 const saveReduxState = state => {
   const pickedState = _.pick(state, [
     `status`,
@@ -108,8 +66,49 @@ const saveReduxState = state => {
   return fs.writeFile(`${process.cwd()}/.cache/redux-state.json`, stringified)
 }
 
-exports.saveState = saveState
+// Persist state.
+let saveInProgress = false
+const saveState = async state => {
+  if (saveInProgress) return
+  saveInProgress = true
 
+  try {
+    await Promise.all([saveReduxState(state), state.nodes.db.saveState()])
+  } catch (err) {
+    const report = require(`gatsby-cli/lib/reporter`)
+    report.warn(`Error persisting state: ${(err && err.message) || err}`)
+  }
+
+  saveInProgress = false
+}
+
+const saveStateDebounced = _.debounce(saveState, 1000)
+
+const multiMiddleware = store => next => action =>
+  Array.isArray(action)
+    ? action.filter(Boolean).map(store.dispatch)
+    : next(action)
+
+// TODO: isBootstrapFinished should be in redux as app state
+let isBootstrapFinished = false
+emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
+const autoSaveMiddleware = store => next => action => {
+  // const isBootstrapFinished = store.getState().???
+  const result = next(action)
+  if (isBootstrapFinished) {
+    const state = store.getState()
+    saveStateDebounced(state)
+  }
+  return result
+}
+
+const store = Redux.createStore(
+  Redux.combineReducers({ ...reducers }),
+  initialState,
+  Redux.applyMiddleware(multiMiddleware, autoSaveMiddleware)
+)
+
+// Re-emit actions as events
 store.subscribe(() => {
   const lastAction = store.getState().lastAction
   emitter.emit(lastAction.type, lastAction)
