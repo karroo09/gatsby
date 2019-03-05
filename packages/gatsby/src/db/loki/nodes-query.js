@@ -1,8 +1,7 @@
 const _ = require(`lodash`)
 const prepareRegex = require(`../../utils/prepare-regex`)
-const { getNodeTypeCollection } = require(`./nodes`)
 const sift = require(`sift`)
-const { emitter } = require(`../../redux`)
+const { store, emitter } = require(`../../redux`)
 
 // Cleared on DELETE_CACHE
 const fieldUsages = {}
@@ -261,7 +260,7 @@ function toSortFields(sortArgs) {
 // most. Any time a field is seen more than `FIELD_INDEX_THRESHOLD`
 // times, we create a loki index so that future queries with that
 // field will execute faster.
-function ensureFieldIndexes(coll, lokiArgs) {
+function ensureFieldIndexes(collection, lokiArgs) {
   _.forEach(lokiArgs, (v, fieldName) => {
     // Increment the usages of the field
     _.update(fieldUsages, fieldName, n => (n ? n + 1 : 1))
@@ -269,7 +268,7 @@ function ensureFieldIndexes(coll, lokiArgs) {
     if (_.get(fieldUsages, fieldName) === FIELD_INDEX_THRESHOLD) {
       // Loki ensures that this is a noop if index already exists. E.g
       // if it was previously added via a sort field
-      coll.ensureIndex(fieldName)
+      collection.ensureIndex(fieldName)
     }
   })
 }
@@ -293,10 +292,12 @@ function ensureFieldIndexes(coll, lokiArgs) {
  * a collection of matching objects (even if `firstOnly` is true)
  */
 async function runQuery({ gqlType, queryArgs, context = {}, firstOnly }) {
+  const { db } = store.getState().nodes
+
   const lokiArgs = convertArgs(queryArgs, gqlType)
-  const coll = getNodeTypeCollection(gqlType.name)
-  ensureFieldIndexes(coll, lokiArgs)
-  let chain = coll.chain().find(lokiArgs, firstOnly)
+  const collection = db.db.getCollection(gqlType.name)
+  ensureFieldIndexes(collection, lokiArgs)
+  let chain = collection.chain().find(lokiArgs, firstOnly)
 
   if (queryArgs.sort) {
     const sortFields = toSortFields(queryArgs.sort)
@@ -305,7 +306,7 @@ async function runQuery({ gqlType, queryArgs, context = {}, firstOnly }) {
     // so we lose nothing by ensuring an index is added for each sort
     // field. Loki ensures this is a noop if the index already exists
     for (const sortField of sortFields) {
-      coll.ensureIndex(sortField[0])
+      collection.ensureIndex(sortField[0])
     }
     chain = chain.compoundsort(sortFields)
   }

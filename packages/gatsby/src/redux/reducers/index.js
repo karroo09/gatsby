@@ -1,7 +1,6 @@
 module.exports = {
   program: require(`./program`),
   nodes: require(`./nodes`),
-  nodesByType: require(`./nodes-by-type`),
   resolvedNodesCache: require(`./resolved-nodes`),
   nodesTouched: require(`./nodes-touched`),
   lastAction: require(`./last-action`),

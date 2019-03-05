@@ -11,7 +11,7 @@ const createNodesDb = saveFile => {
       break
     }
     case `loki`: {
-      const LokiDb = require(`./loki/nodes`)
+      const LokiDb = require(`./loki/node-store`)
       db = new LokiDb(saveFile)
       break
     }

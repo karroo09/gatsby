@@ -206,18 +206,17 @@ module.exports = async (args: BootstrapArgs) => {
 
   // TODO: Maybe move into redux/index
   // Start the nodes database.
-  // If data was saved from a previous build, it will be loaded here.
+  // If data was saved from a previous build, it will be loaded.
   activity = report.activityTimer(`start nodes db`, {
     parentSpan: bootstrapSpan,
   })
   activity.start()
   const { createNodesDb } = require(`../db`)
-  // TODO: Node tracking should not be in `db` folder.
-  // It is only used in default `File` resolver, and in `TypeConflictReporter`.
+  // TODO: Node tracking should not be in `db` folder. It is only used in
+  // default `File` resolver, and in `TypeConflictReporter`.
   const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
-  const dbSaveFile = `${cacheDirectory}/db/nodes.db`
+  const dbSaveFile = `${cacheDirectory}/nodes.db`
   try {
-    // TODO: No need to await
     const db = createNodesDb(dbSaveFile)
     // By now, our nodes database has been loaded, so ensure that we
     // have tracked all inline objects
@@ -244,7 +243,7 @@ module.exports = async (args: BootstrapArgs) => {
     await fs.copy(tryRequire, `${siteDir}/test-require-error.js`, {
       clobber: true,
     })
-    await fs.ensureDirSync(`${cacheDirectory}/json`)
+    await fs.ensureDir(`${cacheDirectory}/json`)
 
     // Ensure .cache/fragments exists and is empty. We want fragments to be
     // added on every run in response to data as fragments can only be added if

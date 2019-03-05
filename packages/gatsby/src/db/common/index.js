@@ -17,7 +17,7 @@ const loadNodeContent = node => {
       }
 
       return loadNodeContent(node).then(content => {
-        // TODO update node's content field here.
+        // TODO: update node's content field here.
         resolve(content)
       })
     })
@@ -36,7 +36,9 @@ const hasNodeChanged = (id, digest) => {
 const getNodeAndSavePathDependency = (id, path) => {
   const createPageDependency = require(`../../redux/actions/add-page-dependency`)
   const node = store.getState().nodes.db.getNode(id)
-  createPageDependency({ path, nodeId: id })
+  if (node && path) {
+    createPageDependency({ path, nodeId: id })
+  }
   return node
 }
 

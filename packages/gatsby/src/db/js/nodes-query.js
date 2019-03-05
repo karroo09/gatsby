@@ -4,7 +4,6 @@ const _ = require(`lodash`)
 const prepareRegex = require(`../../utils/prepare-regex`)
 const Promise = require(`bluebird`)
 const { trackInlineObjectsInRootNode } = require(`../node-tracking`)
-const { getNode, getNodesByType } = require(`../nodes`)
 const { store } = require(`../../redux`)
 
 const enhancedNodeCache = new Map()
@@ -278,17 +277,19 @@ function handleMany(siftArgs, nodes, sort) {
  *   if `firstOnly` is true
  */
 module.exports = (args: Object) => {
+  const { db } = store.getState().nodes
+
   const { queryArgs, gqlType, firstOnly = false } = args
 
   // If nodes weren't provided, then load them from the DB
-  const nodes = args.nodes || getNodesByType(gqlType.name)
+  const nodes = args.nodes || db.getNodesByType(gqlType.name)
 
   const { siftArgs, fieldsToSift } = parseFilter(queryArgs.filter)
 
   // If the the query for single node only has a filter for an "id"
   // using "eq" operator, then we'll just grab that ID and return it.
   if (isEqId(firstOnly, fieldsToSift, siftArgs)) {
-    const node = getNode(siftArgs[0].id[`$eq`])
+    const node = db.getNode(siftArgs[0].id[`$eq`])
 
     if (!node || (node.internal && node.internal.type !== gqlType.name)) {
       return []

@@ -69,6 +69,9 @@ const saveReduxState = state => {
 // Persist state.
 let saveInProgress = false
 const saveState = async state => {
+  // FIXME: Don't just return, but enqueue in Promise chain
+  // probably needs savingStatePromise as module-level state,
+  // which is set to null when Promise resolves.
   if (saveInProgress) return
   saveInProgress = true
 
@@ -84,17 +87,20 @@ const saveState = async state => {
 
 const saveStateDebounced = _.debounce(saveState, 1000)
 
-const multiMiddleware = store => next => action =>
-  Array.isArray(action)
-    ? action.filter(Boolean).map(store.dispatch)
-    : next(action)
+const multiMiddleware = store => next => action => {
+  if (Array.isArray(action)) {
+    return action.filter(Boolean).map(store.dispatch)
+  } else {
+    return next(action)
+  }
+}
 
 // TODO: isBootstrapFinished should be in redux as app state
 let isBootstrapFinished = false
 emitter.on(`BOOTSTRAP_FINISHED`, () => (isBootstrapFinished = true))
 const autoSaveMiddleware = store => next => action => {
-  // const isBootstrapFinished = store.getState().???
   const result = next(action)
+  // const isBootstrapFinished = store.getState().???
   if (isBootstrapFinished) {
     const state = store.getState()
     saveStateDebounced(state)
@@ -105,7 +111,7 @@ const autoSaveMiddleware = store => next => action => {
 const store = Redux.createStore(
   Redux.combineReducers({ ...reducers }),
   initialState,
-  Redux.applyMiddleware(multiMiddleware, autoSaveMiddleware)
+  Redux.applyMiddleware(autoSaveMiddleware, multiMiddleware)
 )
 
 // Re-emit actions as events

@@ -1,7 +1,9 @@
-module.exports = (state = { db: null, path: `` }, action) => {
+module.exports = (state = { db: null, path: null }, action) => {
   switch (action.type) {
-    case `SET_NODES_DB`:
-      return action.payload
+    case `SET_NODES_DB`: {
+      const { db, path } = action.payload || {}
+      return { db, path }
+    }
 
     case `DELETE_CACHE`: {
       if (state.db) {
@@ -13,7 +15,7 @@ module.exports = (state = { db: null, path: `` }, action) => {
     case `CREATE_NODE`: {
       const node = action.payload
       if (state.db && node) {
-        state.db.create(action.payload)
+        state.db.create(node)
       }
       return state
     }
@@ -22,7 +24,7 @@ module.exports = (state = { db: null, path: `` }, action) => {
     case `ADD_CHILD_NODE_TO_PARENT_NODE`: {
       const node = action.payload
       if (state.db && node) {
-        state.db.update(action.payload)
+        state.db.update(node)
       }
       return state
     }
@@ -30,7 +32,7 @@ module.exports = (state = { db: null, path: `` }, action) => {
     case `DELETE_NODE`: {
       const node = action.payload
       if (state.db && node) {
-        state.db.delete(action.payload.id)
+        state.db.delete(node)
       }
       return state
     }
