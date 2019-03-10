@@ -240,13 +240,12 @@ module.exports = async (args: BootstrapArgs) => {
   })
   activity.start()
   const srcDir = `${__dirname}/../../cache-dir`
-  const siteDir = cacheDirectory
   const tryRequire = `${__dirname}/../utils/test-require-error.js`
   try {
-    await fs.copy(srcDir, siteDir, {
+    await fs.copy(srcDir, cacheDirectory, {
       clobber: true,
     })
-    await fs.copy(tryRequire, `${siteDir}/test-require-error.js`, {
+    await fs.copy(tryRequire, `${cacheDirectory}/test-require-error.js`, {
       clobber: true,
     })
     await fs.ensureDirSync(`${cacheDirectory}/json`)
@@ -321,9 +320,12 @@ module.exports = async (args: BootstrapArgs) => {
   let sSRAPIRunner = ``
 
   try {
-    sSRAPIRunner = fs.readFileSync(`${siteDir}/api-runner-ssr.js`, `utf-8`)
+    sSRAPIRunner = fs.readFileSync(
+      `${cacheDirectory}/api-runner-ssr.js`,
+      `utf-8`
+    )
   } catch (err) {
-    report.panic(`Failed to read ${siteDir}/api-runner-ssr.js`, err)
+    report.panic(`Failed to read ${cacheDirectory}/api-runner-ssr.js`, err)
   }
 
   const ssrPluginsRequires = ssrPlugins
@@ -338,11 +340,11 @@ module.exports = async (args: BootstrapArgs) => {
   sSRAPIRunner = `var plugins = [${ssrPluginsRequires}]\n${sSRAPIRunner}`
 
   fs.writeFileSync(
-    `${siteDir}/api-runner-browser-plugins.js`,
+    `${cacheDirectory}/api-runner-browser-plugins.js`,
     browserAPIRunner,
     `utf-8`
   )
-  fs.writeFileSync(`${siteDir}/api-runner-ssr.js`, sSRAPIRunner, `utf-8`)
+  fs.writeFileSync(`${cacheDirectory}/api-runner-ssr.js`, sSRAPIRunner, `utf-8`)
 
   activity.end()
   /**
@@ -496,6 +498,7 @@ module.exports = async (args: BootstrapArgs) => {
       report.log(``)
       report.info(`bootstrap finished - ${process.uptime()} s`)
       report.log(``)
+      emitter.emit(`BOOTSTRAP_FINISHED`)
 
       // onPostBootstrap
       activity = report.activityTimer(`onPostBootstrap`, {
