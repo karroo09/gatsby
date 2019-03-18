@@ -137,8 +137,29 @@ const addInferredFieldsImpl = ({
       }
     } else if (addNewFields) {
       if (namedInferredType instanceof schemaComposer.TypeComposer) {
-        schemaComposer.add(namedInferredType)
+        // Type will already exist when targeted directly by the auto-infered
+        // name. E.g.
+        // `type MarkdownRemarkFrontmatter {
+        //   foo: Boolean
+        // }`
+        // without also rooting it in a top-level type with
+        // `type MarkdownRemark implements Node {
+        //   frontmatter: MarkdownRemarkFrontmatter
+        // }`
+        const typeName = namedInferredType.getTypeName()
+        if (schemaComposer.has(typeName)) {
+          fieldConfig.type = schemaComposer
+            .getTC(typeName)
+            .addFields(namedInferredType.getFields())
+          while (arrays > 0) {
+            fieldConfig.type = [fieldConfig.type]
+            arrays--
+          }
+        } else {
+          schemaComposer.add(namedInferredType)
+        }
       }
+
       typeComposer.setField(key, fieldConfig)
     }
   })
