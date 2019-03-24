@@ -108,19 +108,21 @@ const addInferredFieldsImpl = ({
         namedFieldType = namedFieldType.ofType
       }
 
-      if (arrays === lists) {
+      const namedInferredTypeName =
+        namedInferredType instanceof ObjectTypeComposer
+          ? namedInferredType.getTypeName()
+          : namedInferredType
+
+      if (arrays === lists && namedFieldType.name === namedInferredTypeName) {
         if (
           namedFieldType instanceof GraphQLObjectType &&
-          typeof namedInferredType !== `string` &&
-          namedFieldType.name === namedInferredType.getTypeName()
+          namedInferredType instanceof ObjectTypeComposer
         ) {
           const fieldTypeComposer = typeComposer.getFieldTC(key)
           const inferredFields = namedInferredType.getFields()
           fieldTypeComposer.addFields(inferredFields)
-        } else if (
-          addDefaultResolvers &&
-          namedFieldType.name === namedInferredType
-        ) {
+        }
+        if (addDefaultResolvers) {
           let field = typeComposer.getField(key)
           if (!field.type) {
             field = {
