@@ -109,9 +109,9 @@ const addInferredFieldsImpl = ({
       }
 
       const namedInferredTypeName =
-        namedInferredType instanceof ObjectTypeComposer
-          ? namedInferredType.getTypeName()
-          : namedInferredType
+        typeof namedInferredType === `string`
+          ? namedInferredType
+          : namedInferredType.getTypeName()
 
       if (arrays === lists && namedFieldType.name === namedInferredTypeName) {
         if (
