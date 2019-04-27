@@ -14,7 +14,7 @@ const {
   buildInterfaceType,
   buildInputObjectType,
 } = require(`../schema/types/type-builders`)
-const { emitter } = require(`../redux`)
+const { store, emitter } = require(`../redux`)
 const { getNonGatsbyCodeFrame } = require(`./stack-trace-utils`)
 const { trackBuildError, decorateEvent } = require(`gatsby-telemetry`)
 
@@ -75,15 +75,13 @@ const runAPI = (plugin, api, args) => {
     pluginSpan.setTag(`plugin`, plugin.name)
 
     let pathPrefix = ``
-    const { store, emitter } = require(`../redux`)
     const {
       loadNodeContent,
-      getNodes,
-      getNode,
-      getNodesByType,
       hasNodeChanged,
       getNodeAndSavePathDependency,
-    } = require(`../db/nodes`)
+    } = require(`../db/common`)
+    const { db } = store.getState().nodes
+    const { getNode, getNodes, getNodesByType } = db || {}
     const { boundActionCreators } = require(`../redux/actions`)
 
     const doubleBoundActionCreators = doubleBind(

@@ -30,6 +30,7 @@ interface QueryArguments {
 }
 
 export interface NodeModel {
+  findRootNodeAncestor(obj: Object, predicate?: Function): any | null;
   getNodeById(
     { id: IDOrNode, type?: TypeOrTypeName },
     pageDependencies?: PageDependencies
@@ -54,9 +55,16 @@ export interface NodeModel {
 }
 
 class LocalNodeModel {
-  constructor({ schema, nodeStore, createPageDependency, path }) {
+  constructor({
+    schema,
+    nodeStore,
+    findRootNodeAncestor,
+    createPageDependency,
+    path,
+  }) {
     this.schema = schema
     this.nodeStore = nodeStore
+    this.findRootNodeAncestor = findRootNodeAncestor
     this.createPageDependency = createPageDependency
     this.path = path
   }
@@ -66,9 +74,9 @@ class LocalNodeModel {
    *
    * @param {Object} args
    * @param {string} args.id ID of the requested node
-   * @param {(string|GraphQLOutputType)} [args.type] Optional type of the node
+   * @param {(string | GraphQLOutputType)} [args.type] Optional type of the node
    * @param {PageDependencies} [pageDependencies]
-   * @returns {(Node|null)}
+   * @returns {(Node | null)}
    */
   getNodeById(args, pageDependencies) {
     const { id, type } = args || {}
@@ -81,7 +89,9 @@ class LocalNodeModel {
     } else if (!type) {
       result = node
     } else {
-      const nodeTypeNames = toNodeTypeNames(this.schema, type)
+      const nodeTypeNames = toNodeTypes(this.schema, type).map(
+        type => type.name
+      )
       result = nodeTypeNames.includes(node.internal.type) ? node : null
     }
 
@@ -93,7 +103,7 @@ class LocalNodeModel {
    *
    * @param {Object} args
    * @param {string[]} args.ids IDs of the requested nodes
-   * @param {(string|GraphQLOutputType)} [args.type] Optional type of the nodes
+   * @param {(string | GraphQLOutputType)} [args.type] Optional type of the nodes
    * @param {PageDependencies} [pageDependencies]
    * @returns {Node[]}
    */
@@ -108,7 +118,9 @@ class LocalNodeModel {
     if (!nodes.length || !type) {
       result = nodes
     } else {
-      const nodeTypeNames = toNodeTypeNames(this.schema, type)
+      const nodeTypeNames = toNodeTypes(this.schema, type).map(
+        type => type.name
+      )
       result = nodes.filter(node => nodeTypeNames.includes(node.internal.type))
     }
 
@@ -121,7 +133,7 @@ class LocalNodeModel {
    * passed.
    *
    * @param {Object} args
-   * @param {(string|GraphQLOutputType)} [args.type] Optional type of the nodes
+   * @param {(string | GraphQLOutputType)} [args.type] Optional type of the nodes
    * @param {PageDependencies} [pageDependencies]
    * @returns {Node[]}
    */
@@ -132,7 +144,9 @@ class LocalNodeModel {
     if (!type) {
       result = this.nodeStore.getNodes()
     } else {
-      const nodeTypeNames = toNodeTypeNames(this.schema, type)
+      const nodeTypeNames = toNodeTypes(this.schema, type).map(
+        type => type.name
+      )
       const nodes = nodeTypeNames.reduce(
         (acc, typeName) => acc.concat(this.nodeStore.getNodesByType(typeName)),
         []
@@ -152,7 +166,7 @@ class LocalNodeModel {
    *
    * @param {Object} args
    * @param {Object} args.query Query arguments (`filter`, `sort`, `limit`, `skip`)
-   * @param {(string|GraphQLOutputType)} args.type Type
+   * @param {(string | GraphQLOutputType)} args.type Type
    * @param {boolean} [args.firstOnly] If true, return only first match
    * @param {PageDependencies} [pageDependencies]
    * @returns {Promise<Node[]>}
@@ -168,32 +182,14 @@ class LocalNodeModel {
       `Querying GraphQLUnion types is not supported.`
     )
 
-    // We provide nodes in case of abstract types, because `run-sift` should
-    // only need to know about node types in the store.
-    let nodes
-    const nodeTypeNames = toNodeTypeNames(this.schema, gqlType)
-    if (nodeTypeNames.length > 1) {
-      nodes = nodeTypeNames.reduce(
-        (acc, typeName) => acc.concat(this.nodeStore.getNodesByType(typeName)),
-        []
-      )
-    }
+    const types = toNodeTypes(this.schema, gqlType)
 
-    const queryResult = await this.nodeStore.runQuery({
-      queryArgs: query,
+    const result = await this.nodeStore.runQuery({
+      query,
+      types,
+      schema: this.schema,
       firstOnly,
-      gqlType,
-      nodes,
     })
-
-    let result = queryResult
-    if (args.firstOnly) {
-      if (result && result.length > 0) {
-        result = result[0]
-      } else {
-        result = null
-      }
-    }
 
     return this.trackPageDependencies(result, pageDependencies)
   }
@@ -211,12 +207,12 @@ class LocalNodeModel {
    * Get the root ancestor node for an object's parent node, or its first
    * ancestor matching a specified condition.
    *
-   * @param {(Object|Array)} obj An object belonging to a Node, or a Node object
+   * @param {(Object | Array)} obj An object belonging to a Node, or a Node object
    * @param {Function} [predicate] Optional condition to match
-   * @returns {(Node|null)}
+   * @returns {(Node | null)}
    */
   findRootNodeAncestor(obj, predicate) {
-    return this.nodeStore.findRootNodeAncestor(obj, predicate)
+    return this.findRootNodeAncestor(obj, predicate)
   }
 
   /**
@@ -259,7 +255,7 @@ const getNodeById = (nodeStore, id) => {
   return id != null ? nodeStore.getNode(id) : null
 }
 
-const toNodeTypeNames = (schema, gqlTypeName) => {
+const toNodeTypes = (schema, gqlTypeName) => {
   const gqlType =
     typeof gqlTypeName === `string` ? schema.getType(gqlTypeName) : gqlTypeName
 
@@ -269,9 +265,9 @@ const toNodeTypeNames = (schema, gqlTypeName) => {
     ? schema.getPossibleTypes(gqlType)
     : [gqlType]
 
-  return possibleTypes
-    .filter(type => type.getInterfaces().some(iface => iface.name === `Node`))
-    .map(type => type.name)
+  return possibleTypes.filter(type =>
+    type.getInterfaces().some(iface => iface.name === `Node`)
+  )
 }
 
 module.exports = {

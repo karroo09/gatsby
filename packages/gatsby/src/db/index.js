@@ -1,41 +1,53 @@
-const _ = require(`lodash`)
-const report = require(`gatsby-cli/lib/reporter`)
-const redux = require(`../redux`)
-const { emitter } = redux
+const fs = require(`fs-extra`)
+const path = require(`path`)
+const { store } = require(`../redux`)
 
-// Even if we are using loki, we still include redux in the list of
-// dbs since it still has pages, config, etc.
-const dbs = [redux]
-if (process.env.GATSBY_DB_NODES === `loki`) {
-  dbs.push(require(`./loki`))
+const backend = process.env.GATSBY_DB_NODES || `js`
+
+interface NodeStore {
+  getNode: (id: string) => any | undefined;
+  getNodes: () => Array<any>;
+  getNodesByType: (type: string) => Array<any>;
+  getTypes: () => Array<string>;
+  // XXX(freiksenet): types
+  runQuery: (...args: any) => any | undefined;
 }
 
-// calls `saveState()` on all DBs
-let saveInProgress = false
-async function saveState() {
-  if (saveInProgress) return
-  saveInProgress = true
+const createNodesDb = async fileName => {
+  const saveFile = fileName + `.` + backend
+  fs.ensureDirSync(path.dirname(saveFile))
 
-  try {
-    await Promise.all(dbs.map(db => db.saveState()))
-  } catch (err) {
-    report.warn(`Error persisting state: ${(err && err.message) || err}`)
+  let db: NodeStore
+  // let cache
+  switch (backend) {
+    case `js`: {
+      const JsStore = require(`./js/store`)
+      db = new JsStore(saveFile)
+      break
+    }
+    case `loki`: {
+      const LokiDb = require(`./loki/store`)
+      db = new LokiDb(saveFile)
+      break
+    }
+    default:
+      throw new Error(`Unsupported node-store backend ${backend}`)
   }
 
-  saveInProgress = false
-}
-const saveStateDebounced = _.debounce(saveState, 1000)
+  await db.start()
 
-/**
- * Starts listening to redux actions and triggers a database save to
- * disk upon any action (debounced to every 1 second)
- */
-function startAutosave() {
-  saveStateDebounced()
-  emitter.on(`*`, () => saveStateDebounced())
+  store.dispatch({
+    type: `SET_NODES_DB`,
+    payload: {
+      backend,
+      db,
+      path: saveFile,
+    },
+  })
+
+  return db
 }
 
 module.exports = {
-  startAutosave,
-  saveState,
+  createNodesDb,
 }

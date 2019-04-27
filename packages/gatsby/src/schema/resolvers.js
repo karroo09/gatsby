@@ -25,6 +25,14 @@ const findOne = typeName => ({ args, context, info }) =>
   )
 
 const findManyPaginated = typeName => async rp => {
+  // Ensure `group` and `distinct` work on fields that need to be
+  // resolved first.
+  if (rp.projection.group) {
+    rp.args.group = getProjectedField(rp.info, `group`)
+  }
+  if (rp.projection.distinct) {
+    rp.args.distinct = getProjectedField(rp.info, `distinct`)
+  }
   const result = await findMany(typeName)(rp)
   return paginate(result, { skip: rp.args.skip, limit: rp.args.limit })
 }
@@ -178,6 +186,19 @@ const fileByPath = (source, args, context, info) => {
   } else {
     return findLinkedFileNode(fieldValue)
   }
+}
+
+const getProjectedField = (info, fieldName) => {
+  const { selections } = info.fieldNodes[0].selectionSet
+  const selection = selections.find(s => s.name.value === fieldName)
+  const fieldArg = selection.arguments.find(arg => arg.name.value === `field`)
+  const enumKey = fieldArg.value.value
+  const Enum = getNullableType(
+    info.returnType
+      .getFields()
+      [fieldName].args.find(arg => arg.name === `field`).type
+  )
+  return Enum.getValue(enumKey).value
 }
 
 module.exports = {

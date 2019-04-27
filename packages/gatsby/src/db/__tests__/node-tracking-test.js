@@ -2,10 +2,14 @@ const { store } = require(`../../redux`)
 const {
   boundActionCreators: { createNode },
 } = require(`../../redux/actions`)
-const { getNode } = require(`../../db/nodes`)
-const { findRootNodeAncestor, trackDbNodes } = require(`../node-tracking`)
+const {
+  findRootNodeAncestor,
+  trackInlineObjectsInRootNode,
+} = require(`../node-tracking`)
 const { run: runQuery } = require(`../nodes-query`)
 require(`./fixtures/ensure-loki`)()
+
+const { db } = store.getState().nodes
 
 function makeNode() {
   return {
@@ -31,7 +35,7 @@ describe(`track root nodes`, () => {
     for (const node of nodes) {
       store.dispatch({ type: `CREATE_NODE`, payload: node })
     }
-    trackDbNodes()
+    nodes.forEach(trackInlineObjectsInRootNode)
     createNode(
       {
         id: `id2`,
@@ -51,32 +55,36 @@ describe(`track root nodes`, () => {
       }
     )
   })
+
   describe(`Tracks nodes read from redux state cache`, () => {
     it(`Tracks inline objects`, () => {
-      const node = getNode(`id1`)
+      const node = db.getNode(`id1`)
       const inlineObject = node.inlineObject
       const trackedRootNode = findRootNodeAncestor(inlineObject)
 
       expect(trackedRootNode).toEqual(node)
     })
+
     it(`Tracks inline arrays`, () => {
-      const node = getNode(`id1`)
+      const node = db.getNode(`id1`)
       const inlineObject = node.inlineArray
       const trackedRootNode = findRootNodeAncestor(inlineObject)
 
       expect(trackedRootNode).toEqual(node)
     })
+
     it(`Doesn't track copied objects`, () => {
-      const node = getNode(`id1`)
+      const node = db.getNode(`id1`)
       const copiedInlineObject = { ...node.inlineObject }
       const trackedRootNode = findRootNodeAncestor(copiedInlineObject)
 
       expect(trackedRootNode).not.toEqual(node)
     })
   })
+
   describe(`Tracks nodes created using createNode action`, () => {
     it(`Tracks inline objects`, () => {
-      const node = getNode(`id2`)
+      const node = db.getNode(`id2`)
       const inlineObject = node.inlineObject
       const trackedRootNode = findRootNodeAncestor(inlineObject)
 

@@ -1,4 +1,5 @@
 const _ = require(`lodash`)
+const { store } = require(`../redux`)
 
 /**
  * Map containing links between inline objects or arrays
@@ -49,7 +50,7 @@ exports.trackInlineObjectsInRootNode = trackInlineObjectsInRootNode
  * or first node that meet predicate conditions if predicate is specified
  */
 const findRootNodeAncestor = (obj, predicate = null) => {
-  const { getNode } = require(`./nodes`)
+  const { db } = store.getState().nodes
 
   // Find the root node.
   let rootNode = obj
@@ -58,14 +59,14 @@ const findRootNodeAncestor = (obj, predicate = null) => {
   while (
     (!predicate || !predicate(rootNode)) &&
     (rootNodeId = getRootNodeId(rootNode) || rootNode.parent) &&
-    ((rootNode.parent && getNode(rootNode.parent) !== undefined) ||
-      getNode(rootNodeId)) &&
+    ((rootNode.parent && db.getNode(rootNode.parent) !== undefined) ||
+      db.getNode(rootNodeId)) &&
     whileCount < 101
   ) {
     if (rootNodeId) {
-      rootNode = getNode(rootNodeId)
+      rootNode = db.getNode(rootNodeId)
     } else {
-      rootNode = getNode(rootNode.parent)
+      rootNode = db.getNode(rootNode.parent)
     }
     whileCount += 1
     if (whileCount > 100) {
@@ -79,16 +80,8 @@ const findRootNodeAncestor = (obj, predicate = null) => {
   return !predicate || predicate(rootNode) ? rootNode : null
 }
 
-function trackDbNodes() {
-  const { getNodes } = require(`./nodes`)
-  _.each(getNodes(), node => {
-    trackInlineObjectsInRootNode(node)
-  })
-}
-
 /**
  * @callback nodePredicate
  * @param {Node} node Node that is examined
  */
 exports.findRootNodeAncestor = findRootNodeAncestor
-exports.trackDbNodes = trackDbNodes

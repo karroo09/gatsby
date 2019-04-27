@@ -11,7 +11,7 @@ const truePath = require(`true-case-path`)
 const url = require(`url`)
 const kebabHash = require(`kebab-hash`)
 const slash = require(`slash`)
-const { hasNodeChanged, getNode } = require(`../db/nodes`)
+const { hasNodeChanged } = require(`../db/common`)
 const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
 const { store } = require(`./index`)
 const fileExistsSync = require(`fs-exists-cached`).sync
@@ -21,9 +21,10 @@ const { generateComponentChunkName } = require(`../utils/js-chunk-names`)
 const actions = {}
 
 const findChildrenRecursively = (children = []) => {
+  const { db } = store.getState().nodes
   children = children.concat(
     ...children.map(child => {
-      const newChildren = getNode(child).children
+      const newChildren = db.getNode(child).children
       if (_.isArray(newChildren) && newChildren.length > 0) {
         return findChildrenRecursively(newChildren)
       } else {
@@ -368,6 +369,8 @@ ${reservedFields.map(f => `  * "${f}"`).join(`\n`)}
  * deleteNode({node: node})
  */
 actions.deleteNode = (options: any, plugin: Plugin, args: any) => {
+  const { db } = store.getState().nodes
+
   let id
 
   // Check if using old method signature. Warn about incorrect usage but get
@@ -390,7 +393,7 @@ actions.deleteNode = (options: any, plugin: Plugin, args: any) => {
 
   // Always get node from the store, as the node we get as an arg
   // might already have been deleted.
-  const node = getNode(id)
+  const node = db.getNode(id)
 
   const createDeleteAction = node => {
     return {
@@ -407,7 +410,7 @@ actions.deleteNode = (options: any, plugin: Plugin, args: any) => {
   const deleteDescendantsActions =
     node &&
     findChildrenRecursively(node.children)
-      .map(getNode)
+      .map(db.getNode)
       .map(createDeleteAction)
 
   if (deleteDescendantsActions && deleteDescendantsActions.length) {
@@ -424,6 +427,8 @@ actions.deleteNode = (options: any, plugin: Plugin, args: any) => {
  * deleteNodes([`node1`, `node2`])
  */
 actions.deleteNodes = (nodes: any[], plugin: Plugin) => {
+  const { db } = store.getState().nodes
+
   let msg =
     `The "deleteNodes" action is now deprecated and will be removed in ` +
     `Gatsby v3. Please use "deleteNode" instead.`
@@ -434,7 +439,7 @@ actions.deleteNodes = (nodes: any[], plugin: Plugin) => {
 
   // Also delete any nodes transformed from these.
   const descendantNodes = _.flatten(
-    nodes.map(n => findChildrenRecursively(getNode(n).children))
+    nodes.map(n => findChildrenRecursively(db.getNode(n).children))
   )
 
   const deleteNodesAction = {
@@ -593,7 +598,8 @@ actions.createNode = (
 
   trackInlineObjectsInRootNode(node)
 
-  const oldNode = getNode(node.id)
+  const { db } = store.getState().nodes
+  const oldNode = db.getNode(node.id)
 
   // Ensure the plugin isn't creating a node type owned by another
   // plugin. Type "ownership" is first come first served.
@@ -664,14 +670,13 @@ actions.createNode = (
         }
       }
       deleteActions = findChildrenRecursively(oldNode.children)
-        .map(getNode)
+        .map(db.getNode)
         .map(createDeleteAction)
     }
 
     updateNodeAction = {
       type: `CREATE_NODE`,
       plugin,
-      oldNode,
       ...actionOptions,
       payload: node,
     }

@@ -1,110 +1,41 @@
-const Redux = require(`redux`)
-const _ = require(`lodash`)
-const fs = require(`fs-extra`)
 const mitt = require(`mitt`)
-const stringify = require(`json-stringify-safe`)
+const { createStore, combineReducers, applyMiddleware } = require(`redux`)
+const reducers = require(`./reducers`)
+const { loadState, saveState } = require(`./persist`)
 
 // Create event emitter for actions
 const emitter = mitt()
 
-// Reducers
-const reducers = require(`./reducers`)
-
-const objectToMap = obj => {
-  let map = new Map()
-  Object.keys(obj).forEach(key => {
-    map.set(key, obj[key])
-  })
-  return map
+const multiMiddleware = store => next => action => {
+  if (Array.isArray(action)) {
+    return action.filter(Boolean).map(store.dispatch)
+  } else {
+    return next(action)
+  }
 }
 
-const mapToObject = map => {
-  const obj = {}
-  for (let [key, value] of map) {
-    obj[key] = value
-  }
-  return obj
-}
-
-// Read from cache the old node data.
-let initialState = {}
-try {
-  const file = fs.readFileSync(`${process.cwd()}/.cache/redux-state.json`)
-  // Apparently the file mocking in node-tracking-test.js
-  // can override the file reading replacing the mocked string with
-  // an already parsed object.
-  if (Buffer.isBuffer(file) || typeof file === `string`) {
-    initialState = JSON.parse(file)
-  }
-  if (initialState.staticQueryComponents) {
-    initialState.staticQueryComponents = objectToMap(
-      initialState.staticQueryComponents
-    )
-  }
-  if (initialState.components) {
-    initialState.components = objectToMap(initialState.components)
-  }
-  if (initialState.nodes) {
-    initialState.nodes = objectToMap(initialState.nodes)
-
-    initialState.nodesByType = new Map()
-    initialState.nodes.forEach(node => {
-      const { type } = node.internal
-      if (!initialState.nodesByType.has(type)) {
-        initialState.nodesByType.set(type, new Map())
-      }
-      initialState.nodesByType.get(type).set(node.id, node)
-    })
-  }
-} catch (e) {
-  // ignore errors.
-}
-
-const store = Redux.createStore(
-  Redux.combineReducers({ ...reducers }),
-  initialState,
-  Redux.applyMiddleware(function multi({ dispatch }) {
-    return next => action =>
-      Array.isArray(action)
-        ? action.filter(Boolean).map(dispatch)
-        : next(action)
-  })
-)
-
-// Persist state.
-function saveState() {
-  if (process.env.DANGEROUSLY_DISABLE_OOM) {
-    return Promise.resolve()
-  }
-
-  const state = store.getState()
-  const pickedState = _.pick(state, [
-    `nodes`,
-    `status`,
-    `componentDataDependencies`,
-    `jsonDataPaths`,
-    `components`,
-    `staticQueryComponents`,
-  ])
-
-  pickedState.staticQueryComponents = mapToObject(
-    pickedState.staticQueryComponents
+const configureStore = initialState =>
+  createStore(
+    combineReducers(reducers),
+    initialState,
+    applyMiddleware(multiMiddleware)
   )
-  pickedState.components = mapToObject(pickedState.components)
-  pickedState.nodes = pickedState.nodes ? mapToObject(pickedState.nodes) : []
-  const stringified = stringify(pickedState, null, 2)
-  return fs.writeFile(`${process.cwd()}/.cache/redux-state.json`, stringified)
-}
 
-exports.saveState = saveState
+const initialState = loadState()
+const store = configureStore(initialState)
 
 store.subscribe(() => {
-  const lastAction = store.getState().lastAction
+  const state = store.getState()
+  const { lastAction, program } = state
+  if (program.status === `BOOTSTRAP_FINISHED`) {
+    saveState(state)
+  }
+  // Re-emit actions as events
   emitter.emit(lastAction.type, lastAction)
 })
 
-/** Event emitter */
-exports.emitter = emitter
-
-/** Redux store */
-exports.store = store
+module.exports = {
+  emitter,
+  store,
+  configureStore,
+}

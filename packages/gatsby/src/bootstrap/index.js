@@ -21,7 +21,8 @@ const report = require(`gatsby-cli/lib/reporter`)
 const getConfigFile = require(`./get-config-file`)
 const tracer = require(`opentracing`).globalTracer()
 const preferDefault = require(`./prefer-default`)
-const nodeTracking = require(`../db/node-tracking`)
+const { createNodesDb } = require(`../db`)
+const { trackInlineObjectsInRootNode } = require(`../db/node-tracking`)
 const withResolverContext = require(`../schema/context`)
 // Add `util.promisify` polyfill for old node versions
 require(`util.promisify/shim`)()
@@ -209,31 +210,20 @@ module.exports = async (args: BootstrapArgs) => {
 
   activity.end()
 
-  if (process.env.GATSBY_DB_NODES === `loki`) {
-    const loki = require(`../db/loki`)
-    // Start the nodes database (in memory loki js with interval disk
-    // saves). If data was saved from a previous build, it will be
-    // loaded here
-    activity = report.activityTimer(`start nodes db`, {
-      parentSpan: bootstrapSpan,
-    })
-    activity.start()
-    const dbSaveFile = `${cacheDirectory}/loki/loki.db`
-    try {
-      await loki.start({
-        saveFile: dbSaveFile,
-      })
-    } catch (e) {
-      report.error(
-        `Error starting DB. Perhaps try deleting ${path.dirname(dbSaveFile)}`
-      )
-    }
-    activity.end()
+  activity = report.activityTimer(`start nodes db`, {
+    parentSpan: bootstrapSpan,
+  })
+  activity.start()
+  const dbSaveFile = path.join(cacheDirectory, `nodes.db`)
+  try {
+    const db = await createNodesDb(dbSaveFile)
+    db.getNodes().forEach(trackInlineObjectsInRootNode)
+  } catch (err) {
+    report.panic(
+      `Error starting DB. Perhaps try deleting ${path.dirname(dbSaveFile)}`
+    )
   }
-
-  // By now, our nodes database has been loaded, so ensure that we
-  // have tracked all inline objects
-  nodeTracking.trackDbNodes()
+  activity.end()
 
   // Copy our site files to the root of the site.
   activity = report.activityTimer(`copy gatsby files`, {

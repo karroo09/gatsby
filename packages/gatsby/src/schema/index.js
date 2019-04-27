@@ -2,7 +2,6 @@
 
 const tracer = require(`opentracing`).globalTracer()
 const { store } = require(`../redux`)
-const nodeStore = require(`../db/nodes`)
 const { createSchemaComposer } = require(`./schema-composer`)
 const { buildSchema, rebuildSchemaWithSitePage } = require(`./schema`)
 const { TypeConflictReporter } = require(`./infer/type-conflict-reporter`)
@@ -14,6 +13,7 @@ module.exports.build = async ({ parentSpan }) => {
   let {
     schemaCustomization: { thirdPartySchemas, types },
     config: { mapping: typeMapping },
+    nodes: { db: nodeStore },
   } = store.getState()
 
   const typeConflictReporter = new TypeConflictReporter()
@@ -52,6 +52,7 @@ module.exports.rebuildWithSitePage = async ({ parentSpan }) => {
   let {
     schemaCustomization: { composer: schemaComposer },
     config: { mapping: typeMapping },
+    nodes: { db: nodeStore },
   } = store.getState()
 
   const typeConflictReporter = new TypeConflictReporter()
