@@ -11,7 +11,14 @@ const { link, fileByPath } = require(`../resolvers`)
 const { getDateResolver } = require(`../types/date`)
 
 // Reserved for internal use
-const internalExtensionNames = [`createdFrom`, `directives`, `infer`, `plugin`]
+const internalExtensionNames = [
+  `composers`,
+  `createdFrom`,
+  `default`,
+  `directives`,
+  `infer`,
+  `plugin`,
+]
 
 const typeExtensions = {
   infer: {

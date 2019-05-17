@@ -91,7 +91,8 @@ describe(`build and update schema`, () => {
   // This currently does not work because we need to invalidate all FilterInput
   // composers on nested types as well. Alternatively, use a local cache
   // in `filter.js` instead of checking `schemaComposer.has()`.
-  it.skip(`updates nested types on rebuild`, async () => {
+  it.only(`updates nested types on rebuild`, async () => {
+    debugger
     let fields
     let inputFields
 
@@ -99,7 +100,7 @@ describe(`build and update schema`, () => {
     expect(fields.length).toBe(1)
     expect(fields).toEqual([`oldKey`])
     inputFields = Object.keys(
-      schema.getType(`SitePageSitePageFieldsFilterInput`).getFields()
+      schema.getType(`SitePageFieldsFilterInput`).getFields()
     )
     expect(inputFields.length).toBe(1)
     expect(inputFields).toEqual([`oldKey`])
@@ -114,7 +115,7 @@ describe(`build and update schema`, () => {
     expect(fields).toEqual([`oldKey`, `key`])
 
     inputFields = Object.keys(
-      schema.getType(`SitePageSitePageFieldsFilterInput`).getFields()
+      schema.getType(`SitePageFieldsFilterInput`).getFields()
     )
     expect(inputFields.length).toBe(2)
     expect(inputFields).toEqual([`oldKey`, `key`])

@@ -476,10 +476,11 @@ const addCustomResolveFunctions = async ({ schemaComposer, parentSpan }) => {
 const addResolvers = ({ schemaComposer, typeComposer }) => {
   const typeName = typeComposer.getTypeName()
 
-  // TODO: We should have an abstraction for keeping and clearing
-  // related TypeComposers and InputTypeComposers.
-  // Also see the comment on the skipped test in `rebuild-schema`.
+  debugger
+  // Clear related resolvers
   typeComposer.removeInputTypeComposer()
+  const composers = typeComposer.getExtension(`composers`) || {}
+  Object.keys(composers).forEach(kind => schemaComposer.delete(composers[kind]))
 
   const sortInputTC = getSortInput({
     schemaComposer,
@@ -493,6 +494,14 @@ const addResolvers = ({ schemaComposer, typeComposer }) => {
     schemaComposer,
     typeComposer,
   })
+
+  typeComposer.setExtension(`composers`, {
+    filter: filterInputTC,
+    input: typeComposer.getInputTypeComposer(),
+    pagination: paginationTC, // connection
+    sort: sortInputTC,
+  })
+
   typeComposer.addResolver({
     name: `findOne`,
     type: typeComposer,
