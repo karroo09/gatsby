@@ -36,6 +36,13 @@ const typeExtensions = {
   },
 }
 
+interface GraphQLFieldExtensionDefinition {
+  // TODO:
+  name: string;
+  args: object;
+  extend: (args: object; prevFieldConfig: object) => { type: string, args: object, resolve: () => {} };
+}
+
 const fieldExtensions = {
   dateformat: {
     description: `Add date formating options.`,

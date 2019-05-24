@@ -6,7 +6,7 @@ const actions = {}
  * Add a third-party schema to be merged into main schema. Schema has to be a
  * graphql-js GraphQLSchema object.
  *
- * Only available in [`sourceNodes`](/docs/node-apis/#sourceNodes) API.
+ * Only available in [`createSchemaCustomization`](/docs/node-apis/#createSchemaCustomization) API.
  *
  * This schema is going to be merged as-is. This can easily break the main
  * Gatsby schema, so it's user's responsibility to make sure it doesn't happen
@@ -32,7 +32,7 @@ import type GatsbyGraphQLType from "../../schema/types/type-builders"
 /**
  * Add type definitions to the GraphQL schema.
  *
- * Only available in [`sourceNodes`](/docs/node-apis/#sourceNodes) API.
+ * Only available in [`createSchemaCustomization`](/docs/node-apis/#createSchemaCustomization) API.
  *
  * @param {string | GraphQLOutputType | GatsbyGraphQLType | string[] | GraphQLOutputType[] | GatsbyGraphQLType[]} types Type definitions
  *
@@ -59,14 +59,14 @@ import type GatsbyGraphQLType from "../../schema/types/type-builders"
  * Schema customization controls:
  * * `@infer` - run inference on the type and add fields that don't exist on the
  * defined type to it.
- * * `@dontInfer` - don't run any inference on the type
+ * * `@dontInfer` - don't run any inference on the type.
  *
  * Extensions to add resolver options:
  * * `@dateformat` - add date formatting arguments. Accepts `formatString` and
- *   `locale` options that sets the defaults for this field
+ *   `locale` options that sets the defaults for this field.
  * * `@link` - connect to a different Node. Arguments `by` and `from`, which
  *   define which field to compare to on a remote node and which field to use on
- *   the source node
+ *   the source node.
  * * `@fileByRelativePath` - connect to a File node. Same arguments. The
  *   difference from link is that this normalizes the relative path to be
  *   relative from the path where source node is found.
@@ -76,7 +76,7 @@ import type GatsbyGraphQLType from "../../schema/types/type-builders"
  *
  *
  * @example
- * exports.sourceNodes = ({ actions }) => {
+ * exports.createSchemaCustomization = ({ actions }) => {
  *   const { createTypes } = actions
  *   const typeDefs = `
  *     """
@@ -110,7 +110,7 @@ import type GatsbyGraphQLType from "../../schema/types/type-builders"
  * }
  *
  * // using Gatsby Type Builder API
- * exports.sourceNodes = ({ actions, schema }) => {
+ * exports.createSchemaCustomization = ({ actions, schema }) => {
  *   const { createTypes } = actions
  *   const typeDefs = [
  *     schema.buildObjectType({
@@ -187,6 +187,61 @@ actions.createTypes = (
   }
 }
 
+import type GraphQLFieldExtensionDefinition from "../../schema/extensions"
+/**
+ * Add a field extension to the GraphQL schema.
+ *
+ * Only available in [`createSchemaCustomization`](/docs/node-apis/#createSchemaCustomization) API.
+ *
+ * Extensions allow defining custom behavior which can be added to fields
+ * via directive (in SDL) or on the `extensions` prop (with Type Builders).
+ *
+ * The extension definition takes a `name`, an `extend` function, and optional
+ * extension `args` for options. The `extend` function has to return a (partial)
+ * field config, and receives the extension options and the previous field config
+ * as arguments.
+ *
+ * @param {GraphQLFieldExtensionDefinition} extension The field extension definition
+ * @example
+ * exports.createSchemaCustomization = ({ action }) => {
+ *   const { createFieldExtension } = actions
+ *   createFieldExtension({
+ *     name: 'motivate',
+ *     args: {
+ *       caffeine: 'Int'
+ *     },
+ *     extend(options, prevFieldConfig) {
+ *       return {
+ *         type: 'String',
+ *         arg: {
+ *           sunshine: {
+ *             type: 'Int'
+ *             defaultValue: 0,
+ *           },
+ *         },
+ *         resolve(source, args, context, info) {
+ *           const motivation = (caffeine || 0) - sunshine
+ *           if (motivation > 5) return 'Work! Work! Work!'
+ *           return 'Maybe tomorrow.'
+ *         },
+ *       },
+ *     },
+ *   })
+ * }
+ */
+actions.createFieldExtension = (
+  extension: GraphQLFieldExtensionDefinition,
+  plugin: Plugin,
+  traceId?: string
+) => {
+  return {
+    type: `CREATE_FIELD_EXTENSION`,
+    plugin,
+    traceId,
+    payload: extension,
+  }
+}
+
 const availableInAPI = {
   // onPreInit: {
   //   createTypes: actions.createTypes,
@@ -198,6 +253,11 @@ const availableInAPI = {
   // },
   sourceNodes: {
     createTypes: actions.createTypes,
+    addThirdPartySchema: actions.addThirdPartySchema,
+  },
+  createSchemaCustomization: {
+    createTypes: actions.createTypes,
+    createFieldExtension: actions.createFieldExtension,
     addThirdPartySchema: actions.addThirdPartySchema,
   },
 }
