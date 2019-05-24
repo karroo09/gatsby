@@ -1,5 +1,6 @@
 // @flow
-// @flow
+const report = require(`gatsby-cli/lib/reporter`)
+
 const actions = {}
 
 /**
@@ -233,12 +234,23 @@ actions.createFieldExtension = (
   extension: GraphQLFieldExtensionDefinition,
   plugin: Plugin,
   traceId?: string
-) => {
-  return {
-    type: `CREATE_FIELD_EXTENSION`,
-    plugin,
-    traceId,
-    payload: extension,
+) => (dispatch, getState) => {
+  const { name } = extension || {}
+  const { fieldExtensions } = getState().schemaCustomization
+
+  if (!name) {
+    report.error(`The provided field extension must have a \`name\` property.`)
+  } else if (fieldExtensions[name]) {
+    report.error(
+      `A field extension with the name ${name} has already been registered.`
+    )
+  } else {
+    dispatch({
+      type: `CREATE_FIELD_EXTENSION`,
+      plugin,
+      traceId,
+      payload: extension,
+    })
   }
 }
 

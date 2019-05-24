@@ -413,7 +413,7 @@ const addSetFieldsOnGraphQLNodeTypeFields = ({
             nodes: nodeStore.getNodesByType(typeName),
           },
           traceId: `initial-setFieldsOnGraphQLNodeType`,
-          parentSpan: parentSpan,
+          parentSpan,
         })
         if (result) {
           // NOTE: `setFieldsOnGraphQLNodeType` only allows setting
@@ -537,7 +537,7 @@ const addCustomResolveFunctions = async ({ schemaComposer, parentSpan }) => {
     schema: intermediateSchema,
     createResolvers,
     traceId: `initial-createResolvers`,
-    parentSpan: parentSpan,
+    parentSpan,
   })
 }
 

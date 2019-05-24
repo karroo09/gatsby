@@ -1,3 +1,4 @@
+// @flow
 const {
   GraphQLBoolean,
   GraphQLNonNull,
@@ -9,6 +10,15 @@ const {
 
 const { link, fileByPath } = require(`../resolvers`)
 const { getDateResolver } = require(`../types/date`)
+
+import type { GraphQLFieldConfigArgumentMap, GraphQLFieldConfig } from 'graphql'
+import type { ComposeFieldConfig } from 'graphql-compose'
+
+export interface GraphQLFieldExtensionDefinition {
+  name: string;
+  args: GraphQLFieldConfigArgumentMap;
+  extend(args: GraphQLFieldConfigArgumentMap; prevFieldConfig: GraphQLFieldConfig): $Shape<ComposeFieldConfig>;
+}
 
 // Reserved for internal use
 const internalExtensionNames = [`createdFrom`, `directives`, `infer`, `plugin`]
@@ -36,14 +46,7 @@ const typeExtensions = {
   },
 }
 
-interface GraphQLFieldExtensionDefinition {
-  // TODO:
-  name: string;
-  args: object;
-  extend: (args: object; prevFieldConfig: object) => { type: string, args: object, resolve: () => {} };
-}
-
-const fieldExtensions = {
+const builtInFieldExtensions = {
   dateformat: {
     description: `Add date formating options.`,
     args: {
@@ -129,6 +132,7 @@ const addDirectives = ({ schemaComposer }) => {
 }
 
 const processFieldExtensions = ({
+  fieldExtensions,
   schemaComposer,
   typeComposer,
   parentSpan,
