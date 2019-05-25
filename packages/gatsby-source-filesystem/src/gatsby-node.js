@@ -47,7 +47,7 @@ exports.sourceNodes = (
 
   // Validate that the path exists.
   if (!fs.existsSync(pluginOptions.path)) {
-    reporter.panic(`
+    reporter.error(`
 The path passed to gatsby-source-filesystem does not exist on your file system:
 
 ${pluginOptions.path}
@@ -56,6 +56,7 @@ Please pick a path to an existing directory.
 
 See docs here - https://www.gatsbyjs.org/packages/gatsby-source-filesystem/
       `)
+    return
   }
 
   // Validate that the path is absolute.
