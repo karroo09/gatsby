@@ -188,7 +188,7 @@ actions.createTypes = (
   }
 }
 
-const { internalExtensionNames } = require(`../../schema/extensions`)
+const { reservedExtensionNames } = require(`../../schema/extensions`)
 import type GraphQLFieldExtensionDefinition from "../../schema/extensions"
 /**
  * Add a field extension to the GraphQL schema.
@@ -241,7 +241,7 @@ actions.createFieldExtension = (
 
   if (!name) {
     report.error(`The provided field extension must have a \`name\` property.`)
-  } else if (internalExtensionNames.includes(name)) {
+  } else if (reservedExtensionNames.includes(name)) {
     report.error(
       `The field extension name ${name} is reserved for internal use.`
     )

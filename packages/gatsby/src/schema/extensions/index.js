@@ -98,7 +98,7 @@ const builtInFieldExtensions = {
     description: `Proxy resolver from another field.`,
     args: {
       from: {
-        type: GraphQLString,
+        type: new GraphQLNonNull(GraphQLString),
       },
     },
     extend({ from }, fieldConfig) {
@@ -122,6 +122,9 @@ const internalExtensionNames = [
   `directives`,
   `infer`,
   `plugin`,
+]
+const reservedExtensionNames = [
+  ...internalExtensionNames,
   ...Object.keys(builtInFieldExtensions),
 ]
 
@@ -194,6 +197,6 @@ const processFieldExtensions = ({
 module.exports = {
   addDirectives,
   builtInFieldExtensions,
-  internalExtensionNames,
   processFieldExtensions,
+  reservedExtensionNames,
 }
