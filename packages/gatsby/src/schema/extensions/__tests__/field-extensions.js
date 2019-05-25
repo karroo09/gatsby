@@ -6,6 +6,7 @@ const { store } = require(`../../../redux`)
 const { dispatch } = store
 const { actions } = require(`../../../redux/actions/restricted`)
 const { createFieldExtension, createTypes } = actions
+require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
 describe(`GraphQL field extensions`, () => {
   beforeEach(() => {
