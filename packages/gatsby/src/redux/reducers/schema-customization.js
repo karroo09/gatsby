@@ -42,8 +42,7 @@ module.exports = (
       }
     }
     case `CREATE_FIELD_EXTENSION`: {
-      const extension = action.payload
-      const { name } = extension
+      const { extension, name } = action.payload
       return {
         ...state,
         fieldExtensions: { ...state.fieldExtensions, [name]: extension },

@@ -188,6 +188,7 @@ actions.createTypes = (
   }
 }
 
+const { internalExtensionNames } = require(`../../schema/extensions`)
 import type GraphQLFieldExtensionDefinition from "../../schema/extensions"
 /**
  * Add a field extension to the GraphQL schema.
@@ -204,7 +205,7 @@ import type GraphQLFieldExtensionDefinition from "../../schema/extensions"
  *
  * @param {GraphQLFieldExtensionDefinition} extension The field extension definition
  * @example
- * exports.createSchemaCustomization = ({ action }) => {
+ * exports.createSchemaCustomization = ({ actions }) => {
  *   const { createFieldExtension } = actions
  *   createFieldExtension({
  *     name: 'motivate',
@@ -214,18 +215,18 @@ import type GraphQLFieldExtensionDefinition from "../../schema/extensions"
  *     extend(options, prevFieldConfig) {
  *       return {
  *         type: 'String',
- *         arg: {
+ *         args: {
  *           sunshine: {
- *             type: 'Int'
+ *             type: 'Int',
  *             defaultValue: 0,
  *           },
  *         },
  *         resolve(source, args, context, info) {
- *           const motivation = (caffeine || 0) - sunshine
+ *           const motivation = (options.caffeine || 0) - args.sunshine
  *           if (motivation > 5) return 'Work! Work! Work!'
  *           return 'Maybe tomorrow.'
  *         },
- *       },
+ *       }
  *     },
  *   })
  * }
@@ -240,16 +241,22 @@ actions.createFieldExtension = (
 
   if (!name) {
     report.error(`The provided field extension must have a \`name\` property.`)
+  } else if (internalExtensionNames.includes(name)) {
+    report.error(
+      `The field extension name ${name} is reserved for internal use.`
+    )
   } else if (fieldExtensions[name]) {
     report.error(
       `A field extension with the name ${name} has already been registered.`
     )
+  } else if (!extension) {
+    report.error(`No definition provided for field extension ${name}.`)
   } else {
     dispatch({
       type: `CREATE_FIELD_EXTENSION`,
       plugin,
       traceId,
-      payload: extension,
+      payload: { name, extension },
     })
   }
 }
@@ -265,6 +272,7 @@ const availableInAPI = {
   // },
   sourceNodes: {
     createTypes: actions.createTypes,
+    createFieldExtension: actions.createFieldExtension,
     addThirdPartySchema: actions.addThirdPartySchema,
   },
   createSchemaCustomization: {

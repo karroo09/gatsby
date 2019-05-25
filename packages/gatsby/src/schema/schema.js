@@ -31,8 +31,9 @@ const buildSchema = async ({
   schemaComposer,
   nodeStore,
   types,
-  thirdPartySchemas,
   typeMapping,
+  fieldExtensions,
+  thirdPartySchemas,
   typeConflictReporter,
   parentSpan,
 }) => {
@@ -40,8 +41,9 @@ const buildSchema = async ({
     schemaComposer,
     nodeStore,
     types,
-    thirdPartySchemas,
     typeMapping,
+    fieldExtensions,
+    thirdPartySchemas,
     typeConflictReporter,
     parentSpan,
   })
@@ -55,6 +57,7 @@ const rebuildSchemaWithSitePage = async ({
   schemaComposer,
   nodeStore,
   typeMapping,
+  fieldExtensions,
   typeConflictReporter,
   parentSpan,
 }) => {
@@ -69,6 +72,7 @@ const rebuildSchemaWithSitePage = async ({
   await processTypeComposer({
     schemaComposer,
     typeComposer,
+    fieldExtensions,
     nodeStore,
     parentSpan,
   })
@@ -85,6 +89,7 @@ const updateSchemaComposer = async ({
   nodeStore,
   types,
   typeMapping,
+  fieldExtensions,
   thirdPartySchemas,
   typeConflictReporter,
   parentSpan,
@@ -107,6 +112,7 @@ const updateSchemaComposer = async ({
       processTypeComposer({
         schemaComposer,
         typeComposer,
+        fieldExtensions,
         nodeStore,
         parentSpan,
       })
@@ -119,11 +125,17 @@ const updateSchemaComposer = async ({
 const processTypeComposer = async ({
   schemaComposer,
   typeComposer,
+  fieldExtensions,
   nodeStore,
   parentSpan,
 }) => {
   if (typeComposer instanceof ObjectTypeComposer) {
-    await processFieldExtensions({ schemaComposer, typeComposer, parentSpan })
+    await processFieldExtensions({
+      schemaComposer,
+      typeComposer,
+      fieldExtensions,
+      parentSpan,
+    })
     if (typeComposer.hasInterface(`Node`)) {
       await addNodeInterfaceFields({ schemaComposer, typeComposer, parentSpan })
       await addResolvers({ schemaComposer, typeComposer, parentSpan })

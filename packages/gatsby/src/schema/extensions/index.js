@@ -11,17 +11,17 @@ const {
 const { link, fileByPath } = require(`../resolvers`)
 const { getDateResolver } = require(`../types/date`)
 
-import type { GraphQLFieldConfigArgumentMap, GraphQLFieldConfig } from 'graphql'
-import type { ComposeFieldConfig } from 'graphql-compose'
+import type { GraphQLFieldConfigArgumentMap, GraphQLFieldConfig } from "graphql"
+import type { ComposeFieldConfig } from "graphql-compose"
 
 export interface GraphQLFieldExtensionDefinition {
   name: string;
-  args: GraphQLFieldConfigArgumentMap;
-  extend(args: GraphQLFieldConfigArgumentMap; prevFieldConfig: GraphQLFieldConfig): $Shape<ComposeFieldConfig>;
+  args?: GraphQLFieldConfigArgumentMap;
+  extend(
+    args: GraphQLFieldConfigArgumentMap,
+    prevFieldConfig: GraphQLFieldConfig
+  ): $Shape<ComposeFieldConfig>;
 }
-
-// Reserved for internal use
-const internalExtensionNames = [`createdFrom`, `directives`, `infer`, `plugin`]
 
 const typeExtensions = {
   infer: {
@@ -48,17 +48,19 @@ const typeExtensions = {
 
 const builtInFieldExtensions = {
   dateformat: {
+    name: `dateformat`,
     description: `Add date formating options.`,
     args: {
       formatString: { type: GraphQLString },
       locale: { type: GraphQLString },
     },
-    process(args, fieldConfig) {
+    extend(args, fieldConfig) {
       return getDateResolver(args)
     },
   },
 
   link: {
+    name: `link`,
     description: `Link to node by foreign-key relation.`,
     args: {
       by: {
@@ -69,7 +71,7 @@ const builtInFieldExtensions = {
         type: GraphQLString,
       },
     },
-    process(args, fieldConfig) {
+    extend(args, fieldConfig) {
       return {
         resolve: link(args),
       }
@@ -77,13 +79,14 @@ const builtInFieldExtensions = {
   },
 
   fileByRelativePath: {
+    name: `fileByRelativePath`,
     description: `Link to File node by relative path.`,
     args: {
       from: {
         type: GraphQLString,
       },
     },
-    process(args, fieldConfig) {
+    extend(args, fieldConfig) {
       return {
         resolve: fileByPath(args),
       }
@@ -91,13 +94,14 @@ const builtInFieldExtensions = {
   },
 
   proxy: {
+    name: `proxy`,
     description: `Proxy resolver from another field.`,
     args: {
       from: {
         type: GraphQLString,
       },
     },
-    process({ from }, fieldConfig) {
+    extend({ from }, fieldConfig) {
       const resolver = fieldConfig.resolve || defaultFieldResolver
       return {
         resolve(source, args, context, info) {
@@ -111,20 +115,50 @@ const builtInFieldExtensions = {
   },
 }
 
-const toDirectives = ({ extensions, locations }) =>
+// Reserved for internal use
+const internalExtensionNames = [
+  `createdFrom`,
+  `default`,
+  `directives`,
+  `infer`,
+  `plugin`,
+  ...Object.keys(builtInFieldExtensions),
+]
+
+const toDirectives = ({ schemaComposer, extensions, locations }) =>
   Object.keys(extensions).map(name => {
     const extension = extensions[name]
     const { args, description } = extension
-    return new GraphQLDirective({ name, args, description, locations })
+    // Support the `graphql-compose` style of directly providing the field type as string
+    const normalizedArgs = Object.entries(args).reduce((acc, [arg, config]) => {
+      const normalizedConfig =
+        typeof config === `string` ? { type: config } : config
+      const type =
+        typeof normalizedConfig.type === `string`
+          ? // At this point, only the built-in scalars, as well as GraphQLJSON
+            // and GraphQLDate are guaranteed to be available.
+            schemaComposer.getAnyTC(normalizedConfig.type).getType()
+          : normalizedConfig.type
+      acc[arg] = { ...normalizedConfig, type }
+      return acc
+    }, {})
+    return new GraphQLDirective({
+      name,
+      args: normalizedArgs,
+      description,
+      locations,
+    })
   })
 
-const addDirectives = ({ schemaComposer }) => {
+const addDirectives = ({ schemaComposer, fieldExtensions = {} }) => {
   const fieldDirectives = toDirectives({
+    schemaComposer,
     extensions: fieldExtensions,
     locations: [DirectiveLocation.FIELD_DEFINITION],
   })
   fieldDirectives.forEach(directive => schemaComposer.addDirective(directive))
   const typeDirectives = toDirectives({
+    schemaComposer,
     extensions: typeExtensions,
     locations: [DirectiveLocation.OBJECT],
   })
@@ -132,7 +166,7 @@ const addDirectives = ({ schemaComposer }) => {
 }
 
 const processFieldExtensions = ({
-  fieldExtensions,
+  fieldExtensions = {},
   schemaComposer,
   typeComposer,
   parentSpan,
@@ -143,14 +177,14 @@ const processFieldExtensions = ({
       .filter(name => !internalExtensionNames.includes(name))
       .sort(a => a === `proxy`) // Ensure `proxy` is run last
       .forEach(name => {
-        const { process } = fieldExtensions[name] || {}
-        if (process) {
+        const { extend } = fieldExtensions[name] || {}
+        if (typeof extend === `function`) {
           // Always get fresh field config as it will have been changed
           // by previous field extension
           const prevFieldConfig = typeComposer.getFieldConfig(fieldName)
           typeComposer.extendField(
             fieldName,
-            process(extensions[name], prevFieldConfig)
+            extend(extensions[name], prevFieldConfig)
           )
         }
       })
@@ -159,5 +193,7 @@ const processFieldExtensions = ({
 
 module.exports = {
   addDirectives,
+  builtInFieldExtensions,
+  internalExtensionNames,
   processFieldExtensions,
 }
