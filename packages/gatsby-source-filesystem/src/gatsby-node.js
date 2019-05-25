@@ -56,7 +56,7 @@ Please pick a path to an existing directory.
 
 See docs here - https://www.gatsbyjs.org/packages/gatsby-source-filesystem/
       `)
-    return
+    return Promise.resolve()
   }
 
   // Validate that the path is absolute.
