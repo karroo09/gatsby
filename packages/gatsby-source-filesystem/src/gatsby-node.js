@@ -183,3 +183,45 @@ See docs here - https://www.gatsbyjs.org/packages/gatsby-source-filesystem/
 }
 
 exports.setFieldsOnGraphQLNodeType = require(`./extend-file-node`)
+
+exports.onPreBootstrap = ({ actions }) => {
+  actions.createTypes(`
+    type File implements Node @dontInfer {
+      sourceInstanceName: String
+      absolutePath: String
+      relativePath: String
+      extension: String
+      size: Int
+      prettySize: String
+      modifiedTime: Date @dateformat
+      accessTime: Date @dateformat
+      changeTime: Date @dateformat
+      birthTime: Date @dateformat
+      root: String
+      dir: String
+      base: String
+      ext: String
+      name: String
+      relativeDirectory: String
+      dev: Int
+      mode: Int
+      nlink: Int
+      uid: Int
+      gid: Int
+      rdev: Int
+      blksize: Int
+      ino: Int
+      blocks: Int
+      atimeMs: Float
+      mtimeMs: Float
+      ctimeMs: Float
+      birthtimeMs: Float
+      atime: Date @dateformat
+      mtime: Date @dateformat
+      ctime: Date @dateformat
+      birthtime: Date @dateformat
+      # added in setFieldsOnGraphQLNodeType
+      # publicURL: String
+    }
+  `)
+}
