@@ -213,8 +213,12 @@ describe(`GraphQL field extensions`, () => {
   it.todo(`shows error message when no extension definition provided`)
   it.todo(`shows error message when no extension name provided`)
 
-  it.todo(`validates type of extension options`) // we get a defined extension option with a wrong type
-  it.todo(`validates non-existing extension options`) // we get an extension option that has not been defined
+  // we get a defined extension option with a wrong type
+  it.todo(`validates type of extension options`)
+  // we get an extension option that has not been defined.
+  it.todo(`validates non-existing extension options`)
+  // we get an extension that has not been defined
+  it.todo(`validates non-existing extension`)
   it.todo(`validates extension options when passed with type builder`)
 })
 

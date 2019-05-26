@@ -189,6 +189,7 @@ const addTypes = ({ schemaComposer, types, parentSpan }) => {
         if (schemaComposer.has(typeName)) {
           const typeComposer = schemaComposer.get(typeName)
           mergeTypes({
+            schemaComposer,
             typeComposer,
             type,
             plugin,
@@ -212,6 +213,7 @@ const addTypes = ({ schemaComposer, types, parentSpan }) => {
       if (schemaComposer.has(typeName)) {
         const typeComposer = schemaComposer.get(typeName)
         mergeTypes({
+          schemaComposer,
           typeComposer,
           type: typeOrTypeDef,
           plugin,
@@ -232,6 +234,7 @@ const addTypes = ({ schemaComposer, types, parentSpan }) => {
 }
 
 const mergeTypes = ({
+  schemaComposer,
   typeComposer,
   type,
   plugin,
@@ -244,7 +247,7 @@ const mergeTypes = ({
     if (isNamedTypeComposer(type)) {
       typeComposer.extendExtensions(type.getExtensions())
     }
-    addExtensions({ typeComposer, plugin, createdFrom })
+    addExtensions({ schemaComposer, typeComposer, plugin, createdFrom })
     return true
   } else {
     report.warn(
@@ -275,12 +278,17 @@ const processAddedType = ({
   }
   schemaComposer.addSchemaMustHaveType(typeComposer)
 
-  addExtensions({ typeComposer, plugin, createdFrom })
+  addExtensions({ schemaComposer, typeComposer, plugin, createdFrom })
 
   return typeComposer
 }
 
-const addExtensions = ({ typeComposer, plugin, createdFrom }) => {
+const addExtensions = ({
+  schemaComposer,
+  typeComposer,
+  plugin,
+  createdFrom,
+}) => {
   typeComposer.setExtension(`createdFrom`, createdFrom)
   typeComposer.setExtension(`plugin`, plugin ? plugin.name : null)
 
@@ -321,6 +329,50 @@ const addExtensions = ({ typeComposer, plugin, createdFrom }) => {
           typeComposer.setFieldExtension(fieldName, name, args)
         })
       }
+
+      // Validate field extension args. `graphql-compose` already checks the
+      // type of directive args in `parseDirectives`, but we want to check
+      // extensions provided with type builders as well. Also, we warn if an
+      // extension option was provided which does not exist in the field
+      // extension definition.
+      const fieldExtensions = typeComposer.getFieldExtensions(fieldName)
+      const typeName = typeComposer.getTypeName()
+      Object.keys(fieldExtensions)
+        .filter(name => ![`createdFrom`, `directives`, `plugin`].includes(name)) // TODO: use internalExtensionNames
+        .forEach(name => {
+          const args = fieldExtensions[name]
+          // TODO: Get the extension definition from redux instead of from
+          // the directive? Directive has advantage of already having parsed arg type
+          try {
+            const definition = schemaComposer.getDirective(name)
+            Object.keys(args).forEach(arg => {
+              const argumentDef = definition.args.find(
+                ({ name }) => name === arg
+              )
+              if (!argumentDef) {
+                report.error(
+                  `Field extension \`${name}\` on \`${typeName}.${fieldName}\` ` +
+                    `has invalid argument \`${arg}\`.`
+                )
+                return
+              }
+              const value = args[arg]
+              try {
+                argumentDef.type.parseValue(value)
+              } catch (error) {
+                report.error(
+                  `Field extension \`${name}\` on \`${typeName}.${fieldName}\` ` +
+                    `has argument \`${arg}\` with invalid value "${value}".`
+                )
+              }
+            })
+          } catch (error) {
+            report.error(
+              `Field extension \`${name}\` on \`${typeName}.${fieldName}\` ` +
+                `is not available.`
+            )
+          }
+        })
     })
   }
 
@@ -697,6 +749,7 @@ const parseTypes = ({
 
       // Merge the parsed type with the original
       mergeTypes({
+        schemaComposer,
         typeComposer,
         type: parsedType,
         plugin,
