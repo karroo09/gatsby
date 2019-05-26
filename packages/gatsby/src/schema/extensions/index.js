@@ -133,18 +133,7 @@ const toDirectives = ({ schemaComposer, extensions, locations }) =>
     const extension = extensions[name]
     const { args, description } = extension
     // Support the `graphql-compose` style of directly providing the field type as string
-    const normalizedArgs = Object.entries(args).reduce((acc, [arg, config]) => {
-      const normalizedConfig =
-        typeof config === `string` ? { type: config } : config
-      const type =
-        typeof normalizedConfig.type === `string`
-          ? // At this point, only the built-in scalars, as well as GraphQLJSON
-            // and GraphQLDate are guaranteed to be available.
-            schemaComposer.getAnyTC(normalizedConfig.type).getType()
-          : normalizedConfig.type
-      acc[arg] = { ...normalizedConfig, type }
-      return acc
-    }, {})
+    const normalizedArgs = schemaComposer.typeMapper.convertArgConfigMap(args)
     return new GraphQLDirective({
       name,
       args: normalizedArgs,
@@ -197,6 +186,7 @@ const processFieldExtensions = ({
 module.exports = {
   addDirectives,
   builtInFieldExtensions,
+  internalExtensionNames,
   processFieldExtensions,
   reservedExtensionNames,
 }

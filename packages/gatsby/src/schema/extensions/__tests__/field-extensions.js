@@ -8,6 +8,14 @@ const { actions } = require(`../../../redux/actions/restricted`)
 const { createFieldExtension, createTypes } = actions
 require(`../../../db/__tests__/fixtures/ensure-loki`)()
 
+const report = require(`gatsby-cli/lib/reporter`)
+report.error = jest.fn()
+report.panic = jest.fn()
+afterEach(() => {
+  report.error.mockClear()
+  report.panic.mockClear()
+})
+
 describe(`GraphQL field extensions`, () => {
   beforeEach(() => {
     dispatch({ type: `DELETE_CACHE` })
@@ -29,6 +37,11 @@ describe(`GraphQL field extensions`, () => {
         internal: { type: `Test` },
         somedate: `2019-09-26`,
         otherdate: `2019-09-26`,
+      },
+      {
+        id: `test4`,
+        internal: { type: `Test` },
+        olleh: `world`,
       },
     ]
     nodes.forEach(node => {
@@ -198,28 +211,647 @@ describe(`GraphQL field extensions`, () => {
     expect(results).toEqual(expected)
   })
 
-  it.todo(`allows specifying extension options with type string`)
-  it.todo(`allows specifying extension options with flat type string`)
-  it.todo(`allows specifying extension options with default value`)
-  it.todo(`allows wrapping existing field resolver`)
+  it(`allows specifying extension options with type string`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: {
+            // type provided as string
+            type: `String`,
+          },
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet || `world`
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hello: String @hello
+          hi: String @hello(planet: "mars")
+        }`
+      )
+    )
+    const query = `
+      {
+        test {
+          hello
+          hi
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        hello: `world`,
+        hi: `mars`,
+      },
+    }
+    expect(results).toEqual(expected)
+  })
 
-  // TODO: Decide behavior
-  it.todo(`input type keeps original type when extension changes field type`)
-  it.todo(`handles multiple extensions per field`)
-  it.todo(`allows extensions on fields of interface type`) // needs change in processTypeComposer
+  it(`allows specifying extension options with flat type string`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          // type provided as flat string
+          planet: `String`,
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet || `world`
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hello: String @hello
+          hi: String @hello(planet: "mars")
+        }`
+      )
+    )
+    const query = `
+      {
+        test {
+          hello
+          hi
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        hello: `world`,
+        hi: `mars`,
+      },
+    }
+    expect(results).toEqual(expected)
+  })
 
-  it.todo(`shows error message when extension name is reserved`)
-  it.todo(`shows error message when extension is already defined`)
-  it.todo(`shows error message when no extension definition provided`)
-  it.todo(`shows error message when no extension name provided`)
+  it(`allows specifying extension options with default value`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: {
+            type: `String!`,
+            defaultValue: `world`,
+          },
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hello: String @hello
+          hi: String @hello(planet: "mars")
+        }`
+      )
+    )
+    const query = `
+      {
+        test {
+          hello
+          hi
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        hello: `world`,
+        hi: `mars`,
+      },
+    }
+    expect(results).toEqual(expected)
+  })
 
-  // we get a defined extension option with a wrong type
-  it.todo(`validates type of extension options`)
+  it(`allows specifying extension options with default value (type builder)`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: {
+            type: `String!`,
+            defaultValue: `world`,
+          },
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        buildObjectType({
+          name: `Test`,
+          interfaces: [`Node`],
+          fields: {
+            hello: {
+              type: `String`,
+              extensions: {
+                hello: {},
+              },
+            },
+            hi: {
+              type: `String`,
+              extensions: {
+                hello: { planet: `mars` },
+              },
+            },
+          },
+        })
+      )
+    )
+    const query = `
+      {
+        test {
+          hello
+          hi
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        hello: `world`,
+        hi: `mars`,
+      },
+    }
+    expect(results).toEqual(expected)
+  })
+
+  it(`allows List and NonNull type modifiers in extension type`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planets: {
+            type: `[String!]`,
+            defaultValue: [`world`],
+          },
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planets
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hello: [String] @hello
+          hi: [String] @hello(planets: ["mars", "venus"])
+        }`
+      )
+    )
+    const query = `
+      {
+        test {
+          hello
+          hi
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        hello: [`world`],
+        hi: [`mars`, `venus`],
+      },
+    }
+    expect(results).toEqual(expected)
+  })
+
+  it(`allows wrapping existing field resolver`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: `String`,
+        },
+        extend(options, prevFieldConfig) {
+          const { resolve } = prevFieldConfig
+          return {
+            resolve(...rp) {
+              const planet = resolve(...rp)
+              return options.planet
+                ? [planet, options.planet].join(`, `)
+                : planet
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        buildObjectType({
+          name: `Test`,
+          interfaces: [`Node`],
+          fields: {
+            hello: {
+              type: `String`,
+              resolve: () => `world`,
+              extensions: { hello: {} },
+            },
+            hi: {
+              type: `String`,
+              resolve: () => `world`,
+              extensions: { hello: { planet: `mars` } },
+            },
+          },
+        })
+      )
+    )
+    const query = `
+      {
+        test {
+          hello
+          hi
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        hello: `world`,
+        hi: `world, mars`,
+      },
+    }
+    expect(results).toEqual(expected)
+  })
+
+  // TODO: Decide on intended behavior
+  it(`input type reflects changed type when extension changes field type`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        extend(options) {
+          return {
+            type: `String`,
+            resolve: () => `world`,
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hello: Boolean @hello
+        }`
+      )
+    )
+    const query = `
+      {
+        test {
+          hello
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        hello: `world`,
+      },
+    }
+    expect(results).toEqual(expected)
+    const { hello } = store
+      .getState()
+      .schema.getType(`TestFilterInput`)
+      .getFields()
+    expect(hello.type.toString()).toBe(`StringQueryOperatorInput`)
+  })
+
+  it(`handles multiple extensions per field`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `uppercase`,
+        extend(options) {
+          return {
+            type: `String`,
+            resolve(source, args, context, info) {
+              return String(source[info.fieldName]).toUpperCase()
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createFieldExtension({
+        name: `reverse`,
+        extend(options) {
+          return {
+            type: `String`,
+            resolve(source, args, context, info) {
+              return [...String(source[info.fieldName])].reverse().join(``)
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          olleh: String @uppercase @reverse
+        }`
+      )
+    )
+    const query = `
+      {
+        test(id: { eq: "test4" }) {
+          olleh
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      test: {
+        olleh: `DLROW`,
+      },
+    }
+    expect(results).toEqual(expected)
+  })
+
+  it(`shows error message when extension name is reserved`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `dateformat`,
+        extend: () => {
+          return {}
+        },
+      })
+    )
+    const schema = await buildSchema()
+    expect(report.error).toBeCalledWith(
+      `The field extension name \`dateformat\` is reserved for internal use.`
+    )
+    const directive = schema.getDirective(`dateformat`)
+    expect(directive).toBeDefined()
+    expect(directive.args).toHaveLength(2)
+  })
+
+  it(`shows error message when extension is already defined`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {},
+        extend: () => {
+          return {
+            resolve: () => `world`,
+          }
+        },
+      })
+    )
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: `String`,
+        },
+        extend: () => {
+          return {
+            resolve: () => `again`,
+          }
+        },
+      })
+    )
+    const schema = await buildSchema()
+    expect(report.error).toBeCalledWith(
+      `A field extension with the name \`hello\` has already been registered.`
+    )
+    const directive = schema.getDirective(`hello`)
+    expect(directive).toBeDefined()
+    expect(directive.args).toHaveLength(0)
+  })
+
+  it(`shows error message when no extension name provided`, () => {
+    dispatch(
+      createFieldExtension({
+        args: {},
+        extend: () => {
+          return {
+            resolve: () => `world`,
+          }
+        },
+      })
+    )
+    expect(report.error).toBeCalledWith(
+      `The provided field extension must have a \`name\` property.`
+    )
+  })
+
+  // FIXME: error message for directive is different from extension error,
+  // because directive is checked before by graphql-compose
+  // we get an extension option with a wrong type
+  it(`validates type of extension options`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: `String`,
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet || `world`
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hi: String @hello(planet: 2)
+        }`
+      )
+    )
+    await buildSchema({})
+    expect(report.panic).toBeCalledWith(
+      expect.stringContaining(
+        `Encountered an error parsing the provided GraphQL type definitions:\n` +
+          `Argument "planet" has invalid value 2.`
+      )
+    )
+  })
+
+  // we get an extension option with a wrong type
+  it(`validates type of extension options (type builder)`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: `String`,
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet || `world`
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        buildObjectType({
+          name: `Test`,
+          interfaces: [`Node`],
+          fields: {
+            hi: {
+              type: `String`,
+              extensions: {
+                hello: {
+                  planet: 2,
+                },
+              },
+            },
+          },
+        })
+      )
+    )
+    await buildSchema({})
+    expect(report.error).toBeCalledWith(
+      `Field extension \`hello\` on \`Test.hi\` has argument \`planet\` with ` +
+        `invalid value "2".`
+    )
+  })
+
+  // FIXME: `graphql-compose` (in `parseDirectives`) silently omits invalid extension options
   // we get an extension option that has not been defined.
-  it.todo(`validates non-existing extension options`)
+  it.skip(`validates non-existing extension options`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: `String`,
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet || `world`
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hi: String @hello(what: 2)
+        }`
+      )
+    )
+    await buildSchema({})
+    expect(report.error).toBeCalledWith(`Some error message`)
+  })
+
+  // we get an extension option that has not been defined.
+  it(`validates non-existing extension options (type builder)`, async () => {
+    dispatch(
+      createFieldExtension({
+        name: `hello`,
+        args: {
+          planet: `String`,
+        },
+        extend(options) {
+          return {
+            resolve() {
+              return options.planet || `world`
+            },
+          }
+        },
+      })
+    )
+    dispatch(
+      createTypes(
+        buildObjectType({
+          name: `Test`,
+          interfaces: [`Node`],
+          fields: {
+            hi: {
+              type: `String`,
+              extensions: {
+                hello: {
+                  what: 2,
+                },
+              },
+            },
+          },
+        })
+      )
+    )
+    await buildSchema({})
+    expect(report.error).toBeCalledWith(
+      `Field extension \`hello\` on \`Test.hi\` has invalid argument \`what\`.`
+    )
+  })
+
   // we get an extension that has not been defined
-  it.todo(`validates non-existing extension`)
-  it.todo(`validates extension options when passed with type builder`)
+  it(`validates non-existing extension`, async () => {
+    dispatch(
+      createTypes(
+        `type Test implements Node {
+          hi: String @what(what: 2)
+        }`
+      )
+    )
+    await buildSchema({})
+    expect(report.error).toBeCalledWith(
+      `Field extension \`what\` on \`Test.hi\` is not available.`
+    )
+  })
+
+  // we get an extension that has not been defined
+  it(`validates non-existing extension (type builder)`, async () => {
+    dispatch(
+      createTypes(
+        buildObjectType({
+          name: `Test`,
+          interfaces: [`Node`],
+          fields: {
+            hi: {
+              type: `String`,
+              extensions: {
+                what: {
+                  what: 2,
+                },
+              },
+            },
+          },
+        })
+      )
+    )
+    await buildSchema({})
+    expect(report.error).toBeCalledWith(
+      `Field extension \`what\` on \`Test.hi\` is not available.`
+    )
+  })
 })
 
 const buildSchema = async () => {

@@ -243,14 +243,12 @@ actions.createFieldExtension = (
     report.error(`The provided field extension must have a \`name\` property.`)
   } else if (reservedExtensionNames.includes(name)) {
     report.error(
-      `The field extension name ${name} is reserved for internal use.`
+      `The field extension name \`${name}\` is reserved for internal use.`
     )
   } else if (fieldExtensions[name]) {
     report.error(
-      `A field extension with the name ${name} has already been registered.`
+      `A field extension with the name \`${name}\` has already been registered.`
     )
-  } else if (!extension) {
-    report.error(`No definition provided for field extension ${name}.`)
   } else {
     dispatch({
       type: `CREATE_FIELD_EXTENSION`,

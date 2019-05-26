@@ -21,7 +21,10 @@ const report = require(`gatsby-cli/lib/reporter`)
 const { addNodeInterfaceFields } = require(`./types/node-interface`)
 const { addInferredType, addInferredTypes } = require(`./infer`)
 const { findOne, findManyPaginated } = require(`./resolvers`)
-const { processFieldExtensions } = require(`./extensions`)
+const {
+  processFieldExtensions,
+  internalExtensionNames,
+} = require(`./extensions`)
 const { getPagination } = require(`./types/pagination`)
 const { getSortInput } = require(`./types/sort`)
 const { getFilterInput } = require(`./types/filter`)
@@ -164,7 +167,7 @@ const addTypes = ({ schemaComposer, types, parentSpan }) => {
           parentSpan,
         })
       } catch (error) {
-        reportParsingError(error)
+        return reportParsingError(error)
       }
       parsedTypes.forEach(type => {
         processAddedType({
@@ -338,7 +341,7 @@ const addExtensions = ({
       const fieldExtensions = typeComposer.getFieldExtensions(fieldName)
       const typeName = typeComposer.getTypeName()
       Object.keys(fieldExtensions)
-        .filter(name => ![`createdFrom`, `directives`, `plugin`].includes(name)) // TODO: use internalExtensionNames
+        .filter(name => !internalExtensionNames.includes(name))
         .forEach(name => {
           const args = fieldExtensions[name]
           // TODO: Get the extension definition from redux instead of from
@@ -783,7 +786,6 @@ const reportParsingError = error => {
   const { message, source, locations } = error
 
   if (source && locations && locations.length) {
-    const report = require(`gatsby-cli/lib/reporter`)
     const { codeFrameColumns } = require(`@babel/code-frame`)
 
     const frame = codeFrameColumns(
