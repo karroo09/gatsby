@@ -129,23 +129,44 @@ const ensureFieldIndexes = (collection, lokiArgs) => {
   })
 }
 
+const getSortFields = (collection, sort) => {
+  const sortFields = toSortFields(sort)
+  sortFields.forEach(sortField => collection.ensureIndex(sortField[0]))
+  return sortFields
+}
+
 const query = (collections, query, firstOnly) => {
+  debugger
   // TODO: query/filter can be empty object
-  // FIXME: handle multiple collections
-  const [collection, type] = collections[0]
-  const filter = convertArgs(query, type)
-  ensureFieldIndexes(collection, filter)
-  let chain = collection.chain().find(filter, firstOnly)
 
-  if (query.sort) {
-    const sortFields = toSortFields(query.sort)
+  const resultSets = collections.map(([collection, type]) => {
+    const filter = convertArgs(query, type)
+    ensureFieldIndexes(collection, filter)
+    return collection.chain().find(filter, firstOnly)
+  })
 
-    for (const sortField of sortFields) {
-      collection.ensureIndex(sortField[0])
+  // If we query more than one collection (i.e. we query an abstract type),
+  // we need to manually concat results (and manually sort that).
+  if (resultSets.length > 1) {
+    const data = []
+    resultSets.forEach(resultSet => [...data, ...resultSet.data()])
+
+    let results
+    if (query.sort) {
+      // TODO: Try to utilise sort index nevertheless (to get something pre-sorted),
+      // even if we have to manually sort anyway?
+      const sortFields = toSortFields(query.sort)
+      results = _.sortBy(data, sortFields)
     }
-    chain = chain.compoundsort(sortFields)
+    return firstOnly && results ? results[0] : results
   }
 
+  // If we only have one collection, we can let Loki do the sorting
+  const [resultSet] = resultSets
+  const [[collection]] = collections
+  const chain = query.sort
+    ? resultSet.compoundsort(getSortFields(collection, query.sort))
+    : resultSet
   const results = chain.data()
   return firstOnly && results ? results[0] : results
 }

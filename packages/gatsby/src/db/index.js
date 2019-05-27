@@ -14,11 +14,11 @@ interface NodeStore {
 }
 
 const createNodesDb = async fileName => {
+  // FIXME:
   const saveFile = fileName + `.` + backend
   fs.ensureDirSync(path.dirname(saveFile))
 
   let db: NodeStore
-  // let cache
   switch (backend) {
     case `js`: {
       const JsStore = require(`./js/store`)
