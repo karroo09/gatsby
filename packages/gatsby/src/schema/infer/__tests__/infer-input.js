@@ -1,36 +1,30 @@
 // NOTE: Previously `infer-graphql-input-type-test.js`
 
 const { graphql } = require(`graphql`)
-const { createSchemaComposer } = require(`../../schema-composer`)
-const { buildSchema } = require(`../../schema`)
-const { LocalNodeModel } = require(`../../node-model`)
-const nodeStore = require(`../../../db/nodes`)
+const { build } = require(`../..`)
+const withResolverContext = require(`../../context`)
 const { store } = require(`../../../redux`)
-const createPageDependency = require(`../../../redux/actions/add-page-dependency`)
-require(`../../../db/__tests__/fixtures/ensure-loki`)()
+const { createNodesDb } = require(`../../../db`)
 
 const buildTestSchema = async nodes => {
   store.dispatch({ type: `DELETE_CACHE` })
   for (const node of nodes) {
     store.dispatch({ type: `CREATE_NODE`, payload: node })
   }
-  const schemaComposer = createSchemaComposer()
-  const schema = await buildSchema({
-    schemaComposer,
-    nodeStore,
-    types: [],
-    thirdPartySchemas: [],
-  })
+  await build({})
+  const { schema } = store.getState()
   return schema
 }
 const queryResult = async (nodes, query) => {
   const schema = await buildTestSchema(nodes)
-  return graphql(schema, query, undefined, {
-    nodeModel: new LocalNodeModel({ schema, nodeStore, createPageDependency }),
-  })
+  return graphql(schema, query, undefined, withResolverContext({}))
 }
 
 describe(`GraphQL Input args`, () => {
+  beforeAll(async () => {
+    await createNodesDb()
+  })
+
   it(`filters out null example values`, async () => {
     const nodes = [
       {

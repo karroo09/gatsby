@@ -1,6 +1,7 @@
 jest.mock(`fs-extra`, () => {
   return {
     readFile: jest.fn(() => `contents`),
+    existsSync: jest.fn(() => true),
   }
 })
 const glob = require(`glob`)

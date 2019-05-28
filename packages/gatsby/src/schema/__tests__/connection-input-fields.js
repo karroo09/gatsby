@@ -2,7 +2,6 @@ const { graphql } = require(`graphql`)
 const { createSchemaComposer } = require(`../schema-composer`)
 const { buildSchema } = require(`../schema`)
 const { LocalNodeModel } = require(`../node-model`)
-const nodeStore = require(`../../db/nodes`)
 const { store } = require(`../../redux`)
 require(`../../db/__tests__/fixtures/ensure-loki`)()
 
@@ -134,6 +133,7 @@ function makeNodes() {
 async function queryResult(nodes, query) {
   store.dispatch({ type: `DELETE_CACHE` })
   nodes.forEach(node => store.dispatch({ type: `CREATE_NODE`, payload: node }))
+  const nodeStore = store.getState().nodes.db
 
   const schemaComposer = createSchemaComposer()
   const schema = await buildSchema({

@@ -59,6 +59,7 @@ class NodeStore {
     this.db.collections.forEach(collection =>
       this.db.removeCollection(collection.name)
     )
+    this.clearCache()
     this.initialize()
   }
 
@@ -155,7 +156,7 @@ class NodeStore {
 
   clearCache() {
     this.resolvedFields = new Map()
-    // TODO: How to clear a Loki DB?
+    // TODO: Clear instead of recreate?
     this.resolvedNodesDb = new Loki()
   }
 

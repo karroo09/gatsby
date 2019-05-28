@@ -43,7 +43,7 @@ const getMissingFields = (obj1, obj2) =>
   Object.entries(obj1).reduce((acc, [key, value]) => {
     const compareValue = obj2[key]
     if (compareValue === undefined) {
-      acc[key] = true
+      acc[key] = value
     } else if (isObject(value) && isObject(compareValue)) {
       const d = getMissingFields(value, compareValue)
       if (Object.keys(d).length) acc[key] = d

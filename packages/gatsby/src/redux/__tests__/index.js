@@ -1,14 +1,17 @@
 const path = require(`path`)
 const fs = require(`fs-extra`)
-const { saveState, store } = require(`../index`)
+const { saveStateUndebounced } = require(`../persist`)
+const { store } = require(`..`)
 const {
   actions: { createPage },
 } = require(`../actions`)
+const { createNodesDb } = require(`../../db`)
 
 jest.mock(`fs-extra`)
 
 describe(`redux db`, () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await createNodesDb()
     store.dispatch(
       createPage(
         {
@@ -26,19 +29,24 @@ describe(`redux db`, () => {
 
     fs.writeFile.mockClear()
   })
+
   it(`should write cache to disk`, async () => {
-    await saveState()
+    const state = store.getState()
+    const { db } = state.nodes
+    db.saveState = jest.fn()
+    await saveStateUndebounced(state)
 
     expect(fs.writeFile).toBeCalledWith(
       expect.stringContaining(`.cache/redux-state.json`),
       expect.stringContaining(`my-sweet-new-page.js`)
     )
+    expect(db.saveState).toHaveBeenCalled()
   })
 
   it(`does not write to the cache when DANGEROUSLY_DISABLE_OOM is set`, async () => {
     process.env.DANGEROUSLY_DISABLE_OOM = true
 
-    await saveState()
+    await saveStateUndebounced()
 
     expect(fs.writeFile).not.toBeCalled()
 

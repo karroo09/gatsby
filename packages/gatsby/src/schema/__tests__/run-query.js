@@ -1,4 +1,4 @@
-const nodesQuery = require(`../../db/nodes-query`)
+const nodesQuery = require(`../../db/query`)
 const { store } = require(`../../redux`)
 require(`../../db/__tests__/fixtures/ensure-loki`)()
 

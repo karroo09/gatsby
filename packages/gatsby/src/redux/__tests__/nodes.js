@@ -1,20 +1,12 @@
-const Redux = require(`redux`)
 const { actions } = require(`../actions`)
 const nodeReducer = require(`../reducers/nodes`)
 const nodeTouchedReducer = require(`../reducers/nodes-touched`)
+const { createNodesDb } = require(`../../db`)
 
-jest.mock(`../../db/nodes`)
-jest.mock(`../nodes`)
-
-const store = Redux.createStore(
-  Redux.combineReducers({ nodeReducer, nodeTouchedReducer }),
-  {}
-)
 describe(`Create and update nodes`, () => {
-  beforeEach(() => {
-    store.dispatch({
-      type: `DELETE_CACHE`,
-    })
+  let db
+  beforeEach(async () => {
+    db = await createNodesDb()
   })
 
   it(`allows creating nodes`, () => {
@@ -34,7 +26,11 @@ describe(`Create and update nodes`, () => {
       }
     )
     expect(action).toMatchSnapshot()
-    expect(nodeReducer(undefined, action)).toMatchSnapshot()
+    expect(
+      nodeReducer({ db }, action)
+        .db.getNodes()
+        .map(({ $loki, ...node }) => node)
+    ).toMatchSnapshot()
   })
 
   it(`allows updating nodes`, () => {
@@ -83,11 +79,11 @@ describe(`Create and update nodes`, () => {
         name: `tests`,
       }
     )
-    let state = nodeReducer(undefined, action)
-    state = nodeReducer(state, updateAction)
-    expect(state.get(`hi`).pickle).toEqual(false)
-    expect(state.get(`hi`).deep.array[0]).toEqual(1)
-    expect(state.get(`hi`).deep2.boom).toEqual(`foo`)
+    const state = nodeReducer({ db }, action)
+    const currentDb = nodeReducer(state, updateAction).db
+    expect(currentDb.getNode(`hi`).pickle).toEqual(false)
+    expect(currentDb.getNode(`hi`).deep.array[0]).toEqual(1)
+    expect(currentDb.getNode(`hi`).deep2.boom).toEqual(`foo`)
   })
 
   it(`nodes that are added are also "touched"`, () => {
@@ -106,7 +102,7 @@ describe(`Create and update nodes`, () => {
         name: `tests`,
       }
     )
-    let state = nodeTouchedReducer(undefined, action)
+    const state = nodeTouchedReducer({ db }, action)
     expect(state[`hi`]).toBe(true)
   })
 
@@ -126,11 +122,11 @@ describe(`Create and update nodes`, () => {
         name: `tests`,
       }
     )
-    let state = nodeReducer(undefined, action)
+    const state = nodeReducer({ db }, action)
 
     const addFieldAction = actions.createNodeField(
       {
-        node: state.get(`hi`),
+        node: state.db.getNode(`hi`),
         name: `joy`,
         value: `soul's delight`,
       },
@@ -138,8 +134,10 @@ describe(`Create and update nodes`, () => {
         name: `test`,
       }
     )
-    state = nodeReducer(state, addFieldAction)
-    expect(state).toMatchSnapshot()
+    const nodes = nodeReducer(state, addFieldAction)
+      .db.getNodes()
+      .map(({ $loki, ...node }) => node)
+    expect(nodes).toMatchSnapshot()
   })
 
   it(`throws error if a field is updated by a plugin not its owner`, () => {
@@ -158,11 +156,11 @@ describe(`Create and update nodes`, () => {
         name: `tests`,
       }
     )
-    let state = nodeReducer(undefined, action)
+    const state = nodeReducer({ db }, action)
 
     const addFieldAction = actions.createNodeField(
       {
-        node: state.get(`hi`),
+        node: state.db.getNode(`hi`),
         name: `joy`,
         value: `soul's delight`,
       },
@@ -170,12 +168,12 @@ describe(`Create and update nodes`, () => {
         name: `test`,
       }
     )
-    state = nodeReducer(state, addFieldAction)
+    const currentDb = nodeReducer(state, addFieldAction).db
 
     function callActionCreator() {
       actions.createNodeField(
         {
-          node: state.get(`hi`),
+          node: currentDb.getNode(`hi`),
           name: `joy`,
           value: `soul's delight`,
         },

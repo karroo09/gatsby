@@ -1,13 +1,14 @@
 const { actions } = require(`../../redux/actions`)
-const { getNode, getNodes } = require(`../nodes`)
 const { store } = require(`../../redux`)
-require(`./fixtures/ensure-loki`)()
+const { createNodesDb } = require(`..`)
 
 const report = require(`gatsby-cli/lib/reporter`)
 jest.mock(`gatsby-cli/lib/reporter`)
 
 describe(`nodes db tests`, () => {
-  beforeEach(() => {
+  let db
+  beforeEach(async () => {
+    db = await createNodesDb()
     store.dispatch({ type: `DELETE_CACHE` })
   })
 
@@ -47,8 +48,8 @@ describe(`nodes db tests`, () => {
     store.dispatch(
       actions.createParentChildLink(
         {
-          parent: getNode(`hi`),
-          child: getNode(`hi-1`),
+          parent: db.getNode(`hi`),
+          child: db.getNode(`hi-1`),
         },
         {
           name: `tests`,
@@ -74,8 +75,8 @@ describe(`nodes db tests`, () => {
     store.dispatch(
       actions.createParentChildLink(
         {
-          parent: getNode(`hi-1`),
-          child: getNode(`hi-1-1`),
+          parent: db.getNode(`hi-1`),
+          child: db.getNode(`hi-1-1`),
         },
         {
           name: `tests`,
@@ -98,7 +99,7 @@ describe(`nodes db tests`, () => {
         }
       )
     )
-    expect(getNodes()).toHaveLength(1)
+    expect(db.getNodes()).toHaveLength(1)
   })
 
   it(`deletes previously transformed children nodes when the parent node is deleted`, () => {
@@ -153,8 +154,8 @@ describe(`nodes db tests`, () => {
     store.dispatch(
       actions.createParentChildLink(
         {
-          parent: getNode(`hi`),
-          child: getNode(`hi-1`),
+          parent: db.getNode(`hi`),
+          child: db.getNode(`hi-1`),
         },
         {
           name: `tests`,
@@ -180,8 +181,8 @@ describe(`nodes db tests`, () => {
     store.dispatch(
       actions.createParentChildLink(
         {
-          parent: getNode(`hi-1`),
-          child: getNode(`hi-1-1`),
+          parent: db.getNode(`hi-1`),
+          child: db.getNode(`hi-1-1`),
         },
         {
           name: `tests`,
@@ -191,14 +192,14 @@ describe(`nodes db tests`, () => {
     store.dispatch(
       actions.deleteNode(
         {
-          node: getNode(`hi`),
+          node: db.getNode(`hi`),
         },
         {
           name: `tests`,
         }
       )
     )
-    expect(getNodes()).toHaveLength(1)
+    expect(db.getNodes()).toHaveLength(1)
   })
 
   it(`deletes previously transformed children nodes when parent nodes are deleted`, () => {
@@ -237,8 +238,8 @@ describe(`nodes db tests`, () => {
     store.dispatch(
       actions.createParentChildLink(
         {
-          parent: getNode(`hi`),
-          child: getNode(`hi-1`),
+          parent: db.getNode(`hi`),
+          child: db.getNode(`hi-1`),
         },
         {
           name: `tests`,
@@ -264,8 +265,8 @@ describe(`nodes db tests`, () => {
     store.dispatch(
       actions.createParentChildLink(
         {
-          parent: getNode(`hi-1`),
-          child: getNode(`hi-1-1`),
+          parent: db.getNode(`hi-1`),
+          child: db.getNode(`hi-1-1`),
         },
         {
           name: `tests`,
@@ -274,13 +275,13 @@ describe(`nodes db tests`, () => {
     )
     store.dispatch(
       actions.deleteNode(
-        { node: getNode(`hi`) },
+        { node: db.getNode(`hi`) },
         {
           name: `tests`,
         }
       )
     )
-    expect(getNodes()).toHaveLength(0)
+    expect(db.getNodes()).toHaveLength(0)
   })
 
   it(`allows deleting nodes`, () => {
@@ -312,10 +313,10 @@ describe(`nodes db tests`, () => {
     )
     store.dispatch(
       actions.deleteNode({
-        node: getNode(`hi`),
+        node: db.getNode(`hi`),
       })
     )
-    expect(getNode(`hi`)).toBeUndefined()
+    expect(db.getNode(`hi`)).toBeNull()
   })
 
   it(`warns when using old deleteNode signature `, () => {
@@ -335,13 +336,13 @@ describe(`nodes db tests`, () => {
         }
       )
     )
-    expect(getNode(`hi`)).toMatchObject({ id: `hi` })
+    expect(db.getNode(`hi`)).toMatchObject({ id: `hi` })
     store.dispatch(
-      actions.deleteNode(`hi`, getNode(`hi`), {
+      actions.deleteNode(`hi`, db.getNode(`hi`), {
         name: `tests`,
       })
     )
-    expect(getNode(`hi`)).toBeUndefined()
+    expect(db.getNode(`hi`)).toBeNull()
     const deprecationNotice =
       `Calling "deleteNode" with a nodeId is deprecated. Please pass an ` +
       `object containing a full node instead: deleteNode({ node }). ` +
@@ -353,6 +354,6 @@ describe(`nodes db tests`, () => {
     actions.deleteNode(undefined, {
       name: `tests`,
     })
-    expect(getNodes()).toHaveLength(0)
+    expect(db.getNodes()).toHaveLength(0)
   })
 })

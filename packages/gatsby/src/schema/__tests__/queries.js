@@ -2,7 +2,7 @@ const { graphql } = require(`graphql`)
 const { store } = require(`../../redux`)
 const { build } = require(`..`)
 const withResolverContext = require(`../context`)
-require(`../../db/__tests__/fixtures/ensure-loki`)()
+const { createNodesDb } = require(`../../db`)
 
 jest.mock(`../../utils/api-runner-node`)
 const apiRunnerNode = require(`../../utils/api-runner-node`)
@@ -15,7 +15,8 @@ describe(`Query schema`, () => {
   const runQuery = query =>
     graphql(schema, query, undefined, withResolverContext({}, schema))
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    await createNodesDb()
     apiRunnerNode.mockImplementation(async (api, ...args) => {
       if (api === `setFieldsOnGraphQLNodeType`) {
         if (args[0].type.name === `Markdown`) {
@@ -463,6 +464,7 @@ describe(`Query schema`, () => {
           }
         }
       `
+      debugger
       const results = await runQuery(query)
       const expected = {
         author: {
@@ -546,6 +548,7 @@ describe(`Query schema`, () => {
             }
           }
         `
+        debugger
         const results = await runQuery(query)
         const expected = {
           findsort: {

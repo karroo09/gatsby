@@ -59,11 +59,13 @@ const resolveNode = (node, filter, parentType, context, schema) => {
 }
 
 const getResolvedNodes = async ({ nodes, type, fields, schema }) => {
+  debugger
   const nodesToProcess = await nodes
-  const context = withResolverContext({})
+  const context = withResolverContext({}, schema)
   return Promise.all(
     nodesToProcess.map(async node => {
       const resolvedNode = resolveNode(node, fields, type, context, schema)
+      debugger
       trackInlineObjectsInRootNode(await resolvedNode)
       return resolvedNode
     })

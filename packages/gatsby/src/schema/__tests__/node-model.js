@@ -1,8 +1,8 @@
 const { store } = require(`../../redux`)
-const nodeStore = require(`../../db/nodes`)
-require(`../../db/__tests__/fixtures/ensure-loki`)()
 const { LocalNodeModel } = require(`../node-model`)
 const { build } = require(`..`)
+const { createNodesDb } = require(`../../db`)
+const { findRootNodeAncestor } = require(`../../db/node-tracking`)
 
 const nodes = require(`./fixtures/node-model`)
 
@@ -12,6 +12,7 @@ describe(`NodeModel`, () => {
   const createPageDependency = jest.fn()
 
   beforeAll(async () => {
+    await createNodesDb()
     store.dispatch({ type: `DELETE_CACHE` })
     nodes.forEach(node =>
       store.dispatch({ type: `CREATE_NODE`, payload: node })
@@ -40,10 +41,12 @@ describe(`NodeModel`, () => {
     await build({})
     schema = store.getState().schema
 
+    const nodeStore = store.getState().nodes.db
     nodeModel = new LocalNodeModel({
       schema,
       nodeStore,
       createPageDependency,
+      findRootNodeAncestor,
     })
   })
 

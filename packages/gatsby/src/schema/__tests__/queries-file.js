@@ -135,7 +135,7 @@ describe(`Query fields of type File`, () => {
     expect(results.data).toEqual(expected)
   })
 
-  it(`finds filtered File nodes`, async () => {
+  it.only(`finds filtered File nodes`, async () => {
     const query = `
       {
         test(

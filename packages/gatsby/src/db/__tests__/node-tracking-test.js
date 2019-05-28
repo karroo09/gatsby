@@ -6,10 +6,7 @@ const {
   findRootNodeAncestor,
   trackInlineObjectsInRootNode,
 } = require(`../node-tracking`)
-const { run: runQuery } = require(`../nodes-query`)
-require(`./fixtures/ensure-loki`)()
-
-const { db } = store.getState().nodes
+const { createNodesDb } = require(`..`)
 
 function makeNode() {
   return {
@@ -29,7 +26,9 @@ function makeNode() {
 }
 
 describe(`track root nodes`, () => {
-  beforeEach(() => {
+  let db
+  beforeEach(async () => {
+    db = await createNodesDb()
     const nodes = [makeNode()]
     store.dispatch({ type: `DELETE_CACHE` })
     for (const node of nodes) {
@@ -114,9 +113,9 @@ describe(`track root nodes`, () => {
     })
 
     it(`Tracks objects when running query without filter`, async () => {
-      const result = await runQuery({
-        queryArgs: {},
-        gqlType: type,
+      const result = await db.runQuery({
+        query: {},
+        types: [type],
         firstOnly: false,
       })
 
@@ -126,8 +125,8 @@ describe(`track root nodes`, () => {
     })
 
     it(`Tracks objects when running query with filter`, async () => {
-      const result = await runQuery({
-        queryArgs: {
+      const result = await db.runQuery({
+        query: {
           filter: {
             inlineObject: {
               field: {
@@ -136,7 +135,7 @@ describe(`track root nodes`, () => {
             },
           },
         },
-        gqlType: type,
+        types: [type],
         firstOnly: false,
       })
 

@@ -29,6 +29,7 @@ class NodeStore {
   clear() {
     this.nodes = new Map()
     this.nodesByType = new Map()
+    this.cache = new Map()
   }
 
   create(node) {
@@ -121,7 +122,7 @@ class NodeStore {
     this.cache = new Map()
   }
 
-  getResolvedNodes(type, fields, schema) {
+  async getResolvedNodes(type, fields, schema) {
     const typeName = type.name
     const [
       prevResolvedFields = {},
@@ -133,12 +134,22 @@ class NodeStore {
       return prevResolvedNodes
     }
 
-    const resolvedNodes = getResolvedNodes({
+    // Actually await here (and don't just cache the Promise),
+    // because we can have circular dependencies like
+    // Author.posts=>Markdown, Markdown.frontmatter.author=>Author
+    // FIXME: BUT THE PROBLEM IS if we have to await, we create a
+    // race condition: whichever Promise returns last sets the cache
+    // ===> can we first set the cache with a Promise, but still await her
+    // in the function until it resolves?
+    // Or can we just await when we are in leaf node?
+    debugger
+    const resolvedNodes = await getResolvedNodes({
       nodes: prevResolvedNodes,
       type,
       fields: missingFields,
       schema,
     })
+    debugger
     this.cache.set(typeName, [
       merge(prevResolvedFields, missingFields),
       resolvedNodes,
@@ -147,6 +158,7 @@ class NodeStore {
   }
 
   async runQuery({ query, firstOnly, types, schema }) {
+    debugger
     const queryFields = getQueryFields(query)
 
     let queryNodes = []

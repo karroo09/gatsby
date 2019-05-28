@@ -1,12 +1,15 @@
-const { colls, getDb, start } = require(`../index`)
+const LokiDb = require(`../store`)
 
 describe(`db`, () => {
-  start()
-  it(`should create system collections`, () => {
-    const db = getDb()
-    const nodeMetaColl = db.getCollection(colls.nodeMeta.name)
-    const nodeTypesColl = db.getCollection(colls.nodeTypes.name)
+  let db
+  beforeEach(async () => {
+    db = new LokiDb()
+    await db.start()
+  })
+
+  it(`should create meta collection for all nodes`, () => {
+    const nodeMetaColl = db.db.getCollection(`gatsby:nodes`)
     expect(nodeMetaColl).toBeDefined()
-    expect(nodeTypesColl).toBeDefined()
+    expect(db.metaCollection).toBe(nodeMetaColl)
   })
 })

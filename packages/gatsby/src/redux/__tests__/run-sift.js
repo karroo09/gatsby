@@ -1,11 +1,6 @@
-const runSift = require(`../run-sift`)
-const {
-  GraphQLObjectType,
-  GraphQLNonNull,
-  GraphQLID,
-  GraphQLString,
-  GraphQLList,
-} = require(`graphql`)
+const { SchemaComposer, ObjectTypeComposer } = require(`graphql-compose`)
+const { store } = require(`..`)
+const { createNodesDb } = require(`../../db/index`)
 
 jest.mock(`../../db/node-tracking`, () => {
   return {
@@ -13,7 +8,7 @@ jest.mock(`../../db/node-tracking`, () => {
   }
 })
 
-const mockNodes = [
+const nodes = [
   {
     id: `id_1`,
     string: `foo`,
@@ -25,21 +20,21 @@ const mockNodes = [
     id: `id_2`,
     string: `bar`,
     internal: {
-      type: `test`,
+      type: `Test`,
     },
   },
   {
     id: `id_3`,
     string: `baz`,
     internal: {
-      type: `test`,
+      type: `Test`,
     },
   },
   {
     id: `id_4`,
     string: `qux`,
     internal: {
-      type: `test`,
+      type: `Test`,
     },
     first: {
       willBeResolved: `willBeResolved`,
@@ -55,131 +50,137 @@ const mockNodes = [
   },
 ]
 
-jest.mock(`../../db/nodes`, () => {
-  return {
-    getNode: id => mockNodes.find(node => node.id === id),
-    getNodesByType: type =>
-      mockNodes.filter(node => node.internal.type === type),
-  }
-})
-
 describe(`run-sift`, () => {
-  const typeName = `test`
-  const gqlType = new GraphQLObjectType({
-    name: typeName,
-    fields: () => {
-      return {
-        id: { type: new GraphQLNonNull(GraphQLID) },
-        string: { type: GraphQLString },
-        first: {
-          type: new GraphQLObjectType({
-            name: `First`,
-            fields: {
-              willBeResolved: {
-                type: GraphQLString,
-                resolve: () => `resolvedValue`,
-              },
-              second: {
-                type: new GraphQLList(
-                  new GraphQLObjectType({
-                    name: `Second`,
-                    fields: {
-                      willBeResolved: {
-                        type: GraphQLString,
-                        resolve: () => `resolvedValue`,
-                      },
-                      third: new GraphQLObjectType({
-                        name: `Third`,
-                        fields: {
-                          foo: GraphQLString,
-                        },
-                      }),
-                    },
-                  })
-                ),
-              },
-            },
-          }),
-        },
-      }
-    },
+  let db
+  beforeAll(async () => {
+    db = await createNodesDb()
+    nodes.forEach(node => {
+      store.dispatch({ type: `CREATE_NODE`, payload: node })
+    })
   })
-  const nodes = mockNodes
+
+  const sc = new SchemaComposer()
+  ObjectTypeComposer.create(
+    {
+      name: `Test`,
+      fields: {
+        id: `ID!`,
+        string: `String`,
+        first: `First`,
+      },
+    },
+    sc
+  )
+  ObjectTypeComposer.create(
+    {
+      name: `First`,
+      fields: {
+        willBeResolved: {
+          type: `String`,
+          resolve: () => `resolvedValue`,
+        },
+        second: `[Second]`,
+      },
+    },
+    sc
+  )
+  ObjectTypeComposer.create(
+    {
+      name: `Second`,
+      fields: {
+        willBeResolved: {
+          type: `String`,
+          resolve: () => `resolvedValue`,
+        },
+        third: `type Third { foo: String }`,
+      },
+    },
+    sc
+  )
+  sc.Query.addFields({ test: `Test` })
+  const schema = sc.buildSchema()
+  const type = schema.getType(`Test`)
 
   describe(`filters by just id correctly`, () => {
     it(`eq operator`, async () => {
-      const queryArgs = {
+      const query = {
         filter: {
           id: { eq: `id_2` },
         },
       }
 
-      const resultSingular = await runSift({
-        gqlType,
-        queryArgs,
+      const resultSingular = await db.runQuery({
+        types: [type],
+        query,
         firstOnly: true,
+        schema,
       })
 
-      const resultMany = await runSift({
-        gqlType,
-        queryArgs,
+      const resultMany = await db.runQuery({
+        types: [type],
+        query,
         firstOnly: false,
+        schema,
       })
 
-      expect(resultSingular).toEqual([nodes[1]])
+      expect(resultSingular).toEqual(nodes[1])
       expect(resultMany).toEqual([nodes[1]])
     })
 
     it(`eq operator honors type`, async () => {
-      const queryArgs = {
+      const query = {
         filter: {
           id: { eq: `id_1` },
         },
       }
 
-      const resultSingular = await runSift({
-        gqlType,
-        queryArgs,
+      const resultSingular = await db.runQuery({
+        types: [type],
+        query,
         firstOnly: true,
+        schema,
       })
 
-      const resultMany = await runSift({
-        gqlType,
-        queryArgs,
+      const resultMany = await db.runQuery({
+        types: [type],
+        query,
         firstOnly: false,
+        schema,
       })
 
       // `id-1` node is not of queried type, so results should be empty
-      expect(resultSingular).toEqual([])
-      expect(resultMany).toEqual(null)
+      expect(resultSingular).toBeNull()
+      expect(resultMany).toEqual([])
     })
 
     it(`non-eq operator`, async () => {
-      const queryArgs = {
+      const query = {
         filter: {
           id: { ne: `id_2` },
         },
       }
 
-      const resultSingular = await runSift({
-        gqlType,
-        queryArgs,
+      const resultSingular = await db.runQuery({
+        types: [type],
+        query,
         firstOnly: true,
+        schema,
       })
 
-      const resultMany = await runSift({
-        gqlType,
-        queryArgs,
+      const resultMany = await db.runQuery({
+        types: [type],
+        query,
         firstOnly: false,
+        schema,
       })
 
-      expect(resultSingular).toEqual([nodes[2]])
+      expect(resultSingular).toEqual(nodes[2])
       expect(resultMany).toEqual([nodes[2], nodes[3]])
     })
   })
 
   it(`resolves fields before querying`, async () => {
-    const queryArgs = {
+    const query = {
       filter: {
         first: {
           willBeResolved: { eq: `resolvedValue` },
@@ -195,12 +196,14 @@ describe(`run-sift`, () => {
       },
     }
 
-    const results = await runSift({
-      gqlType,
-      queryArgs,
+    const result = await db.runQuery({
+      types: [type],
+      query,
       firstOnly: true,
+      schema,
     })
 
-    expect(results[0].id).toBe(`id_4`)
+    expect(result).not.toBeNull()
+    expect(result.id).toBe(`id_4`)
   })
 })

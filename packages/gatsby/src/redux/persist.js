@@ -66,6 +66,7 @@ const saveState = async state => {
     report.warn(`Error persisting state: ${(err && err.message) || err}`)
   }
   saveInProgress = false
+  return Promise.resolve()
 }
 
 const saveStateDebounced = _.debounce(saveState, 1000)
@@ -73,4 +74,5 @@ const saveStateDebounced = _.debounce(saveState, 1000)
 module.exports = {
   loadState,
   saveState: saveStateDebounced,
+  saveStateUndebounced: saveState,
 }

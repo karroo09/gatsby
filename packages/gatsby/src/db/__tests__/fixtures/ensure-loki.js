@@ -1,8 +1,7 @@
-const { backend } = require(`../../nodes`)
+const { createNodesDb } = require(`../..`)
 
 module.exports = () => {
-  if (backend === `loki`) {
-    const lokiDb = require(`../../loki`)
-    beforeAll(lokiDb.start)
-  }
+  beforeAll(async () => {
+    await createNodesDb()
+  })
 }

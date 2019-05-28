@@ -2,9 +2,17 @@ const fs = require(`fs-extra`)
 const path = require(`path`)
 const { store } = require(`../redux`)
 
-const backend = process.env.GATSBY_DB_NODES || `js`
+const backend = process.env.GATSBY_DB_NODES || `jsmap`
 
 interface NodeStore {
+  // TODO:
+  // start: () => {};
+  // clear: () => {};
+  // create: () => {};
+  // update: () => {};
+  // delete: () => {};
+  // deleteMany: () => {}; // deprecated
+  // saveState: () => {};
   getNode: (id: string) => any | undefined;
   getNodes: () => Array<any>;
   getNodesByType: (type: string) => Array<any>;
@@ -14,13 +22,16 @@ interface NodeStore {
 }
 
 const createNodesDb = async fileName => {
-  // FIXME:
-  const saveFile = fileName + `.` + backend
-  fs.ensureDirSync(path.dirname(saveFile))
+  // FIXME: correct extension/backend name
+  let saveFile
+  if (fileName) {
+    saveFile = `${fileName}.${backend}`
+    fs.ensureDirSync(path.dirname(saveFile))
+  }
 
   let db: NodeStore
   switch (backend) {
-    case `js`: {
+    case `jsmap`: {
       const JsStore = require(`./js/store`)
       db = new JsStore(saveFile)
       break

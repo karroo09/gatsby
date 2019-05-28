@@ -1,4 +1,5 @@
 const _ = require(`lodash`)
+const { getNamedType } = require(`graphql`)
 const prepareRegex = require(`../../utils/prepare-regex`)
 const { emitter } = require(`../../redux`)
 
@@ -16,10 +17,10 @@ const toMongoArgs = (gqlFilter, lastFieldType) => {
   _.each(gqlFilter, (v, k) => {
     if (_.isPlainObject(v)) {
       if (k === `elemMatch`) {
-        const gqlFieldType = lastFieldType.ofType
+        const gqlFieldType = getNamedType(lastFieldType)
         mongoArgs[`$elemMatch`] = toMongoArgs(v, gqlFieldType)
       } else {
-        const gqlFieldType = lastFieldType.getFields()[k].type
+        const gqlFieldType = getNamedType(lastFieldType).getFields()[k].type
         mongoArgs[k] = toMongoArgs(v, gqlFieldType)
       }
     } else {
@@ -136,39 +137,44 @@ const getSortFields = (collection, sort) => {
 }
 
 const query = (collections, query, firstOnly) => {
-  debugger
-  // TODO: query/filter can be empty object
-
   const resultSets = collections.map(([collection, type]) => {
     const filter = convertArgs(query, type)
     ensureFieldIndexes(collection, filter)
     return collection.chain().find(filter, firstOnly)
   })
 
+  // TODO: Clean this up
+  let results
+
   // If we query more than one collection (i.e. we query an abstract type),
   // we need to manually concat results (and manually sort that).
   if (resultSets.length > 1) {
-    const data = []
-    resultSets.forEach(resultSet => [...data, ...resultSet.data()])
-
-    let results
+    let data = []
+    resultSets.forEach(resultSet => {
+      data = data.concat(resultSet.data())
+    })
     if (query.sort) {
-      // TODO: Try to utilise sort index nevertheless (to get something pre-sorted),
+      // TODO: Should we use sort index nevertheless (to get something pre-sorted),
       // even if we have to manually sort anyway?
       const sortFields = toSortFields(query.sort)
       results = _.sortBy(data, sortFields)
+    } else {
+      results = data
     }
-    return firstOnly && results ? results[0] : results
+  } else {
+    // If we only have one collection, we can let Loki do the sorting
+    const [resultSet] = resultSets
+    const [[collection]] = collections
+    const chain = query.sort
+      ? resultSet.compoundsort(getSortFields(collection, query.sort))
+      : resultSet
+    results = chain.data()
   }
 
-  // If we only have one collection, we can let Loki do the sorting
-  const [resultSet] = resultSets
-  const [[collection]] = collections
-  const chain = query.sort
-    ? resultSet.compoundsort(getSortFields(collection, query.sort))
-    : resultSet
-  const results = chain.data()
-  return firstOnly && results ? results[0] : results
+  if (firstOnly) {
+    return results[0] || null
+  }
+  return results
 }
 
 module.exports = { query }

@@ -4,7 +4,6 @@ require(`../../db/__tests__/fixtures/ensure-loki`)()
 const { createSchemaComposer } = require(`../schema-composer`)
 const { buildSchema } = require(`../schema`)
 const { LocalNodeModel } = require(`../node-model`)
-const nodeStore = require(`../../db/nodes`)
 const { store } = require(`../../redux`)
 
 jest.mock(`../../utils/api-runner-node`)
@@ -55,6 +54,7 @@ describe(`build-node-types`, () => {
     nodes.forEach(node =>
       store.dispatch({ type: `CREATE_NODE`, payload: node })
     )
+    const nodeStore = store.getState().nodes.db
 
     const schemaComposer = createSchemaComposer()
     const schema = await buildSchema({
