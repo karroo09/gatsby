@@ -297,7 +297,7 @@ class Runner {
         const str = error.toString()
         let m
 
-        let fragmentName
+        let fragmentName = ``
         while ((m = regex.exec(str)) !== null) {
           // This is necessary to avoid infinite loops with zero-width matches
           if (m.index === regex.lastIndex) regex.lastIndex++
