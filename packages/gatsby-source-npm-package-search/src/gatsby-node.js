@@ -18,7 +18,7 @@ function browse({ index, ...params }) {
 
 exports.sourceNodes = async (
   { boundActionCreators, createNodeId, createContentDigest },
-  { keywords }
+  { keywords, excludeDeprecated }
 ) => {
   const { createNode } = boundActionCreators
 
@@ -30,8 +30,12 @@ exports.sourceNodes = async (
     hitsPerPage: 1000,
   })
 
+  const filteredHits = excludeDeprecated
+    ? hits.filter(hit => hit.deprecated === false)
+    : hits
+
   await Promise.all(
-    hits.map(async hit => {
+    filteredHits.map(async hit => {
       const parentId = createNodeId(`plugin ${hit.objectID}`)
 
       if (!hit.readme) {

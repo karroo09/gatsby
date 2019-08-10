@@ -66,6 +66,7 @@ module.exports = {
       resolve: `gatsby-source-npm-package-search`,
       options: {
         keywords: [`gatsby-plugin`, `gatsby-component`],
+        excludeDeprecated: true,
       },
     },
     {
