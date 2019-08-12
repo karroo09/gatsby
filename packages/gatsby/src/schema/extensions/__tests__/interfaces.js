@@ -362,6 +362,141 @@ describe(`Queryable Node interfaces`, () => {
     }
     expect(results).toEqual(expected)
   })
+
+  it(`handles linking to @nodeInterface interface fields`, async () => {
+    dispatch(
+      createTypes(`
+        interface Post @nodeInterface {
+          id: ID!
+          author: Author @link
+        }
+        type ThisBlog implements Node & Post {
+          author: Author @link
+        }
+        type ThatBlog implements Node & Post {
+          author: Author @link
+        }
+        interface Author @nodeInterface {
+          name: String
+        }
+        type AuthorJson implements Node & Author {
+          name: String
+        }
+        type AuthorYaml implements Node & Author {
+          name: String
+        }
+      `)
+    )
+    const nodes = [
+      {
+        id: `one`,
+        internal: { type: `ThisBlog`, contentDigest: `one` },
+        author: `author1`,
+      },
+      {
+        id: `two`,
+        internal: { type: `ThatBlog`, contentDigest: `two` },
+        author: `author2`,
+      },
+      {
+        id: `author1`,
+        internal: { type: `AuthorJson`, contenDigest: `author1` },
+        name: `Author 1`,
+      },
+      {
+        id: `author2`,
+        internal: { type: `AuthorYaml`, contenDigest: `author2` },
+        name: `Author 2`,
+      },
+    ]
+    nodes.forEach(node =>
+      dispatch({ type: `CREATE_NODE`, payload: { ...node } })
+    )
+    const query = `
+      {
+        allPost {
+          nodes {
+            author {
+              name
+            }
+          }
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      allPost: {
+        nodes: [
+          {
+            author: {
+              name: `Author 1`,
+            },
+          },
+          {
+            author: {
+              name: `Author 2`,
+            },
+          },
+        ],
+      },
+    }
+    expect(results).toEqual(expected)
+  })
+
+  it(`allows different field resolvers on types implementing a @nodeInterface interface`, async () => {
+    dispatch(
+      createTypes(`
+        interface Post @nodeInterface {
+          id: ID!
+          date: Date @dateformat(formatString: "YYYY")
+        }
+        type ThisBlog implements Node & Post {
+          date: Date @dateformat(formatString: "YYYY/DD/MM")
+        }
+        type ThatBlog implements Node & Post {
+          date: Date @dateformat(formatString: "YYYY/MM/DD")
+        }
+      `)
+    )
+    const nodes = [
+      {
+        id: `one`,
+        internal: { type: `ThisBlog`, contentDigest: `one` },
+        date: new Date(1978, 8, 26),
+      },
+      {
+        id: `two`,
+        internal: { type: `ThatBlog`, contentDigest: `two` },
+        date: new Date(1978, 8, 26),
+      },
+    ]
+    nodes.forEach(node =>
+      dispatch({ type: `CREATE_NODE`, payload: { ...node } })
+    )
+    const query = `
+      {
+        allPost {
+          nodes {
+            date
+          }
+        }
+      }
+    `
+    const results = await runQuery(query)
+    const expected = {
+      allPost: {
+        nodes: [
+          {
+            date: `1978/26/09`,
+          },
+          {
+            date: `1978/09/26`,
+          },
+        ],
+      },
+    }
+    expect(results).toEqual(expected)
+  })
 })
 
 const buildSchema = async () => {
