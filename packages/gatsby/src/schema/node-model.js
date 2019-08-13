@@ -182,13 +182,16 @@ class LocalNodeModel {
       nodeTypeNames = [gqlType.name]
     }
 
-    const queryResult = await this.nodeStore.runQuery({
-      queryArgs: query,
-      firstOnly,
-      gqlType,
-      nodes,
-      nodeTypeNames,
-    })
+    const queryResult = await this.nodeStore.runQuery(
+      {
+        queryArgs: query,
+        firstOnly,
+        gqlType,
+        nodes,
+        nodeTypeNames,
+      },
+      this.schema
+    )
 
     let result = queryResult
     if (args.firstOnly) {

@@ -104,7 +104,7 @@ function handleMany(siftArgs, nodes, sort) {
  * @returns Collection of results. Collection will be limited to size
  *   if `firstOnly` is true
  */
-module.exports = (args: Object) => {
+module.exports = (args: Object, schema) => {
   const { getNode, getNodesByType } = require(`../db/nodes`)
 
   const { queryArgs, gqlType, firstOnly = false, nodeTypeNames } = args
@@ -128,17 +128,24 @@ module.exports = (args: Object) => {
       return []
     }
 
-    return resolveRecursive(node, fieldsToSift, gqlType.getFields()).then(
-      node => (node ? [node] : [])
-    )
+    return resolveRecursive(
+      node,
+      fieldsToSift,
+      gqlType.getFields(),
+      gqlType,
+      schema
+    ).then(node => (node ? [node] : []))
   }
 
+  debugger
   return resolveNodes(
     nodes,
     gqlType.name,
     firstOnly,
     fieldsToSift,
-    gqlType.getFields()
+    gqlType.getFields(),
+    gqlType,
+    schema
   ).then(resolvedNodes => {
     if (firstOnly) {
       return handleFirst(siftFilter, resolvedNodes)

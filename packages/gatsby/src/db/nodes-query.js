@@ -52,10 +52,10 @@ function chooseQueryEngine(args) {
  * a collection of matching objects (even if `firstOnly` is true, in
  * which case it will be a collection of length 1 or zero)
  */
-function run(args) {
+function run(args, schema) {
   const queryFunction = chooseQueryEngine(args)
 
-  return queryFunction(args)
+  return queryFunction(args, schema)
 }
 
 module.exports.run = run
