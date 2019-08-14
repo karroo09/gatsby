@@ -329,7 +329,7 @@ describe(`Filter fields`, () => {
     expect(result[0].index).toEqual(2)
   })
 
-  it(`handles the not and elemMatch operator for array of objects`, async () => {
+  it.only(`handles the not and elemMatch operator for array of objects`, async () => {
     let result = await runFilter({
       data: {
         not: {

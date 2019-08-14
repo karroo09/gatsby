@@ -54,6 +54,9 @@ function toMongoArgs(gqlFilter, lastFieldType) {
       if (k === `elemMatch`) {
         const gqlFieldType = lastFieldType.ofType
         mongoArgs[`$elemMatch`] = toMongoArgs(v, gqlFieldType)
+      } else if (k === `not`) {
+        const gqlFieldType = lastFieldType
+        mongoArgs[`$not`] = toMongoArgs(v, gqlFieldType)
       } else {
         const gqlFieldType = lastFieldType.getFields()[k].type
         mongoArgs[k] = toMongoArgs(v, gqlFieldType)
@@ -143,6 +146,12 @@ const toDottedFields = (filter, acc = {}, path = []) => {
     const nextValue = _.isPlainObject(value) && value[Object.keys(value)[0]]
     if (key === `$elemMatch`) {
       acc[path.join(`.`)] = { [`$elemMatch`]: toDottedFields(value) }
+    } else if (key === `$not`) {
+      // const [k, v] = Object.entries(toDottedFields(value))[0]
+      // acc[path.concat(k).join(`.`)] = { [`$not`]: v }
+      Object.entries(toDottedFields(value)).forEach(([k, v]) => {
+        acc[path.concat(k).join(`.`)] = { [`$not`]: v }
+      })
     } else if (_.isPlainObject(nextValue)) {
       toDottedFields(value, acc, path.concat(key))
     } else {
