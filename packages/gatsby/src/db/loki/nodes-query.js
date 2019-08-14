@@ -147,8 +147,6 @@ const toDottedFields = (filter, acc = {}, path = []) => {
     if (key === `$elemMatch`) {
       acc[path.join(`.`)] = { [`$elemMatch`]: toDottedFields(value) }
     } else if (key === `$not`) {
-      // const [k, v] = Object.entries(toDottedFields(value))[0]
-      // acc[path.concat(k).join(`.`)] = { [`$not`]: v }
       Object.entries(toDottedFields(value)).forEach(([k, v]) => {
         acc[path.concat(k).join(`.`)] = { [`$not`]: v }
       })
