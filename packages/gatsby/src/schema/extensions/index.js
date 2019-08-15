@@ -7,6 +7,7 @@ const {
 
 const { link, fileByPath } = require(`../resolvers`)
 const { getDateResolver } = require(`../types/date`)
+const { getValueAt } = require(`../../utils/get-value-at`)
 
 import type { GraphQLFieldConfigArgumentMap, GraphQLFieldConfig } from "graphql"
 import type { ComposeFieldConfig, ComposeOutputType } from "graphql-compose"
@@ -150,6 +151,24 @@ const builtInFieldExtensions = {
             from: options.from || info.from,
             fromNode: options.from ? options.fromNode : info.fromNode,
           })
+        },
+      }
+    },
+  },
+
+  reduce: {
+    name: `reduce`,
+    description: `Pick a prop from the current field value.`,
+    args: {
+      to: `String!`,
+    },
+    extend(options, fieldConfig) {
+      return {
+        async resolve(source, args, context, info) {
+          const resolver = fieldConfig.resolve || context.defaultFieldResolver
+          const fieldValue = await resolver(source, args, context, info)
+          if (fieldValue == null) return null
+          return getValueAt(fieldValue, options.to)
         },
       }
     },
