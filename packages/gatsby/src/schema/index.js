@@ -8,6 +8,8 @@ const { buildSchema, rebuildSchemaWithSitePage } = require(`./schema`)
 const { builtInFieldExtensions } = require(`./extensions`)
 const { TypeConflictReporter } = require(`./infer/type-conflict-reporter`)
 const apiRunner = require(`../utils/api-runner-node`)
+const { getValueAt } = require(`../utils/get-value-at`)
+const { group, paginate } = require(`./resolvers`)
 
 module.exports.build = async ({ parentSpan }) => {
   const spanArgs = parentSpan ? { childOf: parentSpan } : {}
@@ -19,6 +21,17 @@ module.exports.build = async ({ parentSpan }) => {
       type: `CREATE_FIELD_EXTENSION`,
       payload: { name, extension },
     })
+  })
+
+  store.dispatch({
+    type: `CREATE_RESOLVER_CONTEXT`,
+    payload: {
+      helpers: {
+        getValueAt,
+        group,
+        paginate,
+      },
+    },
   })
 
   await apiRunner(`createSchemaCustomization`, {

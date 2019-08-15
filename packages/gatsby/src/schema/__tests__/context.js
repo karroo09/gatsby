@@ -200,6 +200,51 @@ describe(`Resolver context`, () => {
           `object. Received "() => {}".`
       )
     })
+
+    it(`provides helpers on context`, async () => {
+      dispatch(
+        createFieldExtension({
+          name: `checkContext`,
+          extend() {
+            return {
+              resolve(source, args, context, info) {
+                const { getValueAt, group, paginate } = context.helpers
+                const { defaultFieldResolver } = context
+                if (
+                  [getValueAt, group, paginate, defaultFieldResolver].every(
+                    helper => typeof helper === `function`
+                  )
+                ) {
+                  return `ALL OK`
+                }
+                return `FAIL`
+              },
+            }
+          },
+        })
+      )
+      dispatch(
+        createTypes(`
+          type Test implements Node {
+            check: String @checkContext
+          }
+        `)
+      )
+      const query = `
+        {
+          test {
+            check
+          }
+        }
+      `
+      const results = await runQuery(query)
+      const expected = {
+        test: {
+          check: `ALL OK`,
+        },
+      }
+      expect(results).toEqual(expected)
+    })
   })
 })
 
