@@ -1,4 +1,4 @@
-jest.mock(`graphql-tools`, () => {
+jest.mock(`graphql-tools-fork`, () => {
   return {
     makeRemoteExecutableSchema: jest.fn(),
     transformSchema: jest.fn(),
