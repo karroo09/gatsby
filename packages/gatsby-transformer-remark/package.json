@@ -1,33 +1,34 @@
 {
   "name": "gatsby-transformer-remark",
   "description": "Gatsby transformer plugin for Markdown using the Remark library and ecosystem",
-  "version": "2.6.14",
-  "author": "Kyle Mathews <mathews.kyle@gmail.com>",
-  "bugs": {
-    "url": "https://github.com/gatsbyjs/gatsby/issues"
-  },
+  "version": "3.0.0",
+  "license": "MIT",
+  "keywords": [
+    "gatsby",
+    "gatsby-plugin",
+    "markdown",
+    "remark"
+  ],
   "dependencies": {
     "@babel/runtime": "^7.0.0",
-    "bluebird": "^3.5.0",
     "gatsby-core-utils": "^1.0.4",
-    "gray-matter": "^4.0.0",
-    "hast-util-raw": "^4.0.0",
-    "hast-util-to-html": "^4.0.0",
+    "gray-matter": "^4.0.2",
+    "hast-util-raw": "^5.0.1",
+    "hast-util-to-html": "^6.0.2",
     "lodash": "^4.17.14",
-    "mdast-util-to-hast": "^3.0.0",
-    "mdast-util-to-string": "^1.0.5",
+    "mdast-util-to-hast": "^6.0.1",
+    "mdast-util-to-string": "^1.0.6",
     "mdast-util-toc": "^2.0.1",
-    "remark": "^10.0.0",
-    "remark-parse": "^6.0.0",
-    "remark-retext": "^3.1.0",
-    "remark-stringify": "^5.0.0",
-    "retext-english": "^3.0.0",
-    "sanitize-html": "^1.18.2",
-    "underscore.string": "^3.3.5",
-    "unified": "^6.1.5",
-    "unist-util-remove-position": "^1.1.2",
-    "unist-util-select": "^1.5.0",
-    "unist-util-visit": "^1.3.0"
+    "remark": "^11.0.1",
+    "remark-parse": "^7.0.1",
+    "remark-retext": "^3.1.3",
+    "remark-stringify": "^7.0.2",
+    "retext-english": "^3.0.3",
+    "strip-markdown": "^3.1.0",
+    "unified": "^8.3.2",
+    "unist-util-remove-position": "^1.1.3",
+    "unist-util-select": "^2.0.2",
+    "unist-util-visit": "^2.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0",
@@ -35,17 +36,13 @@
     "babel-preset-gatsby-package": "^0.2.2",
     "cross-env": "^5.1.4"
   },
-  "homepage": "https://github.com/gatsbyjs/gatsby/tree/master/packages/gatsby-transformer-remark#readme",
-  "keywords": [
-    "gatsby",
-    "gatsby-plugin",
-    "markdown",
-    "remark"
-  ],
-  "license": "MIT",
   "peerDependencies": {
-    "gatsby": "^2.12.0"
+    "gatsby": "^2.13.52"
   },
+  "bugs": {
+    "url": "https://github.com/gatsbyjs/gatsby/issues"
+  },
+  "homepage": "https://github.com/gatsbyjs/gatsby/tree/master/packages/gatsby-transformer-remark#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/gatsbyjs/gatsby.git",
@@ -58,5 +55,12 @@
   },
   "engines": {
     "node": ">=8.0.0"
-  }
+  },
+  "files": [
+    "create-schema-customization.js",
+    "gatsby-node.js",
+    "index.js",
+    "on-create-node.js",
+    "transformers"
+  ]
 }
