@@ -173,6 +173,7 @@ module.exports = (nodeApiArgs, pluginOptions = {}) => {
     basePath,
     cache,
     getCache: possibleGetCache,
+    pathPrefix,
     reporter,
     schema,
   } = nodeApiArgs
@@ -192,7 +193,14 @@ module.exports = (nodeApiArgs, pluginOptions = {}) => {
   const getCache = safeGetCache({ cache, getCache: possibleGetCache })
 
   actions.createResolverContext(
-    getTransformers({ cache, basePath, getCache, pluginOptions, reporter })
+    getTransformers({
+      cache,
+      basePath,
+      getCache,
+      pathPrefix,
+      pluginOptions,
+      reporter,
+    })
   )
 
   actions.createTypes(getTypeDefs({ schema, pluginOptions }))

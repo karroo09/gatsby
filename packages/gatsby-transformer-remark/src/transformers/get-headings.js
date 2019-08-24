@@ -16,6 +16,7 @@ const getHeadings = ({
   basePath,
   cache,
   getCacheKey,
+  pathPrefix,
   pluginOptions,
   processor,
   reporter,

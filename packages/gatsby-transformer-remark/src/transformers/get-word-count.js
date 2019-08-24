@@ -7,6 +7,7 @@ const getWordCount = ({
   basePath,
   cache,
   getCacheKey,
+  pathPrefix,
   pluginOptions,
   processor,
   reporter,

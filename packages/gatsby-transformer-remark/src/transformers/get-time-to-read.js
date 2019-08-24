@@ -9,6 +9,7 @@ const getTimeToRead = ({
   basePath,
   cache,
   getCacheKey,
+  pathPrefix,
   pluginOptions,
   processor,
   reporter,

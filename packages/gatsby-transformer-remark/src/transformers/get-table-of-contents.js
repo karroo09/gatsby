@@ -15,6 +15,7 @@ const getTableOfContents = ({
   basePath,
   cache,
   getCacheKey,
+  pathPrefix,
   pluginOptions,
   processor,
   reporter,

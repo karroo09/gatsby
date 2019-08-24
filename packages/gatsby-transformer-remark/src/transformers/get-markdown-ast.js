@@ -10,6 +10,7 @@ const getAst = async ({
   cache,
   context,
   getCache,
+  pathPrefix,
   pluginOptions,
   processor,
   reporter,
@@ -20,18 +21,19 @@ const getAst = async ({
     if (typeof requiredPlugin.mutateSource === `function`) {
       await requiredPlugin.mutateSource(
         {
-          markdownNode: source,
-          files: context.nodeModel.getAllNodes({ type: `File` }),
-          getNode: id => context.nodeModel.getNodeById({ id }),
-          pathPrefix: basePath,
-          reporter,
+          basePath,
           cache: getCache(plugin.name),
-          getCache,
           compiler: {
             parseString: processor.parse.bind(processor),
             generateHTML: source =>
               context.transformerRemark.getHtml(source, {}, context),
           },
+          files: context.nodeModel.getAllNodes({ type: `File` }),
+          getCache,
+          getNode: id => context.nodeModel.getNodeById({ id }),
+          markdownNode: source,
+          pathPrefix,
+          reporter,
         },
         plugin.pluginOptions
       )
@@ -55,19 +57,20 @@ const getAst = async ({
     if (typeof requiredPlugin === `function`) {
       await requiredPlugin(
         {
-          markdownAST: markdownAst,
-          markdownNode: source,
-          getNode: id => context.nodeModel.getNodeById({ id }),
-          files: context.nodeModel.getAllNodes({ type: `File` }),
-          pathPrefix: basePath,
-          reporter,
+          basePath,
           cache: getCache(plugin.name),
-          getCache,
           compiler: {
             parseString: processor.parse.bind(processor),
             generateHTML: source =>
               context.transformerRemark.getHtml(source, {}, context),
           },
+          files: context.nodeModel.getAllNodes({ type: `File` }),
+          getCache,
+          getNode: id => context.nodeModel.getNodeById({ id }),
+          markdownAST: markdownAst,
+          markdownNode: source,
+          pathPrefix,
+          reporter,
         },
         plugin.pluginOptions
       )
@@ -82,6 +85,7 @@ const getMarkdownAst = ({
   cache,
   getCache,
   getCacheKey,
+  pathPrefix,
   pluginOptions,
   processor,
   reporter,
@@ -102,6 +106,7 @@ const getMarkdownAst = ({
     cache,
     context,
     getCache,
+    pathPrefix,
     pluginOptions,
     processor,
     reporter,
