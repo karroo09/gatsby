@@ -1,9 +1,4 @@
-// const visit = require(`unist-util-visit`)
-
 const AstGenerationPromises = new Map()
-
-// const withPathPrefix = (url, pathPrefix) =>
-//   (pathPrefix + url).replace(/\/\//, `/`)
 
 const getAst = async ({
   basePath,
@@ -23,11 +18,6 @@ const getAst = async ({
         {
           basePath,
           cache: getCache(plugin.name),
-          compiler: {
-            parseString: processor.parse.bind(processor),
-            generateHTML: source =>
-              context.transformerRemark.getHtml(source, {}, context),
-          },
           files: context.nodeModel.getAllNodes({ type: `File` }),
           getCache,
           getNode: id => context.nodeModel.getNodeById({ id }),
@@ -42,16 +32,6 @@ const getAst = async ({
 
   const markdownAst = processor.parse(source.internal.content)
 
-  // This should be a remark plugin!
-  // if (basePath) {
-  //   // Ensure relative links include `pathPrefix`
-  //   visit(markdownAst, [`link`, `definition`], node => {
-  //     if (node.url && node.url.startsWith(`/`) && !node.url.startsWith(`//`)) {
-  //       node.url = withPathPrefix(node.url, basePath)
-  //     }
-  //   })
-  // }
-
   for (const plugin of pluginOptions.plugins) {
     const requiredPlugin = require(plugin.resolve)
     if (typeof requiredPlugin === `function`) {
@@ -59,11 +39,14 @@ const getAst = async ({
         {
           basePath,
           cache: getCache(plugin.name),
+          // NOTE: This is only used by the markdownCaption option in gatsby-remark-images, and nobody knows about it
+          // What's the reason for the plugin to not simply import remark itself?
           compiler: {
             parseString: processor.parse.bind(processor),
             generateHTML: source =>
               context.transformerRemark.getHtml(source, {}, context),
           },
+          createContentDigest: require(`gatsby-core-utils`).createContentDigest, // Needed by `gatsby-remark-images-contentful`
           files: context.nodeModel.getAllNodes({ type: `File` }),
           getCache,
           getNode: id => context.nodeModel.getNodeById({ id }),

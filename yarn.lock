@@ -17885,6 +17885,13 @@ remark-parse@^7.0.0, remark-parse@^7.0.1:
     vfile-location "^2.0.0"
     xtend "^4.0.1"
 
+remark-prefix-links@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/remark-prefix-links/-/remark-prefix-links-2.0.0.tgz#6b434ba57f499234b44dfad341fb19a0565bec2d"
+  integrity sha512-PVh+ZVoGoH4Pw3AJ07sP7G9TylLOo72Tv6tCCyLKYN+kbiiRa4JrdDmk97fti/DzQveGGIk3IMPg9PaSLFRksw==
+  dependencies:
+    unist-util-visit "^1.4.0"
+
 remark-reference-links@^4.0.1:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/remark-reference-links/-/remark-reference-links-4.0.2.tgz#817c63486901bd4f5f8a0cf48a695f5ecd2c966d"
@@ -20577,11 +20584,6 @@ unicode-trie@^0.3.0:
   dependencies:
     pako "^0.2.5"
     tiny-inflate "^1.0.0"
-
-unified-noop-parser@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/unified-noop-parser/-/unified-noop-parser-1.0.0.tgz#ca0ff5a4ee887c7526f3252f31bcbce09dae8f3f"
-  integrity sha512-jdwegRnCocF5wANFP0Wtw6M/NPaOrS1GP+TsvtK+7Ph/iKoFN47wbnPEz5Sfa9IQg4bfYNMcTu+SDw/FHNYc3A==
 
 unified@^4.1.1:
   version "4.2.1"

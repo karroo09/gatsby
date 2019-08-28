@@ -1,70 +1,83 @@
 const grayMatter = require(`gray-matter`)
-const _ = require(`lodash`)
+const { isDate } = require(`lodash`)
 
-module.exports = async function onCreateNode(
+const createMarkdownNode = ({
+  createContentDigest,
+  createNodeId,
+  markdown,
+  options,
+  parent,
+}) => {
+  const { excerpt, data: rawFrontmatter = {}, content } = grayMatter(
+    markdown,
+    options
+  )
+
+  const frontmatter = Object.entries(rawFrontmatter).reduce(
+    (acc, [key, value]) => {
+      acc[key] = isDate(value) ? value.toISOString() : value
+      return acc
+    },
+    {}
+  )
+
+  const markdownNode = {
+    id: createNodeId(`${parent.id} >>> MarkdownRemark`),
+    parent: parent.id,
+    children: [],
+    internal: {
+      type: `MarkdownRemark`,
+      content,
+      contentDigest: createContentDigest(markdown),
+    },
+    excerpt,
+    frontmatter: {
+      title: ``, // always include a title
+      ...frontmatter,
+    },
+    // @deprecated
+    rawMarkdownBody: content,
+  }
+
+  // @deprecated
+  if (parent.internal.type === `File`) {
+    markdownNode.fileAbsolutePath = parent.absolutePath
+  }
+
+  return markdownNode
+}
+
+const onCreateNode = async (
   {
-    node,
-    loadNodeContent,
     actions,
-    createNodeId,
-    reporter,
     createContentDigest,
+    createNodeId,
+    loadNodeContent,
+    node,
+    reporter,
   },
-  pluginOptions
-) {
-  const { createNode, createParentChildLink } = actions
-
-  // We only care about markdown content.
+  options
+) => {
   if (
     node.internal.mediaType !== `text/markdown` &&
     node.internal.mediaType !== `text/x-markdown`
   ) {
-    return {}
+    return
   }
 
-  const content = await loadNodeContent(node)
+  const markdown = await loadNodeContent(node)
 
   try {
-    let data = grayMatter(content, pluginOptions)
+    const markdownNode = createMarkdownNode({
+      createContentDigest,
+      createNodeId,
+      markdown,
+      options,
+      parent: node,
+    })
 
-    if (data.data) {
-      data.data = _.mapValues(data.data, value => {
-        if (_.isDate(value)) {
-          return value.toJSON()
-        }
-        return value
-      })
-    }
-
-    let markdownNode = {
-      id: createNodeId(`${node.id} >>> MarkdownRemark`),
-      children: [],
-      parent: node.id,
-      internal: {
-        content: data.content,
-        type: `MarkdownRemark`,
-      },
-    }
-
-    markdownNode.frontmatter = {
-      title: ``, // always include a title
-      ...data.data,
-    }
-
-    markdownNode.excerpt = data.excerpt
-    markdownNode.rawMarkdownBody = data.content
-
-    // Add path to the markdown file path
-    if (node.internal.type === `File`) {
-      markdownNode.fileAbsolutePath = node.absolutePath
-    }
-
-    markdownNode.internal.contentDigest = createContentDigest(markdownNode)
-
-    createNode(markdownNode)
-    createParentChildLink({ parent: node, child: markdownNode })
-
-    return markdownNode
+    actions.createNode(markdownNode)
+    actions.createParentChildLink({ parent: node, child: markdownNode })
   } catch (err) {
     reporter.panicOnBuild(
       `Error processing Markdown ${
@@ -72,7 +85,10 @@ module.exports = async function onCreateNode(
       }:\n
       ${err.message}`
     )
-
-    return {} // eslint
   }
+}
+
+module.exports = {
+  createMarkdownNode,
+  onCreateNode,
 }

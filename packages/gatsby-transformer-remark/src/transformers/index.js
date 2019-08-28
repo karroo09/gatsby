@@ -1,4 +1,5 @@
 const remark = require(`remark`)
+const prefixLinks = require(`remark-prefix-links`)
 
 const { getExcerpt, getExcerptAst } = require(`./get-excerpt`)
 const { getHeadings } = require(`./get-headings`)
@@ -9,7 +10,7 @@ const { getTimeToRead } = require(`./get-time-to-read`)
 const { getWordCount } = require(`./get-word-count`)
 const { setupCacheKeyGenerator } = require(`./utils`)
 
-const getProcessor = pluginOptions => {
+const getProcessor = ({ basePath, pluginOptions }) => {
   const {
     blocks = [],
     commonmark = true,
@@ -19,13 +20,15 @@ const getProcessor = pluginOptions => {
     plugins = [],
   } = pluginOptions
 
-  const processor = remark().data(`settings`, {
-    blocks,
-    commonmark,
-    footnotes,
-    gfm,
-    pedantic,
-  })
+  const processor = remark()
+    .data(`settings`, {
+      blocks,
+      commonmark,
+      footnotes,
+      gfm,
+      pedantic,
+    })
+    .use(prefixLinks, basePath)
 
   plugins.forEach(plugin => {
     const requiredPlugin = require(plugin.resolve)
@@ -56,11 +59,12 @@ const getTransformers = ({
   pluginOptions,
   reporter,
 }) => {
-  const processor = getProcessor(pluginOptions)
+  const processor = getProcessor({ basePath, pluginOptions })
 
   const generateCacheKey = setupCacheKeyGenerator({ pluginOptions, basePath })
 
   return {
+    // processor,
     getExcerpt: getExcerpt({
       basePath,
       cache,

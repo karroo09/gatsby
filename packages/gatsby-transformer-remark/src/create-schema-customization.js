@@ -166,7 +166,7 @@ const getTypeDefs = ({ schema, pluginOptions }) => [
   }),
 ]
 
-module.exports = (nodeApiArgs, pluginOptions = {}) => {
+const createSchemaCustomization = (nodeApiArgs, pluginOptions = {}) => {
   const { plugins = [] } = pluginOptions
   const {
     actions,
@@ -217,4 +217,8 @@ module.exports = (nodeApiArgs, pluginOptions = {}) => {
       )
     }
   })
+}
+
+module.exports = {
+  createSchemaCustomization,
 }

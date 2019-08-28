@@ -1,2 +1,7 @@
-exports.createSchemaCustomization = require(`./create-schema-customization`)
-exports.onCreateNode = require(`./on-node-create`)
+const { createSchemaCustomization } = require(`./create-schema-customization`)
+const { onCreateNode } = require(`./on-create-node`)
+
+module.exports = {
+  createSchemaCustomization,
+  onCreateNode,
+}

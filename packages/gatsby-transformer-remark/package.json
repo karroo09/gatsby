@@ -21,6 +21,7 @@
     "mdast-util-toc": "^2.0.1",
     "remark": "^11.0.1",
     "remark-parse": "^7.0.1",
+    "remark-prefix-links": "^2.0.0",
     "remark-retext": "^3.1.3",
     "remark-stringify": "^7.0.2",
     "retext-english": "^3.0.3",

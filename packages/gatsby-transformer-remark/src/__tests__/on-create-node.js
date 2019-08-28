@@ -1,6 +1,5 @@
-const Promise = require(`bluebird`)
 const _ = require(`lodash`)
-const onCreateNode = require(`../on-node-create`)
+const { onCreateNode } = require(`../on-create-node`)
 const { graphql } = require(`gatsby/graphql`)
 
 const { createContentDigest } = require(`gatsby-core-utils`)
@@ -122,13 +121,13 @@ yadda yadda
     async function queryResult(nodes, fragment) {
       const {
         createSchemaComposer,
-      } = require(`../../../gatsby/src/schema/schema-composer`)
+      } = require(`gatsby/src/schema/schema-composer`)
       const {
         addInferredFields,
-      } = require(`../../../gatsby/src/schema/infer/add-inferred-fields`)
+      } = require(`gatsby/src/schema/infer/add-inferred-fields`)
       const {
         getExampleValue,
-      } = require(`../../../gatsby/src/schema/infer/example-value`)
+      } = require(`gatsby/src/schema/infer/example-value`)
 
       const sc = createSchemaComposer()
       const typeName = `MarkdownRemark`
