@@ -167,7 +167,6 @@ const getTypeDefs = ({ schema, pluginOptions }) => [
 ]
 
 const createSchemaCustomization = (nodeApiArgs, pluginOptions = {}) => {
-  const { plugins = [] } = pluginOptions
   const {
     actions,
     basePath,
@@ -208,6 +207,7 @@ const createSchemaCustomization = (nodeApiArgs, pluginOptions = {}) => {
   // This allows subplugins to use Node APIs bound to `gatsby-transformer-remark`
   // to customize the GraphQL schema. This makes it possible for subplugins to
   // modify types owned by `gatsby-transformer-remark`.
+  const plugins = pluginOptions.plugins || []
   plugins.forEach(plugin => {
     const resolvedPlugin = require(plugin.resolve)
     if (typeof resolvedPlugin.createSchemaCustomization === `function`) {

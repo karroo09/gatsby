@@ -1,5 +1,7 @@
 const setupCacheKeyGenerator = ({ pluginOptions, basePath }) => {
-  const plugins = pluginOptions.plugins.map(plugin => plugin.name).join(``)
+  const plugins =
+    pluginOptions.plugins &&
+    pluginOptions.plugins.map(plugin => plugin.name).join(``)
   const pathPrefix = basePath || ``
 
   const generateCacheKey = (key, options) => node =>

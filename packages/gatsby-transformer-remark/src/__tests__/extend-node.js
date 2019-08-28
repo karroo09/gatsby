@@ -1,17 +1,13 @@
 const { graphql } = require(`gatsby/graphql`)
-const { createMarkdownNode } = require(`../gatsby-node`)
+const { createMarkdownNode } = require(`../on-create-node`)
 const { createSchemaCustomization } = require(`../create-schema-customization`)
 const { build } = require(`gatsby/dist/schema`)
 const { buildObjectType } = require(`gatsby/dist/schema/types/type-builders`)
 const withResolverContext = require(`gatsby/dist/schema/context`)
-const store = require(`gatsby/dist/redux`)
-const { actions: publicActions } = require(`gatsby/dist/redux/actions/public`)
-const { createNode } = publicActions
-const {
-  actions: restrictedActions,
-} = require(`gatsby/dist/redux/actions/restricted`)
-const { createTypes, createResolverContext } = restrictedActions
-const strip = require(`strip-indent`)
+const { store } = require(`gatsby/dist/redux`)
+const { actions } = require(`gatsby/dist/redux/actions`)
+const { createNode, createTypes, createResolverContext } = actions
+const { stripIndent: strip } = require(`gatsby-cli/lib/reporter`)
 
 const noop = () => {}
 
@@ -36,13 +32,18 @@ const runQuery = async ({ markdown, options, query }) => {
     },
   })
   store.dispatch({ type: `DELETE_CACHE` })
-  store.dispatch(createNode({ node }))
+  createNode(node, { name: `gatsby-transformer-remark` })(store.dispatch)
   await createSchemaCustomization(
     {
       actions: {
-        createTypes: (...args) => store.dispatch(createTypes(...args)),
-        createResolverContext: (...args) =>
-          store.dispatch(createResolverContext(...args)),
+        createTypes: types =>
+          store.dispatch(
+            createTypes(types, { name: `gatsby-transformer-remark` })
+          ),
+        createResolverContext: ctx =>
+          createResolverContext(ctx, { name: `gatsby-transformer-remark` })(
+            store.dispatch
+          ),
       },
       cache: {
         get: noop,
@@ -70,12 +71,15 @@ const runQuery = async ({ markdown, options, query }) => {
   return data
 }
 
-describe(`Excerpt is generated correctly from schema`, () => {
-  it(`correctly loads an excerpt`, async () => {
-    const markdown = strip`---
+describe.only(`Excerpt is generated correctly from schema`, () => {
+  it.only(`correctly loads an excerpt`, async () => {
+    debugger
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       Where oh where is my little pony?
       `
     const query = `
@@ -112,7 +116,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`correctly loads a default excerpt`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -139,10 +144,12 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`correctly uses excerpt separator`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       Where oh where is my little pony?
       <!-- end -->
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi auctor sit amet velit id facilisis. Nulla viverra, eros at efficitur pulvinar, lectus orci accumsan nisi, eu blandit elit nulla nec lectus. Integer porttitor imperdiet sapien. Quisque in orci sed nisi consequat aliquam. Aenean id mollis nisi. Sed auctor odio id erat facilisis venenatis. Quisque posuere faucibus libero vel fringilla.
@@ -188,10 +195,12 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   describe(`content with separator`, () => {
-    const contentWithSeparator = strip`---
+    const contentWithSeparator = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       Where oh where **is** my little pony?
       <!-- end -->
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi auctor sit amet velit id facilisis. Nulla viverra, eros at efficitur pulvinar, lectus orci accumsan nisi, eu blandit elit nulla nec lectus. Integer porttitor imperdiet sapien. Quisque in orci sed nisi consequat aliquam. Aenean id mollis nisi. Sed auctor odio id erat facilisis venenatis. Quisque posuere faucibus libero vel fringilla.
@@ -256,10 +265,12 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   describe(`content`, () => {
-    const content = strip`---
+    const content = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       Where oh where is my little pony? Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi auctor sit amet velit id facilisis. Nulla viverra, eros at efficitur pulvinar, lectus orci accumsan nisi, eu blandit elit nulla nec lectus. Integer porttitor imperdiet sapien. Quisque in orci sed nisi consequat aliquam. Aenean id mollis nisi. Sed auctor odio id erat facilisis venenatis. Quisque posuere faucibus libero vel fringilla.
       In quis lectus sed eros efficitur luctus. Morbi tempor, nisl eget feugiat tincidunt, sem velit vulputate enim, nec interdum augue enim nec mauris. Nulla iaculis ante sed enim placerat pretium. Nulla metus odio, facilisis vestibulum lobortis vitae, bibendum at nunc. Donec sit amet efficitur metus, in bibendum nisi. Vivamus tempus vel turpis sit amet auctor. Maecenas luctus vestibulum velit, at sagittis leo volutpat quis. Praesent posuere nec augue eget sodales. Pellentesque vitae arcu ut est varius venenatis id maximus sem. Curabitur non consectetur turpis.
       `
@@ -409,7 +420,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`given an html format, it correctly maps nested markdown to html`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -434,7 +446,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`excerpt does have missing words and extra spaces`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -457,7 +470,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`excerpt does not have leading or trailing spaces`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -482,7 +496,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`excerpt has spaces between paragraphs`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -507,7 +522,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`excerpt has spaces between headings`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -536,7 +552,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`excerpt has spaces between table cells`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -561,7 +578,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`excerpt converts linebreaks into spaces`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -585,7 +603,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`excerpt does not have more than one space between elements`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -614,7 +633,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`given raw html in the text body, this html is not escaped`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -639,7 +659,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`given an html format, it prunes large excerpts`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -664,7 +685,8 @@ describe(`Excerpt is generated correctly from schema`, () => {
   })
 
   it(`given an html format, it respects the excerpt_separator`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -695,10 +717,12 @@ describe(`Excerpt is generated correctly from schema`, () => {
 
 describe(`Wordcount and timeToRead`, () => {
   it(`correctly uses wordCount parameters`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       Where oh where is my little pony? Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi auctor sit amet velit id facilisis. Nulla viverra, eros at efficitur pulvinar, lectus orci accumsan nisi, eu blandit elit nulla nec lectus. Integer porttitor imperdiet sapien. Quisque in orci sed nisi consequat aliquam. Aenean id mollis nisi. Sed auctor odio id erat facilisis venenatis. Quisque posuere faucibus libero vel fringilla.
 
       In quis lectus sed eros efficitur luctus. Morbi tempor, nisl eget feugiat tincidunt, sem velit vulputate enim, nec interdum augue enim nec mauris. Nulla iaculis ante sed enim placerat pretium. Nulla metus odio, facilisis vestibulum lobortis vitae, bibendum at nunc. Donec sit amet efficitur metus, in bibendum nisi. Vivamus tempus vel turpis sit amet auctor. Maecenas luctus vestibulum velit, at sagittis leo volutpat quis. Praesent posuere nec augue eget sodales. Pellentesque vitae arcu ut est varius venenatis id maximus sem. Curabitur non consectetur turpis.
@@ -727,7 +751,8 @@ describe(`Wordcount and timeToRead`, () => {
   })
 
   it(`correctly uses a default value for wordCount`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -756,7 +781,8 @@ describe(`Wordcount and timeToRead`, () => {
   })
 
   it(`correctly uses a default value for timeToRead`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
@@ -779,10 +805,12 @@ describe(`Wordcount and timeToRead`, () => {
 
 describe(`Table of contents`, () => {
   it(`returns null on non existing table of contents field`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       # first title
 
       some text
@@ -807,10 +835,12 @@ describe(`Table of contents`, () => {
   })
 
   it(`correctly generates table of contents`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       # first title
 
       some text
@@ -839,10 +869,12 @@ describe(`Table of contents`, () => {
   })
 
   it(`table of contents is generated with correct depth (graphql option)`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       # first title
 
       some text
@@ -871,10 +903,12 @@ describe(`Table of contents`, () => {
   })
 
   it(`table of contents is generated with correct depth (plugin option)`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       # first title
 
       some text
@@ -908,10 +942,12 @@ describe(`Table of contents`, () => {
   })
 
   it(`table of contents is generated from given heading onwards`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
+      ---
       title: "my little pony"
       date: "2017-09-18T23:19:51.246Z"
       ---
+
       # first title
 
       some text
@@ -955,7 +991,7 @@ describe(`Prefixing links`, () => {
     const basePath = `/prefix`
     const pathPrefix = assetPrefix + basePath
 
-    const markdown = strip`---
+    const markdown = strip`
       This is [a link](path/to/page1).
 
       This is [a reference]
@@ -987,7 +1023,7 @@ describe(`Prefixing links`, () => {
     const basePath = `/prefix`
     const pathPrefix = assetPrefix + basePath
 
-    const markdown = strip`---
+    const markdown = strip`
       This is [a link](/path/to/page1).
 
       This is [a reference]
@@ -1019,7 +1055,7 @@ describe(`Prefixing links`, () => {
     const basePath = `/prefix`
     const pathPrefix = assetPrefix + basePath
 
-    const markdown = strip`---
+    const markdown = strip`
       This is [a link](/path/to/page1).
 
       This is [a reference]
@@ -1049,7 +1085,7 @@ describe(`Prefixing links`, () => {
 
 describe(`Code blocks`, () => {
   it(`code block with language and meta`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
       \`\`\`js foo bar
       console.log('hello world')
       \`\`\`
@@ -1077,7 +1113,7 @@ describe(`Code blocks`, () => {
 
 describe(`Headings`, () => {
   it(`returns value`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
       # first title
 
       ## second title
@@ -1110,7 +1146,7 @@ describe(`Headings`, () => {
   })
 
   it(`returns value with inlineCode`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
       # first title
 
       ## \`second title\`
@@ -1143,7 +1179,7 @@ describe(`Headings`, () => {
   })
 
   it(`returns value with mixed text`, async () => {
-    const markdown = strip`---
+    const markdown = strip`
       # An **important** heading with \`inline code\` and text
       `
     const query = `
