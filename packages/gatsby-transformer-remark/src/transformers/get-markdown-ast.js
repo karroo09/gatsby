@@ -11,7 +11,9 @@ const getAst = async ({
   reporter,
   source,
 }) => {
-  for (const plugin of pluginOptions.plugins) {
+  const plugins = pluginOptions.plugins || []
+
+  for (const plugin of plugins) {
     const requiredPlugin = require(plugin.resolve)
     if (typeof requiredPlugin.mutateSource === `function`) {
       await requiredPlugin.mutateSource(
@@ -32,7 +34,7 @@ const getAst = async ({
 
   const markdownAst = processor.parse(source.internal.content)
 
-  for (const plugin of pluginOptions.plugins) {
+  for (const plugin of plugins) {
     const requiredPlugin = require(plugin.resolve)
     if (typeof requiredPlugin === `function`) {
       await requiredPlugin(
@@ -102,8 +104,7 @@ const getMarkdownAst = ({
     })
     .catch(err => {
       AstGenerationPromises.delete(cacheKey)
-      // TODO: What to return
-      return err
+      throw err
     })
 
   AstGenerationPromises.set(cacheKey, AstGenerationPromise)

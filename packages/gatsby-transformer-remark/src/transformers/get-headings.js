@@ -1,7 +1,7 @@
-const select = require(`unist-util-select`)
+const { selectAll } = require(`unist-util-select`)
 const toString = require(`mdast-util-to-string`)
 
-// TODO: This sucke
+// TODO: This sucks
 const headingLevels = [...Array(6).keys()].reduce((acc, i) => {
   acc[`h${i}`] = i
   return acc
@@ -34,7 +34,8 @@ const getHeadings = ({
     context
   )
 
-  const headings = select(ast, `heading`).map(heading => {
+  // TODO: visit instead of selectAll
+  const headings = selectAll(`heading`, ast).map(heading => {
     return {
       value: toString(heading),
       depth: heading.depth,

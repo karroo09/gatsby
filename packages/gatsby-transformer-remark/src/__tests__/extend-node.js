@@ -11,11 +11,6 @@ const { stripIndent: strip } = require(`gatsby-cli/lib/reporter`)
 
 const noop = () => {}
 
-const buildSchema = async () => {
-  await build({})
-  return store.getState().schema
-}
-
 const runQuery = async ({ markdown, options, query }) => {
   const node = createMarkdownNode({
     markdown,
@@ -60,20 +55,20 @@ const runQuery = async ({ markdown, options, query }) => {
     },
     options
   )
-  const schema = await buildSchema()
+  await build({})
+  const { schema, schemaCustomization } = store.getState()
   const { data, errors } = await graphql(
     schema,
     query,
     undefined,
-    withResolverContext({}, schema)
+    withResolverContext({}, schema, schemaCustomization.context)
   )
   expect(errors).toBeUndefined()
   return data
 }
 
-describe.only(`Excerpt is generated correctly from schema`, () => {
-  it.only(`correctly loads an excerpt`, async () => {
-    debugger
+describe(`Excerpt is generated correctly from schema`, () => {
+  it(`correctly loads an excerpt`, async () => {
     const markdown = strip`
       ---
       title: "my little pony"
