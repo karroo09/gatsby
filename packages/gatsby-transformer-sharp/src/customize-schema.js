@@ -550,7 +550,7 @@ module.exports = ({
 }) => {
   const { createTypes } = actions
 
-  const imageSharpType = schema.buildObjectType({
+  const ImageSharpType = schema.buildObjectType({
     name: `ImageSharp`,
     fields: createFields({
       pathPrefix,
@@ -575,7 +575,7 @@ module.exports = ({
       DuotoneGradientType,
       PotraceTurnPolicyType,
       PotraceType,
-      imageSharpType,
+      ImageSharpType,
     ])
   }
 }
